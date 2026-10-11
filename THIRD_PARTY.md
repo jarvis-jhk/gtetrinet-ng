@@ -7,6 +7,8 @@
 - SDL2: zlib licence, included in binary distribution. Source/releases:
   https://github.com/libsdl-org/SDL/releases ; Linux package source:
   https://packages.ubuntu.com/jammy/libsdl2-2.0-0
+- libsamplerate: BSD licence included in Linux archive; source
+  https://github.com/libsndfile/libsamplerate and Ubuntu source package libsamplerate.
 - Windows GCC runtime libraries: GPL with GCC Runtime Library Exception;
   https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html and
   https://www.msys2.org/ provide licences, source packages and toolchain build recipes.

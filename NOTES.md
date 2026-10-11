@@ -12,9 +12,10 @@ Back state after disconnect, now fixed. Installer tests reject bad hashes/path t
 preserve existing installation. Screenshot in docs/ is a running 1280×800 demo, not hardware.
 Linux dummy-driver SDL smoke passes. MinGW Windows build and Wine execution pass: core
 1458 checks, input 66 checks. Agent TypeScript gate and Python installer 3 tests pass.
-ASan/UBSan core passes directly and under gdb, but intermittently segfaults in this
-container before producing a diagnostic; investigating before relying on CI. Publication
-remains gated on CI and actual release-asset verification.
+Local ASan/UBSan core+input and eight-player smoke pass when built without PIE; the
+PIE sanitizer build intermittently failed without a diagnostic in this container.
+The normal PIE Linux GitHub sanitizer job passed on 6141726 (workflow 38156476935).
+Windows native CI is pending. Publication remains gated on both CI jobs and assets.
 
 Known limitations: hardware/virtual-device tests remain open, online interoperability is
 self-tested only, synchronous DNS, no sound, font/localization/remapping pending. Windows

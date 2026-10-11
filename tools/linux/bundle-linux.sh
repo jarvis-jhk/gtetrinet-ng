@@ -21,6 +21,9 @@ for f in "${ELF[@]}"; do
     while read -r name _ path _; do
         [[ "$path" == /* ]] || continue
         [[ "$name" =~ $EXCLUDE ]] && continue
+        # ldd includes dependencies of host libraries too. Copy only SDL's portable
+        # runtime and samplerate; host audio codecs must remain with host libsndfile.
+        [[ "$name" =~ ^lib(SDL2.*|samplerate)\.so ]] || continue
         [[ -n "${seen[$name]:-}" ]] && continue
         seen[$name]=1
         cp -Lv "$path" "$LIBDIR/$name"
