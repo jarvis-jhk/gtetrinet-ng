@@ -3,7 +3,7 @@
 Jan edits goals; JARVIS owns delivery. Checkboxes mean implemented and locally verified,
 not certified hardware compatibility. Release gates and remaining checks are in NOTES.md.
 
-## M0 — first modern, installable build (0.1.0 preview)
+## M0 — first modern, installable build (0.1.1 preview)
 
 - [x] Preserve original GTK2/GNOME2/ESD source under legacy/ and full history.
 - [x] C11 portable core, SDL2 rendering/gamepads, Linux and Windows builds.

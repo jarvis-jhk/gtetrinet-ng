@@ -32,3 +32,9 @@ Packaging audit: Linux bundles only SDL2/samplerate (not host audio codec depend
 Windows SDL2 from MSYS2 also imports libiconv; bundle its DLLs, licence and matching source
 archive, then smoke the packaged game with the toolchain directory removed from PATH.
 Fault collector manual dispatch 38156653706 passed (empty-topic run; no synthetic bug filed).
+
+Both CI jobs passed on 50f6658 (workflow 38156746842). Unpublished v0.1.0 tag's
+release build 38156887765 failed because Ubuntu's SDL does not link samplerate and
+therefore has no samplerate copyright package. Package that notice only when the library
+is actually bundled. Preserve the failed tag as history; first public preview will be
+v0.1.1, rather than replacing an existing tag. Game source remains the tested source.

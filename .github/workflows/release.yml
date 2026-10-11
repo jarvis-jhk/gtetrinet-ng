@@ -25,7 +25,9 @@ jobs:
           cp tools/linux/gtetrinet-ng.sh dist/gtetrinet-ng/
           cp CHANGELOG.md COPYING README.md THIRD_PARTY.md dist/gtetrinet-ng/
           cp /usr/share/doc/libsdl2-2.0-0/copyright dist/gtetrinet-ng/SDL2-license.txt
-          cp /usr/share/doc/libsamplerate0/copyright dist/gtetrinet-ng/samplerate-license.txt
+          if [ -f dist/gtetrinet-ng/lib/libsamplerate.so.0 ]; then
+            cp /usr/share/doc/libsamplerate0/copyright dist/gtetrinet-ng/samplerate-license.txt
+          fi
           echo "$tag" > dist/gtetrinet-ng/VERSION
           tar -C dist -czf dist/gtetrinet-ng-linux-x86_64.tar.gz gtetrinet-ng
           sed "s/@TAG@/$tag/g" tools/linux/install.sh > dist/install.sh
