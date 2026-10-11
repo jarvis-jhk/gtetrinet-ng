@@ -66,7 +66,7 @@ void gtn_logo_at(gtn_app *a, int y, int s)
     /* "gtetrinet-ng" with each letter in a block colour */
     static const gtn_color cols[] = {{0x2f, 0x6b, 0xff, 255}, {0xff, 0xd2, 0x2e, 255}, {0x2e, 0xc8, 0x4a, 255},
                                      {0xb0, 0x4a, 0xff, 255}, {0xff, 0x3b, 0x3b, 255}};
-    const char *t = "gtetrinet-ng";
+    const char *t = "GTetrinet NG";
     int x = (a->w - gtn_text_width(s, t)) / 2, sh = s > 2 ? s / 2 : 1;
     for (int i = 0; t[i]; i++) {
         char c[2] = {t[i], 0};
@@ -95,7 +95,7 @@ static void player_card(gtn_app *a, int i, int x, int y, int w, int h)
     gtn_text(x + 6 * s, y + 6 * s, 2 * s, pc, n);
     gtn_text_fit(x + 6 * s, y + h / 2, s, w - 12 * s, TEXT, p->nick);
     gtn_text_fit(x + 6 * s, y + h - 14 * s, s, w - 12 * s, MUTED,
-                 p->dev == DEV_KEYBOARD ? "Keyboard" : p->pad < 0 ? "No controller!" : "Controller");
+                 p->dev == DEV_KEYBOARD ? "Keyboard" : p->pad < 0 ? "No pad!" : "Gamepad");
 }
 
 static void draw_title(gtn_app *a)
@@ -104,7 +104,7 @@ static void draw_title(gtn_app *a)
     logo(a, a->h / 10);
     char v[64];
     snprintf(v, sizeof v, "TetriNET for up to 8 players - version %s", TN_VERSION);
-    gtn_text_center(a->w / 2, a->h / 10 + (a->w >= 1000 ? 70 : 40), s, MUTED, v);
+    gtn_text_center_fit(a->w / 2, a->h / 10 + (a->w >= 1000 ? 70 : 40), s, a->w - 32, MUTED, v);
 
     int cw = (a->w - 40) / 8, chh = a->h / 6;
     if (cw > 150) cw = 150;
@@ -115,21 +115,22 @@ static void draw_title(gtn_app *a)
     int y = y0 + chh + 30 * s;
     for (int i = 0; i < 4; i++) {
         int sel = a->menu_sel == i;
-        int w = gtn_text_width(s * (sel ? 2 : 2), items[i]);
+        int ms = gtn_text_scale(2 * s, a->w - 48 * s, items[i]);
+        int w = gtn_text_width(ms, items[i]);
         if (sel) gtn_fill((a->w - w) / 2 - 12 * s, y - 6 * s, w + 24 * s, 28 * s, gtn_rgb(0x2a, 0x30, 0x48));
-        gtn_text_center(a->w / 2, y, 2 * s, sel ? ACCENT : TEXT, items[i]);
+        gtn_text_center_fit(a->w / 2, y, ms, a->w - 48 * s, sel ? ACCENT : TEXT, items[i]);
         y += 34 * s;
     }
     if (gtn_local_count(a) == 0)
-        gtn_text_center(a->w / 2, y + 6 * s, s, ACCENT, "Everyone who wants to play: press A on your controller (or Enter)");
-    hints(a, "A: join / choose   B: leave   Up/Down: menu   In game: d-pad move, A/B rotate, Up drop, X special on target, Y on yourself, LB/RB target");
+        gtn_text_center_fit(a->w / 2, y + 6 * s, s, a->w - 32, ACCENT, "Everyone who wants to play: press A on your controller (or Enter)");
+    hints(a, "A/Enter: join / choose   B: leave   Up/Down: menu");
 }
 
 static void draw_online(gtn_app *a)
 {
     int s = ts(a);
-    gtn_text_center(a->w / 2, a->h / 10, 3 * s, TEXT, "Play online");
-    gtn_text_center(a->w / 2, a->h / 10 + 36 * s, s, MUTED, "Server address (any TetriNET 1.13 server, e.g. one running gtetrinet-ng-server)");
+    gtn_text_center_fit(a->w / 2, a->h / 10, 3 * s, a->w - 32, TEXT, "Play online");
+    gtn_text_center_fit(a->w / 2, a->h / 10 + 36 * s, s, a->w - 32, MUTED, "Server address (TetriNET 1.13 or gtetrinet-ng-server)");
     int bw = a->w * 2 / 3, bx = (a->w - bw) / 2, by = a->h / 10 + 56 * s;
     gtn_fill(bx, by, bw, 28 * s, PANEL);
     gtn_frame(bx, by, bw, 28 * s, s, ACCENT);
@@ -155,10 +156,10 @@ static void draw_online(gtn_app *a)
         ky += kh + 4 * s;
     }
     snprintf(buf, sizeof buf, "Mode: %s (Y to change)", a->settings.fast ? "TetriFast" : "classic TetriNET");
-    gtn_text_center(a->w / 2, ky + 12 * s, s, MUTED, buf);
-    gtn_text_center(a->w / 2, ky + 28 * s, s, MUTED, "Everybody who joined plays on that server, each as their own player.");
+    gtn_text_center_fit(a->w / 2, ky + 12 * s, s, a->w - 32, MUTED, buf);
+    gtn_text_center_fit(a->w / 2, ky + 28 * s, s, a->w - 32, MUTED, "Everybody who joined plays on that server, each as their own player.");
     status_line(a);
-    hints(a, "Type, or pick letters with the d-pad and A   X: delete   Start/GO/Enter: connect   B/Esc: back");
+    hints(a, "D-pad/A: type   X: delete   Start/GO/Enter: connect   B/Esc: back");
 }
 
 static void draw_connecting(gtn_app *a)
@@ -166,7 +167,7 @@ static void draw_connecting(gtn_app *a)
     int s = ts(a);
     char buf[200];
     snprintf(buf, sizeof buf, "Connecting to %s ...", a->hosting ? "the game on this machine" : a->host);
-    gtn_text_center(a->w / 2, a->h / 2 - 10 * s, 2 * s, TEXT, buf);
+    gtn_text_center_fit(a->w / 2, a->h / 2 - 10 * s, 2 * s, a->w - 32, TEXT, buf);
     status_line(a);
     hints(a, "B: cancel");
 }
@@ -182,7 +183,7 @@ static void draw_lobby(gtn_app *a)
     else
         snprintf(buf, sizeof buf, "Online: %s", a->host);
     gtn_text(16 * s, 12 * s, 2 * s, TEXT, a->hosting ? "Local game" : "Online game");
-    gtn_text(16 * s, 34 * s, s, MUTED, buf);
+    gtn_text_fit(16 * s, 34 * s, s, a->w - 32 * s, MUTED, buf);
 
     int lx = 16 * s, ly = 56 * s, lw = a->w / 2 - 24 * s, row = 26 * s;
     gtn_fill(lx, ly, lw, row * TN_MAX_SLOTS + 8 * s, PANEL);
@@ -213,7 +214,7 @@ static void draw_lobby(gtn_app *a)
     if (c->last_winner && a->banner_ms > 0) {
         const tn_slot *w = &c->slot[c->last_winner];
         snprintf(buf, sizeof buf, "%s wins!", w->team[0] ? w->team : w->nick);
-        gtn_text(lx, by, 3 * s, ACCENT, buf);
+        gtn_text_fit(lx, by, 3 * s, lw, ACCENT, buf);
         by += 34 * s;
     }
     if (c->winlist[0]) {
@@ -234,15 +235,15 @@ static void draw_lobby(gtn_app *a)
         if (a->pl[i].active && a->pl[i].client.state == TN_CONNECTED && tn_client_moderator(&a->pl[i].client)) m = i;
     if (m >= 0) snprintf(buf, sizeof buf, "Press Start or A to begin the game (%s is the moderator).", a->pl[m].nick);
     else snprintf(buf, sizeof buf, "Waiting for the moderator (%s) to start the game.", mod ? c->slot[mod].nick : "?");
-    gtn_text_center(a->w / 2, a->h - 52 * s, s, ACCENT, buf);
+    gtn_text_center_fit(a->w / 2, a->h - 52 * s, s, a->w - 32, ACCENT, buf);
     status_line(a);
-    hints(a, "Start/A: start   Y: change team   B: leave (the moderator's B ends the session)   Back: what's new   A on a new controller: join");
+    hints(a, "Start/A: start   Y: team   B: leave/end   Back: news   New pad A: join");
 }
 
 static void draw_news(gtn_app *a)
 {
     int s = ts(a);
-    gtn_text_center(a->w / 2, 14 * s, 3 * s, TEXT, "What's new");
+    gtn_text_center_fit(a->w / 2, 14 * s, 3 * s, a->w - 32, TEXT, "What's new");
     int maxc = (a->w - 48 * s) / (8 * s), lh = 12 * s;
     int y0 = 50 * s, y = y0, line = 0;
     const char *p = a->news;
@@ -253,13 +254,14 @@ static void draw_news(gtn_app *a)
         const char *q = p;
         int left = n;
         do {
-            int k = left > maxc ? maxc : left;
-            if (k < left) { int b = k; while (b > maxc / 2 && q[b] != ' ') b--; if (q[b] == ' ') k = b; }
+            int limit = head ? maxc / 2 : maxc;
+            int k = left > limit ? limit : left;
+            if (k < left) { int b = k; while (b > limit / 2 && q[b] != ' ') b--; if (q[b] == ' ') k = b; }
             if (line >= a->news_scroll && y < a->h - 30 * s) {
                 char buf[512];
                 snprintf(buf, sizeof buf, "%.*s", k, q);
                 for (char *t = buf; *t; t++) if ((unsigned char)*t >= 128) *t = '?';
-                gtn_text(24 * s, y, head ? 2 * s : s, head ? ACCENT : TEXT, head ? buf + 3 : buf);
+                gtn_text(24 * s, y, head ? 2 * s : s, head ? ACCENT : TEXT, head && q == p ? buf + 3 : buf);
                 y += head ? 2 * lh : lh;
             }
             line++;
@@ -305,7 +307,7 @@ static void panel(gtn_app *a, int li, int x, int y, int w, int h, int cs)
 
     /* side: next piece, level, lines, target */
     int sx = fx + fw + cs / 2, sw = x + w - sx - cs / 3;
-    s = sw >= 8 * 2 * 6 ? 2 : 1; /* "TARGET" must fit */
+    s = sw >= 8 * 2 * 8 ? 2 : 1; /* "TARGET" must fit */
     gtn_text(sx, fy, s, MUTED, "NEXT");
     if (c->playing) gtn_piece(sx, fy + 10 * s, sw / 4 < cs ? sw / 4 : cs, c->game.next, c->game.next_orient, 255);
     int ty = fy + 10 * s + 4 * cs + cs / 2;
@@ -338,8 +340,8 @@ static void panel(gtn_app *a, int li, int x, int y, int w, int h, int cs)
     }
     if (c->playing && c->game.nspecials > 0) {
         int sb = tn_sb_from_cell(c->game.specials[0]);
-        int nx = fx + (c->game.nspecials < maxq ? c->game.nspecials : maxq) * qs + cs / 3;
-        gtn_text_fit(nx, qy + (qs - 8) / 2, 1, x + w - nx - 4, ACCENT, tn_sb_name(sb));
+        /* The queue must never consume the effect label's width. */
+        gtn_text_fit(fx, qy + qs + 2, 1, x + w - fx - 4, ACCENT, tn_sb_name(sb));
     }
 }
 
@@ -389,13 +391,13 @@ static void draw_game(gtn_app *a)
         int rows = (n + cols - 1) / cols;
         int pw = W / cols, ph = H / rows;
         int cs = pw * 2 / 37;            /* 18.5 cells wide */
-        if (ph * 2 / 51 < cs) cs = ph * 2 / 51; /* 25.5 cells high */
+        if ((ph - 10) * 2 / 51 < cs) cs = (ph - 10) * 2 / 51; /* 25.5 cells high */
         if (cs > best) { best = cs; bc = cols; }
     }
     int cols = bc, rows = (n + cols - 1) / cols, cs = best;
     if (cs < 4) cs = 4;
     int pw = W / cols, ph = H / rows;
-    int panw = cs * 37 / 2, panh = cs * 51 / 2;
+    int panw = cs * 37 / 2, panh = cs * 51 / 2 + 10;
     if (panw > pw) panw = pw;
     if (panh > ph) panh = ph;
     for (int k = 0; k < n; k++) {
@@ -412,8 +414,8 @@ static void draw_game(gtn_app *a)
     }
     if (c->paused) {
         gtn_fill(0, 0, a->w, a->h, (gtn_color){0, 0, 0, 140});
-        gtn_text_center(a->w / 2, a->h / 2 - 20, 4, ACCENT, "PAUSED");
-        gtn_text_center(a->w / 2, a->h / 2 + 24, 2, TEXT, "Start: continue   Back+Start: end the game");
+        gtn_text_center_fit(a->w / 2, a->h / 2 - 20, 4, a->w - 32, ACCENT, "PAUSED");
+        gtn_text_center_fit(a->w / 2, a->h / 2 + 24, 2, a->w - 32, TEXT, "Start: continue   Back+Start: end the game");
     }
     status_line(a);
 }

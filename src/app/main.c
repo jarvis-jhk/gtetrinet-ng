@@ -477,7 +477,7 @@ static void render_art(gtn_app *a, const char *dir)
             gtn_fill(0, 0, a->w, a->h, (gtn_color){0x0b, 0x0d, 0x14, (Uint8)(art[i].logo ? 150 : 60)});
         }
         if (art[i].logo == 1 || art[i].logo == 3) {
-            const char *t = "gtetrinet-ng";
+            const char *t = "GTetrinet NG";
             int sc = a->w / (int)(strlen(t) * 8 + 4);
             gtn_logo_at(a, (a->h - 8 * sc) / 2, sc);
         } else if (art[i].logo == 2) {

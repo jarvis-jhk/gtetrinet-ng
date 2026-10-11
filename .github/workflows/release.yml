@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev xvfb
+      - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev xvfb python3-pil
       - run: |
           tag='${{ github.ref_name }}'
           [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
@@ -18,7 +18,9 @@ jobs:
           cmake --build build --parallel 2
           ctest --test-dir build --output-on-failure
           xvfb-run -a ./build/gtetrinet-ng --window --demo 8 --frames 600 --screenshot demo.bmp
-          mkdir -p dist/gtetrinet-ng/tools/linux
+          mkdir -p dist/gtetrinet-ng/tools/linux dist/gtetrinet-ng/artwork
+          xvfb-run -a ./build/gtetrinet-ng --window --demo 8 --frames 600 --art dist/gtetrinet-ng/artwork
+          python3 tools/linux/convert-artwork.py dist/gtetrinet-ng/artwork
           cmake --install build --prefix "$PWD/dist/gtetrinet-ng"
           bash tools/linux/bundle-linux.sh dist/gtetrinet-ng
           cp tools/linux/*.py dist/gtetrinet-ng/tools/linux/
@@ -32,11 +34,13 @@ jobs:
           tar -C dist -czf dist/gtetrinet-ng-linux-x86_64.tar.gz gtetrinet-ng
           sed "s/@TAG@/$tag/g" tools/linux/install.sh > dist/install.sh
           cp tools/linux/launcher.py dist/launcher.py
+          sed "s/@TAG@/$tag/g" tools/linux/Install-GTetrinet-NG.desktop > dist/Install-GTetrinet-NG.desktop
       - uses: actions/upload-artifact@v4
         with:
           name: linux-release
           path: |
             dist/*.tar.gz
+            dist/Install-GTetrinet-NG.desktop
             dist/install.sh
             dist/launcher.py
   windows:
@@ -88,7 +92,7 @@ jobs:
           path: dist
       - run: |
           cd dist
-          sha256sum *.tar.gz *.zip install.sh launcher.py > SHA256SUMS
-          gh release create "$GITHUB_REF_NAME" --title "gtetrinet-ng ${GITHUB_REF_NAME} — preview" --notes-file ../CHANGELOG.md *.tar.gz *.zip install.sh launcher.py SHA256SUMS
+          sha256sum *.tar.gz *.zip Install-GTetrinet-NG.desktop install.sh launcher.py > SHA256SUMS
+          gh release create "$GITHUB_REF_NAME" --title "gtetrinet-ng ${GITHUB_REF_NAME} — preview" --notes-file ../CHANGELOG.md *.tar.gz *.zip Install-GTetrinet-NG.desktop install.sh launcher.py SHA256SUMS
         env:
           GH_TOKEN: ${{ github.token }}

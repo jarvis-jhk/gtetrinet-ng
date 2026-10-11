@@ -18,8 +18,11 @@ supplies graphics/audio libraries (SteamOS, Mint or Ubuntu 22.04+). Python 3 and
 required by the installer/launcher. Windows x86_64: extract the ZIP, run `Play.cmd`;
 `gtetrinet-ng.exe` also works directly, without launcher fault reporting.
 
-Steam Deck: switch to Desktop Mode, fully exit Steam, download `install.sh` from the
-release and run `bash install.sh`. It installs under `~/.local/share/gtetrinet-ng`, creates
+Steam Deck: switch to Desktop Mode and download `Install-GTetrinet-NG.desktop` from the
+release. Open it (confirm “Execute”/“Trust” if your desktop asks) and follow the install
+dialogs. Fully exit Steam when prompted, so its shortcut can be safely added or renamed.
+The friendly library title is **GTetrinet NG — TetriNET**, with original game artwork.
+Alternatively run `bash install.sh`. It installs under `~/.local/share/gtetrinet-ng`, creates
 a desktop shortcut and adds a Steam shortcut when Steam's userdata is found. Restart
 Steam and return to Game Mode. Use the normal Gamepad template (Steam Input's keyboard
 emulation consumes the Deck as a keyboard player). Extra controllers press A to join.
@@ -31,12 +34,12 @@ Uninstall: remove that install directory and desktop/Steam shortcuts manually.
 
 Press Enter (keyboard) or A (controller) to join. Select Local game; other devices can
 join before the match starts. A/Start starts it. Each seat gets an independent nickname
-and board. Controllers: d-pad/stick moves, Down soft-drops, Up hard-drops, A/B rotates,
+and board. Controllers: d-pad/stick moves, Down soft-drops, Up hard-drops, A rotates clockwise / B counterclockwise,
 X uses a special on the selected target, Y uses it on yourself, shoulders select targets,
 Back discards a special, Start pauses, Back+Start ends the game. A disconnected seat can
 be reclaimed by pressing A on an unclaimed controller. Eight fields are a dense layout.
 
-Keyboard: arrows move/rotate, Space drops, X/Z rotates, S uses a special, Q/E or Tab
+Keyboard: arrows move/rotate, Space drops, X rotates clockwise / Z counterclockwise, S uses a special, Q/E or Tab
 changes target, 1–8 uses it on a numbered player, D discards, P pauses. Online entry has
 a controller keyboard. Choose TetriFast with Y. `--nick Name` sets your nickname.
 

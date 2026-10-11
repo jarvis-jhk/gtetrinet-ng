@@ -4,15 +4,17 @@
 # Steam writes shortcuts on exit. Only artwork may be changed while it is running.
 # Installer originally based on ArnoldSmith86/minecraft-splitscreen (MIT).
 import glob
+import shutil
+from pathlib import Path
 import os
 import struct
 import subprocess
 import sys
 import tempfile
-import urllib.request
 import zlib
 
-ARTWORK = {}  # Original game artwork will be packaged after UI acceptance.
+ARTWORK = {suffix: Path(__file__).resolve().parents[2] / "artwork" / ("steam" + suffix)
+           for suffix in ("p.png", ".png", "_hero.png", "_logo.png", "_icon.png")}
 
 
 
@@ -130,20 +132,21 @@ def replace_shortcuts(path, data):
 
 def fetch_artwork(grid, appid):
     os.makedirs(grid, exist_ok=True)
-    for suffix, url in ARTWORK.items():
+    failed = False
+    for suffix, source in ARTWORK.items():
         path = os.path.join(grid, '%d%s' % (appid, suffix))
         if os.path.exists(path):
             continue
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 gtetrinet-ng-installer'})
-            with urllib.request.urlopen(req, timeout=20) as resp:
-                data = resp.read()
-            with open(path + '.part', 'wb') as out:
-                out.write(data)
+            shutil.copyfile(source, path + '.part')
             os.replace(path + '.part', path)
             print('artwork', path)
-        except Exception as error:
-            print('artwork failed: %s: %s' % (url, error), file=sys.stderr)
+        except OSError as error:
+            failed = True
+            print('artwork failed: %s: %s' % (source, error), file=sys.stderr)
+
+    if failed:
+        raise RuntimeError("Steam artwork could not be installed; rerun the installer")
 
 
 def main(args):

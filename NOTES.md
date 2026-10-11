@@ -1,6 +1,28 @@
 # Running state — 2026-10-11
 
-## Current: first public preview v0.1.1 verified
+## Current: Deck feedback fixes prepared for v0.1.2
+
+Request t_mv487i6v4p7fol: Jan reports one-player v0.1.1 on his physical Steam Deck
+works. Eight physical controllers remain unverified. German UI translation, effect
+colors and a TetriNET 2 parity audit added to ROADMAP. Clockwise/counterclockwise
+already exist; explicit instructions and real live-session button assertions added.
+
+Clickable release-bound desktop installer now uses dialogs, keeps the atomic updater,
+adds the friendly GTetrinet NG — TetriNET title and original Steam artwork rendered by
+our own game. Existing shortcut appid survives title migration, duplicate installs are
+idempotent and live Steam still blocks VDF writes. New installer failures use the same
+anonymous public ntfy relay (no private endpoint or diagnostics in public source).
+
+Text scaling, shortened context help and changelog heading wrapping fix fixed-font
+clipping. Special effect labels have their own line below the queue, so a full queue
+cannot hide them. Layout/artwork evidence is in data/tetrinet/artwork-preview, separate
+from physical hardware proof. Local Debug/ASan/UBSan core1458 and input76 checks pass; five Python checks pass
+(atomic install, bad hash/path rejection, VDF title/appid/artwork preservation, and
+repeated graphical shell installation with spaces in HOME). Screenshot/artwork smoke
+passes; transparent logo alpha is verified. Agent TypeScript gate passes. Exact-head
+Linux/Windows CI and published-asset verification remain the release gates.
+
+## First public preview v0.1.1 verified
 
 https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.1
 

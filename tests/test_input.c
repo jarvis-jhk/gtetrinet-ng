@@ -67,6 +67,23 @@ int main(void)
     CHECK(!a.pl[1].hold);
     pad(&a, 900, SDL_CONTROLLER_BUTTON_DPAD_RIGHT, 1);
     CHECK(a.pl[1].hold == 1 && !a.pl[0].hold);
+    /* Both directions act on the actual live player, without moving another seat. */
+    /* Use a four-orientation piece; a randomly spawned square cannot demonstrate direction. */
+    a.pl[0].client.game.block = 2;
+    a.pl[0].client.game.orient = 0;
+    a.pl[0].client.game.bx = 4;
+    a.pl[0].client.game.by = 4;
+    a.pl[0].client.spawn_wait = 0;
+    int o0 = a.pl[0].client.game.orient;
+    int o1 = a.pl[1].client.game.orient;
+    pad(&a, 100, SDL_CONTROLLER_BUTTON_A, 1);
+    CHECK(a.pl[0].client.game.orient == (o0 + 1) % 4);
+    CHECK(a.pl[1].client.game.orient == o1);
+    pad(&a, 100, SDL_CONTROLLER_BUTTON_B, 1);
+    CHECK(a.pl[0].client.game.orient == o0);
+    pad(&a, 100, SDL_CONTROLLER_BUTTON_B, 1);
+    CHECK(a.pl[0].client.game.orient == 3);
+    CHECK(a.pl[1].client.game.orient == o1);
     /* Releasing a seat and joining again must not inherit a held Back chord. */
     stop_session(&a);
     back_held[3] = 1;
@@ -74,6 +91,28 @@ int main(void)
     pad(&a, 901, SDL_CONTROLLER_BUTTON_A, 1);
     CHECK(a.pl[3].pad == 901 && !back_held[3]);
     stop_session(&a);
+    /* Pixel bounds catch the old one-character ellipsis overflow and fixed-scale clipping. */
+    SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, 320, 80, 32, SDL_PIXELFORMAT_RGBA32);
+    SDL_Renderer *renderer = SDL_CreateSoftwareRenderer(surface);
+    CHECK(renderer != NULL);
+    CHECK(gtn_render_init(renderer) == 0);
+    CHECK(gtn_text_scale(4, 280, "Play here (everyone on this screen)") == 1);
+    for (int width = 8; width <= 80; width += 72) {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+        gtn_text_fit(0, 0, 4, width, gtn_rgb(255, 255, 255), "This must fit within its panel");
+        SDL_RenderPresent(renderer);
+        int overflow = 0;
+        for (int y = 0; y < 80; y++) for (int x = width; x < 320; x++) {
+            Uint8 r, g, b, alpha;
+            SDL_GetRGBA(((Uint32 *)((char *)surface->pixels + y * surface->pitch))[x], surface->format, &r, &g, &b, &alpha);
+            if (r || g || b) overflow++;
+        }
+        CHECK(overflow == 0);
+    }
+    gtn_render_quit();
+    SDL_DestroyRenderer(renderer);
+    SDL_FreeSurface(surface);
     SDL_Quit();
     printf("%d input checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;

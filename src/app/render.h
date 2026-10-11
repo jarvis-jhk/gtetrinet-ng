@@ -25,7 +25,9 @@ void gtn_frame(int x, int y, int w, int h, int thick, gtn_color c);
 int gtn_text(int x, int y, int scale, gtn_color c, const char *s);
 int gtn_text_width(int scale, const char *s);
 void gtn_text_center(int cx, int y, int scale, gtn_color c, const char *s);
-/* Draws as much of s as fits into maxw, ending in ".." when cut. */
+int gtn_text_scale(int scale, int maxw, const char *s);
+void gtn_text_center_fit(int cx, int y, int scale, int maxw, gtn_color c, const char *s);
+/* Reduces integer scale before abbreviating to maxw. */
 void gtn_text_fit(int x, int y, int scale, int maxw, gtn_color c, const char *s);
 
 void gtn_cell(int x, int y, int size, int cell);

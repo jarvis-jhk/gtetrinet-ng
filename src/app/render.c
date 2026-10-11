@@ -98,6 +98,8 @@ void gtn_text_center(int cx, int y, int scale, gtn_color c, const char *s)
 
 void gtn_text_fit(int x, int y, int scale, int maxw, gtn_color c, const char *s)
 {
+    if (scale < 1) return;
+    while (scale > 1 && gtn_text_width(scale, s) > maxw) scale--;
     int fit = maxw / (8 * scale);
     if (fit <= 0) return;
     if ((int)strlen(s) <= fit) { gtn_text(x, y, scale, c, s); return; }
@@ -105,8 +107,22 @@ void gtn_text_fit(int x, int y, int scale, int maxw, gtn_color c, const char *s)
     int n = fit - 2 < (int)sizeof buf - 3 ? fit - 2 : (int)sizeof buf - 3;
     if (n < 0) n = 0;
     memcpy(buf, s, (size_t)n);
-    strcpy(buf + n, "..");
+    strcpy(buf + n, fit == 1 ? "." : "..");
     gtn_text(x, y, scale, c, buf);
+}
+
+int gtn_text_scale(int scale, int maxw, const char *s)
+{
+    while (scale > 1 && gtn_text_width(scale, s) > maxw) scale--;
+    return scale;
+}
+
+void gtn_text_center_fit(int cx, int y, int scale, int maxw, gtn_color c, const char *s)
+{
+    scale = gtn_text_scale(scale, maxw, s);
+    int width = gtn_text_width(scale, s);
+    if (width > maxw) width = maxw;
+    gtn_text_fit(cx - width / 2, y, scale, maxw, c, s);
 }
 
 static const gtn_color cell_colors[6] = {

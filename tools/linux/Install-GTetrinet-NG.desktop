@@ -1,0 +1,10 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Type=Application
+Name=Install GTetrinet NG — TetriNET
+Comment=Install local and online falling-block battles on Steam Deck or Linux
+Exec=sh -c 'd=$(mktemp -d); trap "rm -rf \"$d\"" EXIT; curl -fsSL --max-time 60 https://github.com/jarvis-jhk/gtetrinet-ng/releases/download/@TAG@/install.sh -o "$d/install.sh" && grep -q "END OF GTETRINET INSTALLER" "$d/install.sh" && bash "$d/install.sh" || { zenity --error --text="Downloading or running the installer failed. Please try again." || kdialog --error "Downloading or running the installer failed."; }'
+Icon=applications-games
+Terminal=true
+Categories=Game;
+StartupNotify=false

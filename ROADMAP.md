@@ -35,4 +35,24 @@ not certified hardware compatibility. Release gates and remaining checks are in 
 
 - [ ] AppImage, Windows installer/update parity, signed releases where practical.
 - [ ] Optional crash-report consent UI and local diagnostic export (redacted).
-- [ ] Localization and original upstream theme migration.
+- [ ] German translation of the active game: menus, hints, specials, errors and changelog UI;
+  UTF-8 font coverage (including ä/ö/ü/ß), language choice and layout checks on the Deck.
+  Legacy GTK translations are reference material, not a translated modern frontend.
+- [ ] Color-code specials by effect: beneficial, harmful and situational, with readable
+  labels/symbols as well as colors; document how the chosen target changes the effect.
+- [ ] Audit missing TetriNET 2 features and prioritize a documented parity list (rules,
+  specials, modes, lobby/chat and protocol). Distinguish gameplay additions from TN2 server
+  compatibility; do not advertise TN2 support from classic 1.13/TetriFast support.
+- [x] Two-way rotation exists: controller A clockwise / B counterclockwise, keyboard
+  X clockwise / Z counterclockwise. Keep explicit help and verify both on physical Deck
+  controls; configurable bindings and rotation behavior remain M1 work.
+- [ ] Original upstream theme migration.
+
+## Deck feedback — 2026-10-11
+
+Jan reports that v0.1.1 works on a physical Steam Deck with one player. This is a
+single-player hardware observation; eight-controller and suspend/dock checks remain open.
+- [x] Prepare release packaging for a clickable `.desktop` installer with dialogs, friendly game title and matching
+  original falling-block Steam capsule/hero/logo/icon, preserving existing shortcut appids.
+- [x] Fix clipped menus, help, nicknames and news headings at Deck resolutions; verify
+  title, online entry, lobby, news, pause and one/eight-player views separately (local rendering; physical recheck remains M1).
