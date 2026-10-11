@@ -1,0 +1,85 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev xvfb
+      - run: |
+          tag='${{ github.ref_name }}'
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGTN_VERSION="${tag#v}"
+          cmake --build build --parallel 2
+          ctest --test-dir build --output-on-failure
+          xvfb-run -a ./build/gtetrinet-ng --window --demo 8 --frames 600 --screenshot demo.bmp
+          mkdir -p dist/gtetrinet-ng/tools/linux
+          cmake --install build --prefix "$PWD/dist/gtetrinet-ng"
+          bash tools/linux/bundle-linux.sh dist/gtetrinet-ng
+          cp tools/linux/*.py dist/gtetrinet-ng/tools/linux/
+          cp tools/linux/gtetrinet-ng.sh dist/gtetrinet-ng/
+          cp CHANGELOG.md COPYING README.md THIRD_PARTY.md dist/gtetrinet-ng/
+          cp /usr/share/doc/libsdl2-2.0-0/copyright dist/gtetrinet-ng/SDL2-license.txt
+          echo "$tag" > dist/gtetrinet-ng/VERSION
+          tar -C dist -czf dist/gtetrinet-ng-linux-x86_64.tar.gz gtetrinet-ng
+          sed "s/@TAG@/$tag/g" tools/linux/install.sh > dist/install.sh
+          cp tools/linux/launcher.py dist/launcher.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: |
+            dist/*.tar.gz
+            dist/install.sh
+            dist/launcher.py
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja mingw-w64-ucrt-x86_64-SDL2 zip
+      - run: |
+          tag='${{ github.ref_name }}'
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DGTN_VERSION="${tag#v}"
+          cmake --build build --parallel 2
+          ctest --test-dir build --output-on-failure
+          ./build/gtetrinet-ng.exe --window --demo 8 --frames 600 --screenshot demo.bmp
+          mkdir -p dist/gtetrinet-ng
+          cp build/gtetrinet-ng.exe build/gtetrinet-ng-server.exe dist/gtetrinet-ng/
+          # SDL and its compiler runtimes are redistributed with their source/licence notices.
+          cp /ucrt64/bin/SDL2.dll /ucrt64/bin/libgcc_s_seh-1.dll /ucrt64/bin/libwinpthread-1.dll dist/gtetrinet-ng/
+          cp tools/windows/* CHANGELOG.md COPYING README.md THIRD_PARTY.md dist/gtetrinet-ng/
+          cp -r /ucrt64/share/licenses/SDL2 dist/gtetrinet-ng/SDL2-license
+          echo "$tag" > dist/gtetrinet-ng/VERSION
+          cd dist && zip -r gtetrinet-ng-windows-x86_64.zip gtetrinet-ng
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: dist/*.zip
+  publish:
+    needs: [linux, windows]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: '*-release'
+          merge-multiple: true
+          path: dist
+      - run: |
+          cd dist
+          sha256sum *.tar.gz *.zip install.sh launcher.py > SHA256SUMS
+          gh release create "$GITHUB_REF_NAME" --title "gtetrinet-ng ${GITHUB_REF_NAME} — preview" --notes-file ../CHANGELOG.md *.tar.gz *.zip install.sh launcher.py SHA256SUMS
+        env:
+          GH_TOKEN: ${{ github.token }}
