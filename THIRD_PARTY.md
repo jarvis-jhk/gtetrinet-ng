@@ -9,6 +9,9 @@
   https://packages.ubuntu.com/jammy/libsdl2-2.0-0
 - libsamplerate: BSD licence included in Linux archive; source
   https://github.com/libsndfile/libsamplerate and Ubuntu source package libsamplerate.
+- Windows libiconv/libcharset: LGPL-2.1-or-later libraries, dynamically linked and
+  replaceable. Matching MSYS2 source archive and licence texts accompany the DLLs.
+  https://packages.msys2.org/packages/mingw-w64-ucrt-x86_64-libiconv
 - Windows GCC runtime libraries: GPL with GCC Runtime Library Exception;
   https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html and
   https://www.msys2.org/ provide licences, source packages and toolchain build recipes.

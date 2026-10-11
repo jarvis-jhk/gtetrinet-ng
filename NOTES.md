@@ -27,3 +27,8 @@ EXE directly; crash forwarding then depends on launcher for abnormal termination
 Next: finish Linux/Windows CI for this head, tag 0.1.0, verify archives/installer publicly,
 then announce once with release URL. M1 should begin with actual virtual joystick tests,
 then Jan's hardware feedback when he tries the release. Do not present demo bots as input proof.
+
+Packaging audit: Linux bundles only SDL2/samplerate (not host audio codec dependencies).
+Windows SDL2 from MSYS2 also imports libiconv; bundle its DLLs, licence and matching source
+archive, then smoke the packaged game with the toolchain directory removed from PATH.
+Fault collector manual dispatch 38156653706 passed (empty-topic run; no synthetic bug filed).
