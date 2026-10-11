@@ -9,7 +9,7 @@ not certified hardware compatibility. Release gates and remaining checks are in 
 - [x] C11 portable core, SDL2 rendering/gamepads, Linux and Windows builds.
 - [x] Embedded offline server, standalone LAN server, keyboard play.
 - [x] Game rules, specials, teams, win list, protocol and real TCP integration tests.
-- [ ] Linux/Windows CI, published portable assets and verified download.
+- [x] Linux/Windows CI, published portable assets and verified download.
 - [x] Steam Deck installer, Steam shortcut, update checks and in-game changelog.
 - [x] Anonymous fault relay via ntfy, GitHub issues and private queue secret.
 

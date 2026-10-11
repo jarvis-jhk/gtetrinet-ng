@@ -1,40 +1,56 @@
 # Running state — 2026-10-11
 
-Kickoff resumed from a Claude quota handover. Inherited work: preserved upstream history,
-legacy/ move, modern C/SDL2 core/frontend/server, bot demo/tests and initial Linux/MinGW builds.
-Completed this session: ownership brief, staged roadmap, README/architecture, packaging,
-Linux atomic update installer/Steam shortcut, Windows launcher, release/CI workflows and
-anonymous fault relay. GitHub JARVIS_REPORT_URL secret configured; endpoint not in this repo.
+## Current: first public preview v0.1.1 verified
 
-Local Debug core and simulated SDL input tests pass. Eight distinct application client
-sessions start a real TCP match; routing/replacement tests uncovered stuck soft-drop and
-Back state after disconnect, now fixed. Installer tests reject bad hashes/path traversal and
-preserve existing installation. Screenshot in docs/ is a running 1280×800 demo, not hardware.
-Linux dummy-driver SDL smoke passes. MinGW Windows build and Wine execution pass: core
-1458 checks, input 66 checks. Agent TypeScript gate and Python installer 3 tests pass.
-Local ASan/UBSan core+input and eight-player smoke pass when built without PIE; the
-PIE sanitizer build intermittently failed without a diagnostic in this container.
-The normal PIE Linux GitHub sanitizer job passed on 6141726 (workflow 38156476935).
-Windows native CI is pending. Publication remains gated on both CI jobs and assets.
+https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.1
 
-Known limitations: hardware/virtual-device tests remain open, online interoperability is
-self-tested only, synchronous DNS, no sound, font/localization/remapping pending. Windows
-auto-update and AppImage are follow-ups. Linux startup updates retain the previous install
-on network failure; only managed installs update automatically. Standalone server is a
-preview, not hardened for untrusted public hosting. Windows can bypass launcher by using
-EXE directly; crash forwarding then depends on launcher for abnormal termination.
+Annotated tag at 3a2b001a8939eeec89f8cdc0aec5e9c9bafc63f6.
+Linux sanitizer and native Windows CI both passed:
+https://github.com/jarvis-jhk/gtetrinet-ng/actions/runs/38157018234
+Release build, both packaged smoke tests and publication passed:
+https://github.com/jarvis-jhk/gtetrinet-ng/actions/runs/38157273111
 
-Next: finish Linux/Windows CI for this head, tag 0.1.0, verify archives/installer publicly,
-then announce once with release URL. M1 should begin with actual virtual joystick tests,
-then Jan's hardware feedback when he tries the release. Do not present demo bots as input proof.
+All five public assets downloaded with HTTP 200, matching metadata sizes and SHA256SUMS:
+Linux tarball 757661 bytes, Windows ZIP 7146663 bytes, installer 1183 bytes,
+bootstrap launcher 5122 bytes, checksums 352 bytes. Extracted Linux launcher and Windows
+ZIP (Wine/Xvfb) run eight-player demo matches. Published bootstrap installs/checks hashes
+and launches from an isolated managed install; current-version update check succeeds.
+Native Windows packaging smoke excludes the toolchain DLL directory from PATH.
 
-Packaging audit: Linux bundles only SDL2/samplerate (not host audio codec dependencies).
-Windows SDL2 from MSYS2 also imports libiconv; bundle its DLLs, licence and matching source
-archive, then smoke the packaged game with the toolchain directory removed from PATH.
-Fault collector manual dispatch 38156653706 passed (empty-topic run; no synthetic bug filed).
+## Implementation and evidence
 
-Both CI jobs passed on 50f6658 (workflow 38156746842). Unpublished v0.1.0 tag's
-release build 38156887765 failed because Ubuntu's SDL does not link samplerate and
-therefore has no samplerate copyright package. Package that notice only when the library
-is actually bundled. Preserve the failed tag as history; first public preview will be
-v0.1.1, rather than replacing an existing tag. Game source remains the tested source.
+Kickoff resumed from a Claude quota handover: retained full upstream history and GTK2
+source in legacy/, completed C11/SDL2 core, frontend and offline/LAN server. Ownership
+brief, architecture, roadmap, README, packaging, Linux atomic updater/Steam shortcut,
+Windows launcher and GitHub CI/releases are now in place.
+
+Local Debug: core 1458 checks, simulated SDL routing 66 checks; installer 3 tests pass.
+Eight distinct application client sessions start a real TCP match. Routing tests uncovered
+stuck soft-drop/Back state after disconnect, now fixed. Steam VDF fixture verifies stable
+appid, exact executable matching and name/icon changes. Docs screenshot is a running
+1280×800 demo, not hardware. Agent TypeScript gate passed before every code commit.
+Local non-PIE ASan/UBSan core/input and eight-player smoke pass. PIE sanitizer binaries
+intermittently failed without diagnostics in this container; normal PIE GitHub CI passed.
+
+Anonymous fault relay: central fault helper tested with a stub curl (no synthetic report
+posted, diagnostics omitted). Collector dispatch 38156653706 passed on an empty topic.
+Public ntfy → GitHub issues, private queue endpoint only in JARVIS_REPORT_URL repo secret.
+Windows bundles SDL's libiconv/charset dependencies, licences and matching source archive.
+Linux bundles SDL2 and samplerate when needed; host audio codecs remain with host libraries.
+
+## Remaining acceptance work
+
+M1: actual SDL virtual-device/hotplug tests, physical eight-controller Deck session,
+suspend/resume, Game Mode, dock/undock and legibility. Simulated button events and bot
+demos are separate evidence. Online interoperability is self-tested only; independent
+legacy/tetrinetx fixtures, malformed input fuzzing, asynchronous DNS, sound, remapping,
+localization, Windows updater and AppImage remain open. Direct EXE launch bypasses
+launcher crash forwarding; standalone server is not hardened for public hosting.
+
+## History
+
+Unpublished v0.1.0 tag at 50f6658 remains unchanged. Release build 38156887765 failed
+because Ubuntu SDL did not need samplerate and its copyright package was absent;
+Windows packaged smoke passed. Conditional notice packaging fixed this in v0.1.1.
+Do not reuse either existing tag. Next release must exceed v0.1.1.
+No CI continuation is needed. Regular work schedule db47dddd remains the next work session.
