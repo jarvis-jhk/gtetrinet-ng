@@ -1,6 +1,22 @@
 # Running state — 2026-10-11
 
-## Current: Deck feedback v0.1.2 awaiting release gates
+## Current: Deck feedback v0.1.2 verified
+
+https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.2
+
+Annotated tag/source18308eef9ea61f88ad7c707bc1a4478955a6689c.
+Exact-head Linux sanitizer and native Windows CI passed:
+https://github.com/jarvis-jhk/gtetrinet-ng/actions/runs/38187173734
+Release Linux/Windows packaged smoke and publication passed:
+https://github.com/jarvis-jhk/gtetrinet-ng/actions/runs/38187315858
+
+All six public downloads returned HTTP200, matching sizes and SHA256SUMS: Linux
+archive791090 bytes, Windows ZIP7147485, install.sh2826, launcher.py5122,
+Install-GTetrinet-NG.desktop674 and SHA256SUMS447. Downloaded desktop passes standards
+validation, and five original Steam images are present. Public Linux eight-player and
+Windows ZIP Wine/Xvfb launches pass. Downloaded bootstrap installs the exact public
+archive with real hashes; repeated current-version check and managed one-player launch
+pass. Evidence: data/tetrinet/verified-v0.1.2.json. No CI continuation remains.
 
 Request t_mv487i6v4p7fol: Jan reports one-player v0.1.1 on his physical Steam Deck
 works. Eight physical controllers remain unverified. German UI translation, effect
@@ -20,8 +36,7 @@ from physical hardware proof. Local Debug/ASan/UBSan core1458 and input76 checks
 (atomic install, bad hash/path rejection, VDF title/appid/artwork preservation, and
 repeated graphical shell installation with spaces in HOME). Screenshot/artwork smoke
 passes; transparent logo alpha is verified. Desktop entry passes freedesktop validation and GIO
-parses its command exactly; the repeated-install test executes the desktop command itself. Agent TypeScript gate passes. Exact-head
-Linux/Windows CI and published-asset verification remain the release gates.
+parses its command exactly; the repeated-install test executes the desktop command itself. Agent TypeScript gate passed. Release gates completed above.
 First implementation39d3b0c passed Linux and Windows in CI38171723312. Final desktop
 quoting fix87c1a47 adds freedesktop validation to both CI and release packaging.
 
@@ -66,7 +81,7 @@ Linux bundles SDL2 and samplerate when needed; host audio codecs remain with hos
 ## Remaining acceptance work
 
 M1: actual SDL virtual-device/hotplug tests, physical eight-controller Deck session,
-suspend/resume, Game Mode, dock/undock and legibility. Simulated button events and bot
+suspend/resume, Game Mode, dock/undock and legibility after the text fixes. Simulated button events and bot
 demos are separate evidence. Online interoperability is self-tested only; independent
 legacy/tetrinetx fixtures, malformed input fuzzing, asynchronous DNS, sound, remapping,
 localization, Windows updater and AppImage remain open. Direct EXE launch bypasses
