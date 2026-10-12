@@ -40,7 +40,7 @@ found with a diagnostic branch (ci/repeat-diag, runs 38220519520..38222118414): 
 auto-repeat. Pads were unaffected. Linux/Wine happened to zero it. Tests now use SDL_zero.
 The two moderator changes made on the wrong theory stay: combining every local client's
 slot view and refusing start while a local seat is still joining are both correct, with
-a deterministic check. Inspect native Windows CI for the fix head before release.
+a deterministic check. Fix head 2dac353 passed Linux and native Windows CI 38222383588.
 
 The preceding effect-color source ba4cf08 passed both Linux sanitizer and native
 Windows CI: https://github.com/jarvis-jhk/gtetrinet-ng/actions/runs/38209642858
