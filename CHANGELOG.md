@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.2 — upcoming
+## 0.1.2 — 2026-10-12
 
 Steam Deck feedback: clickable desktop installer with install/error dialogs, friendly
 GTetrinet NG — TetriNET title and original matching Steam artwork. Existing Steam shortcut

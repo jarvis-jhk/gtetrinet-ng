@@ -1,6 +1,6 @@
 # Running state — 2026-10-11
 
-## Current: Deck feedback fixes prepared for v0.1.2
+## Current: Deck feedback v0.1.2 awaiting release gates
 
 Request t_mv487i6v4p7fol: Jan reports one-player v0.1.1 on his physical Steam Deck
 works. Eight physical controllers remain unverified. German UI translation, effect
@@ -22,6 +22,8 @@ repeated graphical shell installation with spaces in HOME). Screenshot/artwork s
 passes; transparent logo alpha is verified. Desktop entry passes freedesktop validation and GIO
 parses its command exactly; the repeated-install test executes the desktop command itself. Agent TypeScript gate passes. Exact-head
 Linux/Windows CI and published-asset verification remain the release gates.
+First implementation39d3b0c passed Linux and Windows in CI38171723312. Final desktop
+quoting fix87c1a47 adds freedesktop validation to both CI and release packaging.
 
 ## First public preview v0.1.1 verified
 
