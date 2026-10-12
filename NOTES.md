@@ -33,6 +33,13 @@ Windows repeat test passes93 checks under Wine/Xvfb. This is separate from nativ
 Windows CI. Actual agent TypeScript gate passes before commit.
 Evidence: data/tetrinet/repeat-presets/ (logs, screenshots, source hashes).
 
+Native Windows CI 38219371782 (5df2db9, rerun) failed the repeat test: the lobby Enter
+start was ignored. Cause was a product race, not timing: a local client in slot 2 that had
+not yet seen slot 1 join believed it moderated, sent startgame, and the server ignored it.
+local_moderator now combines every local client's slot view. Deterministic lagging-view
+check added (negative control with old main.c fails it); Debug ASan/UBSan five CTests pass
+(repeat95). Linux CI on 5df2db9 passed. Inspect native Windows CI for the fix head.
+
 The preceding effect-color source ba4cf08 passed both Linux sanitizer and native
 Windows CI: https://github.com/jarvis-jhk/gtetrinet-ng/actions/runs/38209642858
 Existing CI automatically includes the new repeat test. Inspect Linux/native Windows

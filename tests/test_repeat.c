@@ -101,6 +101,16 @@ int main(int argc, char **argv)
     key(&a, SDLK_ESCAPE, 1);
     CHECK(a.screen == SCR_TITLE);
 
+    /* A local client whose view still lacks slot 1 must not be chosen to start the game. */
+    static gtn_app lag;
+    lag.pl[0].active = lag.pl[1].active = 1;
+    lag.pl[0].client.state = lag.pl[1].client.state = TN_CONNECTED;
+    lag.pl[0].client.me = 2; lag.pl[0].client.slot[2].present = 1;
+    lag.pl[1].client.me = 1; lag.pl[1].client.slot[1].present = 1;
+    CHECK(local_moderator(&lag) == 1);
+    lag.pl[1].active = 0;
+    CHECK(local_moderator(&lag) == 0);
+
     /* Two real clients: controller settings affect keyboard too, without cross-seat movement. */
     key(&a, SDLK_RETURN, 1);
     pad(&a, SDL_CONTROLLER_BUTTON_A, 1);

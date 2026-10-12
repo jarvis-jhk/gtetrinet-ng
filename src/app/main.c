@@ -192,8 +192,19 @@ static void connect_online(gtn_app *a)
 /* the local player whose client is the moderator, -1 if none */
 static int local_moderator(gtn_app *a)
 {
+    /* A client's own view can lag: one in slot 2 that has not yet seen slot 1 join
+     * believes it moderates, and the server silently ignores its start. Combine
+     * what every local client knows before choosing. */
+    int lowest = 0;
+    for (int i = 0; i < GTN_MAX_LOCAL; i++) {
+        const tn_client *c = &a->pl[i].client;
+        if (!a->pl[i].active || c->state != TN_CONNECTED) continue;
+        for (int s = 1; s <= TN_MAX_SLOTS && (!lowest || s < lowest); s++)
+            if (c->slot[s].present) { lowest = s; break; }
+    }
     for (int i = 0; i < GTN_MAX_LOCAL; i++)
-        if (a->pl[i].active && a->pl[i].client.state == TN_CONNECTED && tn_client_moderator(&a->pl[i].client)) return i;
+        if (lowest && a->pl[i].active && a->pl[i].client.state == TN_CONNECTED && a->pl[i].client.me == lowest
+            && tn_client_moderator(&a->pl[i].client)) return i;
     return -1;
 }
 
