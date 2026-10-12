@@ -39,6 +39,11 @@ not yet seen slot 1 join believed it moderated, sent startgame, and the server i
 local_moderator now combines every local client's slot view. Deterministic lagging-view
 check added (negative control with old main.c fails it); Debug ASan/UBSan five CTests pass
 (repeat95). Linux CI on 5df2db9 passed. Inspect native Windows CI for the fix head.
+Windows CI 38219921084 on 2c4ae2b still failed: the single early Enter found no moderator
+(or a lagging one) and was dropped; the test never pressed again. local_moderator now
+returns none while any local seat is still connecting/logging in (status hint shown), and
+the test waits for a known moderator before Enter, as a player would. Debug ASan/UBSan
+five CTests pass. Inspect native Windows CI for this head before release.
 
 The preceding effect-color source ba4cf08 passed both Linux sanitizer and native
 Windows CI: https://github.com/jarvis-jhk/gtetrinet-ng/actions/runs/38209642858

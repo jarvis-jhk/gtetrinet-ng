@@ -110,6 +110,8 @@ int main(int argc, char **argv)
     CHECK(local_moderator(&lag) == 1);
     lag.pl[1].active = 0;
     CHECK(local_moderator(&lag) == 0);
+    lag.pl[1].active = 1; lag.pl[1].client.state = TN_LOGGING_IN;
+    CHECK(local_moderator(&lag) == -1);
 
     /* Two real clients: controller settings affect keyboard too, without cross-seat movement. */
     key(&a, SDLK_RETURN, 1);
@@ -117,6 +119,10 @@ int main(int argc, char **argv)
     CHECK(gtn_local_count(&a) == 2);
     host_local(&a);
     await_screen(&a, SCR_LOBBY);
+    /* As a player would, start once the lobby knows who moderates; an early press
+     * only shows the moderator hint (native Windows CI joins more slowly). */
+    for (int t = 0; t < 2000 && local_moderator(&a) != 0; t++) { update_session(&a, 2); SDL_Delay(1); }
+    CHECK(local_moderator(&a) == 0);
     key(&a, SDLK_RETURN, 1);
     await_screen(&a, SCR_GAME);
     const int delays[] = {170, 250, 120}, intervals[] = {50, 100, 30};

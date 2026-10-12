@@ -198,6 +198,8 @@ static int local_moderator(gtn_app *a)
     int lowest = 0;
     for (int i = 0; i < GTN_MAX_LOCAL; i++) {
         const tn_client *c = &a->pl[i].client;
+        /* Until every local seat has its slot number, the lowest one is unknown. */
+        if (a->pl[i].active && (c->state == TN_CONNECTING || c->state == TN_LOGGING_IN)) return -1;
         if (!a->pl[i].active || c->state != TN_CONNECTED) continue;
         for (int s = 1; s <= TN_MAX_SLOTS && (!lowest || s < lowest); s++)
             if (c->slot[s].present) { lowest = s; break; }
