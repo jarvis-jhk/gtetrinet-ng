@@ -57,7 +57,7 @@ void gtn_fault_install(void)
 static void report_fault(void)
 {
     static int sent;
-    if (sent || (getenv("GTN_NO_REPORT") && !strcmp(getenv("GTN_NO_REPORT"), "1"))) return;
+    if (!TN_FAULT_REPORTS || sent || (getenv("GTN_NO_REPORT") && !strcmp(getenv("GTN_NO_REPORT"), "1"))) return;
     sent = 1;
 #ifdef _WIN32
     char command[] = "curl.exe -fsS --max-time 8 -d \"gtetrinet-ng " TN_VERSION " Windows application fault\" https://ntfy.sh/gtetrinet-ng-faults-5e8b41e03cf04b57";

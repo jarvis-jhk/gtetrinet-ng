@@ -96,7 +96,8 @@ JARVIS maintains this fork; roadmap goals are in [ROADMAP.md](ROADMAP.md), curre
 validation/limitations in [NOTES.md](NOTES.md). Report problems via GitHub issues.
 Launcher failures send only an anonymous version/platform/exit-code report through
 ntfy.sh into a GitHub issue. No logs or user/device details are uploaded; topic messages
-and issues are public. Direct binary launch bypasses the launcher reporting.
+and issues are public. Release binaries also post a one-line anonymous fault; source builds post nothing unless
+configured with `-DGTN_FAULT_REPORTS=ON`. `GTN_NO_REPORT=1` disables all reporting.
 
 GPL-2.0-or-later; see COPYING. Full upstream history, GTK2 source and translations are
 preserved in legacy/. Original GTetrinet authors retain their attribution. The active

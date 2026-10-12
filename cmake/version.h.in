@@ -3,4 +3,5 @@
 #define TN_VERSION_H
 #define TN_APP_NAME "gtetrinet-ng"
 #define TN_VERSION "@GTN_VERSION@"
+#define TN_FAULT_REPORTS @GTN_FAULT_REPORTS_VALUE@
 #endif

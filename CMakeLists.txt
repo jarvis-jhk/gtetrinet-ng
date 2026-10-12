@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.16)
 project(gtetrinet-ng C)
 
 set(GTN_VERSION "0.0.0-dev" CACHE STRING "Version shown in the game and sent to servers")
+# Off for source and development builds: only published release binaries post anonymous faults.
+option(GTN_FAULT_REPORTS "Let the game post anonymous fault reports" OFF)
 option(GTN_BUILD_GAME "Build the SDL2 game (off: core, server and tests only)" ON)
 option(BUILD_TESTING "Build the tests" ON)
 
@@ -15,6 +17,11 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options(-Wall -Wextra -Wno-unused-parameter)
 endif()
 
+if(GTN_FAULT_REPORTS)
+  set(GTN_FAULT_REPORTS_VALUE 1)
+else()
+  set(GTN_FAULT_REPORTS_VALUE 0)
+endif()
 configure_file(cmake/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/generated/version.h @ONLY)
 
 add_library(tncore STATIC

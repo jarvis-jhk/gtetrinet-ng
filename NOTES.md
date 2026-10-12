@@ -185,6 +185,10 @@ intermittently failed without diagnostics in this container; normal PIE GitHub C
 Anonymous fault relay: central fault helper tested with a stub curl (no synthetic report
 posted, diagnostics omitted). Collector dispatch 38156653706 passed on an empty topic.
 Public ntfy → GitHub issues, private queue endpoint only in JARVIS_REPORT_URL repo secret.
+Issue #1 (2026-10-12, six "0.1.0 Linux application fault" posts 07:49–08:11 UTC) was our own
+maintainer smoke runs: local build dirs still cache GTN_VERSION=0.1.0 (never published) and
+ran the UI without GTN_NO_REPORT. Game fault posting is now opt-in via GTN_FAULT_REPORTS
+(OFF by default, ON only in release.yml); stub-curl check: dev 0 posts, release 1, opt-out 0.
 Windows bundles SDL's libiconv/charset dependencies, licences and matching source archive.
 Linux bundles SDL2 and samplerate when needed; host audio codecs remain with host libraries.
 
