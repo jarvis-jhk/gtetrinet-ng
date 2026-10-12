@@ -43,6 +43,13 @@ Keyboard: arrows move/rotate, Space drops, X rotates clockwise / Z counterclockw
 changes target, 1–8 uses it on a numbered player, D discards, P pauses. Online entry has
 a controller keyboard. Choose TetriFast with Y. `--nick Name` sets your nickname.
 
+On the title screen, controller X or keyboard S opens Movement repeat, even before
+joining. D-pad/arrows or A cycle Normal (170 ms delay, 50 ms interval), Relaxed
+(250/100 ms) and Fast (120/30 ms); Y restores Normal and B/Esc/Start returns.
+The choice is saved and applies to held Left/Right on every local keyboard/controller.
+Missing or invalid preferences keep Normal; a failed save shows a warning and keeps
+the choice for the current run. Soft drop and rotation bindings keep their own behavior.
+
 Special tiles keep their classic letters and show their effect on the **recipient**:
 green `+HELP` (C clear line, N nuke field, G gravity), red `-HURT` (A add line),
 amber `?MIX` (R random clear, S switch fields, B clear specials, Q quake, O bomb).

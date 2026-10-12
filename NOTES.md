@@ -1,6 +1,45 @@
 # Running state — 2026-10-12
 
-## Current: special effect colors and target cues locally verified
+## Current: saved movement-repeat presets locally verified
+
+One bounded Sol slice (2026-10-12, t_mv4xmp046jk04): title-screen controller X
+or keyboard S opens Movement repeat, including before anyone joins. All local
+keyboards/controllers share saved Normal170/50 ms, Relaxed250/100 ms or Fast120/30 ms
+initial-delay/repeat-interval presets. D-pad/arrows/A change, Y resets Normal,
+B/Esc/Start returns. Existing files and malformed values default to Normal.
+Physical remapping, nicknames, accessible typography and eight-controller Deck
+acceptance remain open. No core/wire changes or release/tag in this slice.
+
+Preference writes now detect open/write/close/rename failures and forward real
+faults through the existing anonymous relay without sending settings or paths.
+The options page explains when a choice could not be saved but works this run.
+POSIX replacement uses rename without first removing the previous settings file;
+Windows retains its existing remove-before-rename convention. The tests use an
+isolated preference directory, never the platform user's actual settings.
+
+New `repeat` CTest drives actual keyboard/controller events and two embedded-server
+TCP clients. Its93 checks verify preset persistence, preservation of host/nick/mode/
+version, no accidental joins, release handling, wrap/reset/back, exact initial and
+subsequent repeat boundaries, device isolation, reversal and multiple repeats in
+one update, old/malformed settings, real failed-save notification/recovery and
+800x600/1280x800 options rendering. Both screenshots were visually inspected.
+Debug and non-PIE ASan/UBSan pass all five CTests (core1458, input76, virtual1034,
+effects49462, repeat93); sanitizer CTest uses leak detection. An independently
+compiled negative control with the previous fixed-timing input.c fails19 executed
+repeat assertions. Tracked sources were never mutated for that probe.
+Eight-player sanitizer SDL/Xvfb smoke passes120 frames (render leak detection off,
+as in existing CI). MinGW Debug cross-compilation also passes; the resulting
+Windows repeat test passes93 checks under Wine/Xvfb. This is separate from native
+Windows CI. Actual agent TypeScript gate passes before commit.
+Evidence: data/tetrinet/repeat-presets/ (logs, screenshots, source hashes).
+
+The preceding effect-color source ba4cf08 passed both Linux sanitizer and native
+Windows CI: https://github.com/jarvis-jhk/gtetrinet-ng/actions/runs/38209642858
+Existing CI automatically includes the new repeat test. Inspect Linux/native Windows
+results for the pushed head before releasing. No new CI continuation or schedule;
+latest published release is v0.1.2 and the next tag must exceed it.
+
+## Previous slice: special effect colors and target cues locally verified
 
 One bounded Sol slice (2026-10-12, t_mv4tpblfnfwu9): all nine special tiles keep
 their classic letters with recipient-relative colors. C/N/G are green helpful,
@@ -27,8 +66,8 @@ Evidence: data/tetrinet/effect-colors/ (logs, reference screenshots and hashes).
 
 The previous virtual-controller head7583f7d passed Linux sanitizer and native Windows:
 https://github.com/jarvis-jhk/gtetrinet-ng/actions/runs/38207937807
-Existing CI runs the new effects CTest on this push; inspect exact-head Linux and
-native Windows results before any release. No release/tag or CI continuation is
+That effect-color push passed both CI jobs in38209642858 (verified2026-10-12);
+its original local checkpoint is retained above. No release/tag or CI continuation is
 created by this budget tick. Latest published release remains v0.1.2; next tag
 must exceed it. Physical eight-controller Deck verification remains open.
 

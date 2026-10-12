@@ -347,8 +347,32 @@ static void game_button(gtn_app *a, int who, enum gtn_btn b, int down)
     }
 }
 
+static void input_options_button(gtn_app *a, enum gtn_btn b)
+{
+    int profile = a->settings.repeat_profile;
+    switch (b) {
+    case BTN_LEFT: case BTN_UP: profile = (profile + REPEAT_COUNT - 1) % REPEAT_COUNT; break;
+    case BTN_RIGHT: case BTN_DOWN: case BTN_A: profile = (profile + 1) % REPEAT_COUNT; break;
+    case BTN_Y: profile = REPEAT_NORMAL; break;
+    case BTN_B: case BTN_START: a->screen = SCR_TITLE; return;
+    default: return;
+    }
+    a->settings.repeat_profile = profile;
+    if (gtn_settings_save(&a->settings) != 0)
+        gtn_set_status(a, "Movement repeat works for this run, but could not be saved");
+}
+
 void gtn_button(gtn_app *a, int who, enum gtn_dev dev, SDL_JoystickID pad, enum gtn_btn b, int down)
 {
+    /* Options work before joining too; their A button must not claim a player seat. */
+    if (a->screen == SCR_INPUT) {
+        if (down) input_options_button(a, b);
+        return;
+    }
+    if (a->screen == SCR_TITLE && down && b == BTN_X) {
+        a->screen = SCR_INPUT;
+        return;
+    }
     if (who < 0) {
         if (down && (b == BTN_A || b == BTN_START) && a->screen != SCR_NEWS && a->screen != SCR_ONLINE) join(a, dev, pad);
         else if (down && a->screen == SCR_ONLINE) online_button(a, b);

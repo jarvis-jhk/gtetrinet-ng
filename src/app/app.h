@@ -37,7 +37,7 @@ typedef struct gtn_local {
     int nick_tries;
 } gtn_local;
 
-enum gtn_screen { SCR_TITLE, SCR_ONLINE, SCR_CONNECTING, SCR_LOBBY, SCR_GAME, SCR_NEWS };
+enum gtn_screen { SCR_TITLE, SCR_ONLINE, SCR_CONNECTING, SCR_LOBBY, SCR_GAME, SCR_NEWS, SCR_INPUT };
 
 typedef struct gtn_app {
     SDL_Window *win;

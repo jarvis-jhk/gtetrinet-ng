@@ -21,6 +21,8 @@ not certified hardware compatibility. Release gates and remaining checks are in 
 - [ ] Physical Steam Deck + eight-controller play session; suspend/resume, Game Mode,
   dock/undock and 1280×800 legibility. No hardware certification until this passes.
 - [ ] Controller remapping, repeat settings, nickname editing and accessible typography.
+  - [x] Saved Normal/Relaxed/Fast horizontal-repeat presets, controller/keyboard options
+    entry and real TCP/input timing tests; remapping, nicknames and typography remain open.
 - [ ] Sound, haptics and offline bot opponents selectable in the lobby.
 
 ## M2 — online interoperability

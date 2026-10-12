@@ -123,7 +123,27 @@ static void draw_title(gtn_app *a)
     }
     if (gtn_local_count(a) == 0)
         gtn_text_center_fit(a->w / 2, y + 6 * s, s, a->w - 32, ACCENT, "Everyone who wants to play: press A on your controller (or Enter)");
-    hints(a, "A/Enter: join / choose   B: leave   Up/Down: menu");
+    hints(a, "A/Enter: join / choose   B: leave   Up/Down: menu   X/S: movement repeat");
+}
+
+static void draw_input_options(gtn_app *a)
+{
+    int s = ts(a), y = a->h / 4;
+    char buf[128];
+    gtn_text_center_fit(a->w / 2, y, 3 * s, a->w - 32, TEXT, "Movement repeat");
+    y += 50 * s;
+    gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, "Holding Left/Right moves repeatedly after a short delay.");
+    y += 40 * s;
+    snprintf(buf, sizeof buf, "< %s >", gtn_repeat_name(a->settings.repeat_profile));
+    gtn_text_center_fit(a->w / 2, y, 3 * s, a->w - 32, ACCENT, buf);
+    y += 42 * s;
+    snprintf(buf, sizeof buf, "First repeat: %d ms   Next repeats: every %d ms",
+             gtn_repeat_delay(a->settings.repeat_profile), gtn_repeat_interval(a->settings.repeat_profile));
+    gtn_text_center_fit(a->w / 2, y, s, a->w - 32, TEXT, buf);
+    y += 28 * s;
+    gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, "Saved for all local players, keyboard and controllers.");
+    status_line(a);
+    hints(a, "D-pad/Arrows or A: change   Y: normal   B/Esc/Start: back");
 }
 
 static void draw_online(gtn_app *a)
@@ -436,5 +456,6 @@ void gtn_draw(gtn_app *a)
     case SCR_LOBBY: draw_lobby(a); break;
     case SCR_GAME: draw_game(a); break;
     case SCR_NEWS: draw_news(a); break;
+    case SCR_INPUT: draw_input_options(a); break;
     }
 }

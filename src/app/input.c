@@ -5,8 +5,6 @@
  */
 #include "app.h"
 
-#define DAS_MS 170
-#define ARR_MS 50
 #define STICK_ON 16000
 #define STICK_OFF 9000
 
@@ -31,7 +29,7 @@ static void press(gtn_app *a, enum gtn_dev dev, SDL_JoystickID pad, enum gtn_btn
     if (who >= 0 && (b == BTN_LEFT || b == BTN_RIGHT)) {
         gtn_local *p = &a->pl[who];
         int dir = b == BTN_LEFT ? -1 : 1;
-        if (down) { p->hold = dir; p->repeat_ms = DAS_MS; }
+        if (down) { p->hold = dir; p->repeat_ms = gtn_repeat_delay(a->settings.repeat_profile); }
         else if (p->hold == dir) p->hold = 0;
     }
     gtn_button(a, who, dev, pad, b, down);
@@ -188,7 +186,7 @@ void gtn_input_update(gtn_app *a, int dt_ms)
         p->repeat_ms -= dt_ms;
         while (p->repeat_ms <= 0) {
             tn_client_action(&p->client, p->hold < 0 ? TN_ACT_LEFT : TN_ACT_RIGHT);
-            p->repeat_ms += ARR_MS;
+            p->repeat_ms += gtn_repeat_interval(a->settings.repeat_profile);
         }
     }
 }
