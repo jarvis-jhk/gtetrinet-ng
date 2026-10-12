@@ -16,7 +16,7 @@ not certified hardware compatibility. Release gates and remaining checks are in 
 ## M1 — eight controllers on the Deck
 
 - [x] Eight local client slots and responsive board layout; hotplug/takeover input.
-- [ ] SDL virtual-device tests (simulated event tests already cover routing): independent ownership, join/leave,
+- [x] SDL virtual-device tests (simulated event tests already cover routing): independent ownership, join/leave,
   held-input disconnect, reconnection, device replacement and repeated slot reuse.
 - [ ] Physical Steam Deck + eight-controller play session; suspend/resume, Game Mode,
   dock/undock and 1280×800 legibility. No hardware certification until this passes.

@@ -1,6 +1,36 @@
-# Running state — 2026-10-11
+# Running state — 2026-10-12
 
-## Current: Deck feedback v0.1.2 verified
+## Current: M1 SDL virtual-controller pipeline locally verified
+
+One bounded Sol slice (2026-10-12): new `input_virtual` CTest uses real SDL virtual
+devices, never injected controller events. Eight controllers own eight distinct TCP
+client slots in an embedded match; a ninth cannot join. Every seat's movement and
+both rotations remain isolated, concurrent horizontal repeat/soft-drop holds release
+independently, and a middle seat can leave/rejoin four times without stale state.
+Four held-stick/soft-drop/Back disconnect cycles retain the player/nickname/network
+slot, clear input state, prevent repeat after unplugging and accept fresh input after
+takeover by an existing spare or newly attached replacement. Twelve SDL adds/removals,
+140 button events and 24 axis events are observed by the actual application dispatcher.
+All controller references are closed and all virtual devices detached at completion.
+
+Debug and non-PIE ASan/UBSan builds (`--parallel 2`) pass all three CTests:
+core1458, simulated input76 and virtual controller1034 checks. Leak detection is
+enabled for CTest; sanitizer eight-player SDL/Xvfb screenshot smoke also passes
+(120 frames, leak detection disabled for the rendering smoke, as in existing CI).
+A negative control retaining the disconnected instance id fails the executed
+takeover assertion; original input.c was restored byte-for-byte, rebuilt and all
+Debug tests passed again. No gameplay source change was needed. Actual agent
+TypeScript compiler gate passed before commit.
+
+SDL minimum is now2.0.14 for the virtual-device API. Existing Linux sanitizer and
+native Windows workflows run the new CTest automatically; inspect their results
+on the pushed source head before any release. No release/tag or CI continuation
+is created by this budget tick. Physical eight-controller Deck, suspend/resume,
+Steam Input and docking verification remain open. Local evidence is under
+data/tetrinet/virtual-controller-tests/. Latest published release remains v0.1.2;
+the next release tag must exceed it.
+
+## Latest release: Deck feedback v0.1.2 verified
 
 https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.2
 
@@ -80,7 +110,7 @@ Linux bundles SDL2 and samplerate when needed; host audio codecs remain with hos
 
 ## Remaining acceptance work
 
-M1: actual SDL virtual-device/hotplug tests, physical eight-controller Deck session,
+M1: physical eight-controller Deck session,
 suspend/resume, Game Mode, dock/undock and legibility after the text fixes. Simulated button events and bot
 demos are separate evidence. Online interoperability is self-tested only; independent
 legacy/tetrinetx fixtures, malformed input fuzzing, asynchronous DNS, sound, remapping,

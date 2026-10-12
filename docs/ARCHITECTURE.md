@@ -16,8 +16,13 @@ uses eight. Standard clients normally display only six: use six slots when mixin
 The extension does not make an eight-player match interoperable with classic clients.
 
 Controllers are identified by SDL instance id, not discovery index. A disconnect retains
-the seat, and a new unclaimed controller can take it over with A. Physical/hotplug tests
-remain a release follow-up: demonstration bots do not exercise controller dispatch.
+the seat, and a new unclaimed controller can take it over with A. The `input_virtual`
+CTest attaches SDL virtual gamecontrollers and drives their buttons/axes through SDL's
+event queue, including actual attach/detach events. Eight independent TCP players,
+concurrent held inputs, middle-seat leave/rejoin, capacity rejection and replacement
+with preserved session identity are covered. This requires SDL 2.0.14 or newer.
+Physical Deck/Steam Input, suspend/resume and dock/undock checks remain open;
+virtual devices and demonstration bots cannot certify them.
 SDL2 gamepad API reference: https://wiki.libsdl.org/SDL2/CategoryGameController
 
 Packaging keeps a native binary and optional bundled SDL2 beside a launcher. Linux

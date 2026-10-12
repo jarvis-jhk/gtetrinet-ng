@@ -50,7 +50,7 @@ No public-server hardening guarantee is made for this preview.
 
 ## Build
 
-CMake 3.16+, a C11 compiler and SDL2 development headers. On Debian/Ubuntu install
+CMake 3.16+, a C11 compiler and SDL2 2.0.14+ development headers. On Debian/Ubuntu install
 `cmake build-essential libsdl2-dev`; on Windows use MSYS2 UCRT64 + GCC/CMake/SDL2.
 
 ```
