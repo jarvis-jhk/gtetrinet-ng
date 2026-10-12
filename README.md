@@ -43,6 +43,25 @@ Keyboard: arrows move/rotate, Space drops, X rotates clockwise / Z counterclockw
 changes target, 1–8 uses it on a numbered player, D discards, P pauses. Online entry has
 a controller keyboard. Choose TetriFast with Y. `--nick Name` sets your nickname.
 
+Special tiles keep their classic letters and show their effect on the **recipient**:
+green `+HELP` (C clear line, N nuke field, G gravity), red `-HURT` (A add line),
+amber `?MIX` (R random clear, S switch fields, B clear specials, Q quake, O bomb).
+The next queued special has a symbol and category word below the inventory, so color
+is not the only cue. Very small field/queue tiles cannot fit a letter; the next-special
+label still identifies it. Under TARGET, `+You`/`-You` or `+Them`/`-Them` describes
+the selected recipient; `?MIX` means inspect their field, and `?Both` means a swap
+changes both players' fields (`?Self` when aimed at yourself).
+
+Helping yourself or a teammate usually helps your side; helping an opponent helps
+them. Adding a line hurts the chosen recipient, even yourself. Random clears can
+open holes; clearing specials prevents collecting them but can also remove bombs;
+quakes shift rows, and bombs scatter nearby cells. Swaps trade the sender's and
+target's fields with the classic six-row safety rule. These categories are guidance,
+not a guarantee of a win or loss. X/S sends to the selected target (automatically
+selecting a live player if necessary); Y always uses the next special on yourself.
+Aim with the shoulders/Q/E before sending. Colors never change targeting or the
+classic wire protocol.
+
 LAN server: `bin/gtetrinet-ng-server --port 31457 --slots 6` (Windows: server EXE).
 Our local game hosts on 31457, or a free port if busy. Firewall/router configuration is
 your responsibility. Only use eight slots with clients that support our extension.

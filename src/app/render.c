@@ -26,6 +26,53 @@ gtn_color gtn_player_color(int i)
     return pc[((i % 8) + 8) % 8];
 }
 
+enum gtn_effect gtn_special_effect(int sb)
+{
+    switch (sb) {
+    case TN_SB_ADDALL1: case TN_SB_ADDALL2: case TN_SB_ADDALL4: case TN_SB_ADDLINE:
+        return GTN_EFFECT_HURT;
+    case TN_SB_CLEARLINE: case TN_SB_NUKE: case TN_SB_GRAVITY:
+        return GTN_EFFECT_HELP;
+    /* Removing random cells can make holes; clearing specials removes collectible
+     * effects but also bombs. Swaps, row shifts and bomb debris depend on both fields. */
+    case TN_SB_CLEARRANDOM: case TN_SB_SWITCH: case TN_SB_CLEARSPECIAL:
+    case TN_SB_QUAKE: case TN_SB_BOMB:
+        return GTN_EFFECT_MIXED;
+    default: return GTN_EFFECT_UNKNOWN;
+    }
+}
+
+gtn_color gtn_special_color(int sb)
+{
+    switch (gtn_special_effect(sb)) {
+    case GTN_EFFECT_HELP: return gtn_rgb(0x73, 0xdf, 0xa0);
+    case GTN_EFFECT_HURT: return gtn_rgb(0xff, 0x87, 0x87);
+    case GTN_EFFECT_MIXED: return gtn_rgb(0xff, 0xd0, 0x70);
+    default: return gtn_rgb(0xe8, 0xe8, 0xf0);
+    }
+}
+
+const char *gtn_special_cue(int sb)
+{
+    switch (gtn_special_effect(sb)) {
+    case GTN_EFFECT_HELP: return "+HELP";
+    case GTN_EFFECT_HURT: return "-HURT";
+    case GTN_EFFECT_MIXED: return "?MIX";
+    default: return "?UNKNOWN";
+    }
+}
+
+const char *gtn_special_target_hint(int sb, int self)
+{
+    if (sb == TN_SB_SWITCH) return self ? "?Self" : "?Both";
+    switch (gtn_special_effect(sb)) {
+    case GTN_EFFECT_HELP: return self ? "+You" : "+Them";
+    case GTN_EFFECT_HURT: return self ? "-You" : "-Them";
+    case GTN_EFFECT_MIXED: return "?MIX";
+    default: return "?";
+    }
+}
+
 int gtn_render_init(SDL_Renderer *r)
 {
     gtn_ren = r;
@@ -164,8 +211,8 @@ void gtn_cell(int x, int y, int size, int cell)
         }
         return;
     }
-    /* specials: a letter on a light tile, like the original's lettered blocks */
-    gtn_fill(x, y, size, size, gtn_rgb(0xe8, 0xe8, 0xf0));
+    /* Keep classic letters; the tint describes the effect on the recipient. */
+    gtn_fill(x, y, size, size, gtn_special_color(tn_sb_from_cell(cell)));
     gtn_frame(x, y, size, size, size >= 12 ? 2 : 1, gtn_rgb(0x50, 0x50, 0x70));
     char s[2] = {tn_cell_char(cell), 0};
     s[0] = (char)(s[0] - 'a' + 'A');

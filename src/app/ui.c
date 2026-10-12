@@ -324,10 +324,14 @@ static void panel(gtn_app *a, int li, int x, int y, int w, int h, int cs)
     } else {
         gtn_text_fit(sx, ty + 44 * s, s, sw, MUTED, "LB/RB");
     }
+    if (t && c->playing && c->game.nspecials > 0) {
+        int sb = tn_sb_from_cell(c->game.specials[0]);
+        gtn_text_fit(sx, ty + 56 * s, s, sw, gtn_special_color(sb), gtn_special_target_hint(sb, t == c->me));
+    }
     /* last attacks */
     for (int i = 0; i < 3 && i < c->attacks.count; i++) {
         int ly = fy + fh - (i + 1) * 11 * s;
-        if (ly < ty + 60 * s) break;
+        if (ly < ty + 68 * s) break;
         gtn_text_fit(sx, ly, 1, sw, i == 0 ? TEXT : MUTED, tn_log_get(&c->attacks, i));
     }
 
@@ -341,7 +345,8 @@ static void panel(gtn_app *a, int li, int x, int y, int w, int h, int cs)
     if (c->playing && c->game.nspecials > 0) {
         int sb = tn_sb_from_cell(c->game.specials[0]);
         /* The queue must never consume the effect label's width. */
-        gtn_text_fit(fx, qy + qs + 2, 1, x + w - fx - 4, ACCENT, tn_sb_name(sb));
+        snprintf(buf, sizeof buf, "%s %s", gtn_special_cue(sb), tn_sb_name(sb));
+        gtn_text_fit(fx, qy + qs + 2, 1, x + w - fx - 4, gtn_special_color(sb), buf);
     }
 }
 

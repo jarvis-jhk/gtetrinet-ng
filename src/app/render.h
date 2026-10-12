@@ -18,6 +18,12 @@ void gtn_render_quit(void);
 
 gtn_color gtn_rgb(Uint8 r, Uint8 g, Uint8 b);
 gtn_color gtn_player_color(int i); /* 0..7 */
+/* Effects describe the recipient's field, not the sender's tactical advantage. */
+enum gtn_effect { GTN_EFFECT_UNKNOWN, GTN_EFFECT_HELP, GTN_EFFECT_HURT, GTN_EFFECT_MIXED };
+enum gtn_effect gtn_special_effect(int sb);
+gtn_color gtn_special_color(int sb);
+const char *gtn_special_cue(int sb); /* symbol + word, readable without color */
+const char *gtn_special_target_hint(int sb, int self);
 void gtn_fill(int x, int y, int w, int h, gtn_color c);
 void gtn_frame(int x, int y, int w, int h, int thick, gtn_color c);
 

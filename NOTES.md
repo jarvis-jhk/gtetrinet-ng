@@ -1,6 +1,38 @@
 # Running state — 2026-10-12
 
-## Current: M1 SDL virtual-controller pipeline locally verified
+## Current: special effect colors and target cues locally verified
+
+One bounded Sol slice (2026-10-12, t_mv4tpblfnfwu9): all nine special tiles keep
+their classic letters with recipient-relative colors. C/N/G are green helpful,
+A is red harmful, and R/S/B/Q/O are amber situational (random holes, field swaps,
+collectibles/bombs, row shifts and debris). The next-special line adds +HELP/-HURT/?MIX
+and its full name; TARGET adds +You/+Them, -You/-Them, ?MIX or ?Both/?Self.
+README explains teammate/opponent/self targeting and the switch safety rule.
+No core rules, wire ids or input behavior change. Ordinary block colors remain
+distinct from the special palette. Small tiles below eight pixels cannot fit a
+classic letter; the separate next-special label still supplies text and symbols.
+
+New `effects` CTest checks all nine rendered letter tiles at ten sizes, category
+mapping, recipient hints, and actual full-queue one/eight-player layouts at
+1280x800 and 800x600. Fixed pixel references assert every queue label and all eight
+target hints in both self/other cases. Debug and non-PIE ASan/UBSan builds with
+at most two build jobs pass all four CTests: core1458, input76, virtual1034 and
+effects49462 checks, zero failures. Leak detection is enabled in sanitizer CTest.
+A separately compiled negative control restoring the old unnamed-category queue
+label fails15564 executed pixel checks; tracked sources were never mutated for
+that probe. Sanitizer SDL/Xvfb eight-player smoke passes120 frames (render-smoke
+leak detection disabled as in existing CI). Actual agent TypeScript gate passes.
+Screenshot fixtures are visually inspected, separate from Deck hardware proof.
+Evidence: data/tetrinet/effect-colors/ (logs, reference screenshots and hashes).
+
+The previous virtual-controller head7583f7d passed Linux sanitizer and native Windows:
+https://github.com/jarvis-jhk/gtetrinet-ng/actions/runs/38207937807
+Existing CI runs the new effects CTest on this push; inspect exact-head Linux and
+native Windows results before any release. No release/tag or CI continuation is
+created by this budget tick. Latest published release remains v0.1.2; next tag
+must exceed it. Physical eight-controller Deck verification remains open.
+
+## Previous slice: M1 SDL virtual-controller pipeline locally verified
 
 One bounded Sol slice (2026-10-12): new `input_virtual` CTest uses real SDL virtual
 devices, never injected controller events. Eight controllers own eight distinct TCP

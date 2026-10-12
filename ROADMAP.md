@@ -38,7 +38,7 @@ not certified hardware compatibility. Release gates and remaining checks are in 
 - [ ] German translation of the active game: menus, hints, specials, errors and changelog UI;
   UTF-8 font coverage (including ä/ö/ü/ß), language choice and layout checks on the Deck.
   Legacy GTK translations are reference material, not a translated modern frontend.
-- [ ] Color-code specials by effect: beneficial, harmful and situational, with readable
+- [x] Color-code specials by effect: beneficial, harmful and situational, with readable
   labels/symbols as well as colors; document how the chosen target changes the effect.
 - [ ] Audit missing TetriNET 2 features and prioritize a documented parity list (rules,
   specials, modes, lobby/chat and protocol). Distinguish gameplay additions from TN2 server
