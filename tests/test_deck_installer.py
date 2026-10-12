@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import tempfile
 import unittest
@@ -25,16 +26,22 @@ class DeckInstallerTests(unittest.TestCase):
             stubs = home / 'bin'
             stubs.mkdir()
             for name, body in {
-                'curl': 'printf "pass\\n" > "$6"',
+                'curl': 'case "$4" in */install.sh) cp "$GTN_INSTALLER_FIXTURE" "$6";; *) printf "pass\\n" > "$6";; esac',
                 'pgrep': 'exit 1',
                 'zenity': 'printf "%s\\n" "$*" >> "$HOME/dialogs"; exit 0',
             }.items():
                 path = stubs / name
                 path.write_text('#!/bin/sh\n' + body + '\n')
                 path.chmod(0o755)
-            env = dict(os.environ, HOME=tmp, PATH=str(stubs) + ':' + os.environ['PATH'], GTN_NO_REPORT='1')
+            env = dict(os.environ, HOME=tmp, PATH=str(stubs) + ':' + os.environ['PATH'], GTN_NO_REPORT='1', GTN_INSTALLER_FIXTURE=str(ROOT / 'tools/linux/install.sh'))
+            raw = next(line[5:] for line in (ROOT / 'tools/linux/Install-GTetrinet-NG.desktop').read_text().splitlines() if line.startswith('Exec='))
+            command = shlex.split(raw.replace('\\\\', '\\'))
+            self.assertEqual(command[:2], ['sh', '-c'])
+            self.assertEqual(len(command), 3)
+            # Desktop Exec unquotes dollars/backticks; Python shlex preserves these.
+            command[2] = command[2].replace('\\$', '$').replace('\\`', '`')
             for _ in range(2):
-                subprocess.run(['bash', str(ROOT / 'tools/linux/install.sh')], env=env, check=True, capture_output=True)
+                subprocess.run(command, env=env, check=True, capture_output=True)
             desktop = (home / '.local/share/applications/gtetrinet-ng.desktop').read_text()
             self.assertIn('Name=GTetrinet NG — TetriNET', desktop)
             self.assertIn('Icon=' + str(art / 'steam_icon.png'), desktop)

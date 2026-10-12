@@ -19,7 +19,8 @@ cannot hide them. Layout/artwork evidence is in data/tetrinet/artwork-preview, s
 from physical hardware proof. Local Debug/ASan/UBSan core1458 and input76 checks pass; five Python checks pass
 (atomic install, bad hash/path rejection, VDF title/appid/artwork preservation, and
 repeated graphical shell installation with spaces in HOME). Screenshot/artwork smoke
-passes; transparent logo alpha is verified. Agent TypeScript gate passes. Exact-head
+passes; transparent logo alpha is verified. Desktop entry passes freedesktop validation and GIO
+parses its command exactly; the repeated-install test executes the desktop command itself. Agent TypeScript gate passes. Exact-head
 Linux/Windows CI and published-asset verification remain the release gates.
 
 ## First public preview v0.1.1 verified

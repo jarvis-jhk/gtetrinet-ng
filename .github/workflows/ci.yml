@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev xvfb xauth
+      - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev xvfb xauth desktop-file-utils
       - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
       - run: cmake --build build --parallel 2
       - run: ctest --test-dir build --output-on-failure
@@ -23,6 +23,7 @@ jobs:
           ASAN_OPTIONS: detect_leaks=0
           GTN_NO_REPORT: "1"
       - run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - run: desktop-file-validate tools/linux/Install-GTetrinet-NG.desktop
       - run: bash -n tools/linux/install.sh tools/linux/gtetrinet-ng.sh tools/linux/bundle-linux.sh
   windows:
     runs-on: windows-latest
