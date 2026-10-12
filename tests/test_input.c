@@ -11,7 +11,8 @@ static int failures, checks;
 
 static void pad(gtn_app *a, int id, Uint8 button, int down)
 {
-    SDL_Event event = {0};
+    SDL_Event event;
+    SDL_zero(event);
     event.type = down ? SDL_CONTROLLERBUTTONDOWN : SDL_CONTROLLERBUTTONUP;
     event.cbutton.which = id;
     event.cbutton.button = button;
@@ -53,7 +54,8 @@ int main(void)
     pad(&a, 101, SDL_CONTROLLER_BUTTON_DPAD_DOWN, 1);
     pad(&a, 101, SDL_CONTROLLER_BUTTON_BACK, 1);
     CHECK(a.pl[1].client.soft_held != 0);
-    SDL_Event event = {0};
+    SDL_Event event;
+    SDL_zero(event);
     event.type = SDL_CONTROLLERDEVICEREMOVED;
     event.cdevice.which = 101;
     gtn_input_event(&a, &event);

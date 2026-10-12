@@ -28,7 +28,8 @@ static int checks, failures;
 
 static void key(gtn_app *a, SDL_Keycode code, int down)
 {
-    SDL_Event e = {0};
+    SDL_Event e;
+    SDL_zero(e); /* = {0} sets only the union's first member; MinGW left key.repeat set */
     e.type = down ? SDL_KEYDOWN : SDL_KEYUP;
     e.key.keysym.sym = code;
     gtn_input_event(a, &e);
@@ -36,7 +37,8 @@ static void key(gtn_app *a, SDL_Keycode code, int down)
 
 static void pad(gtn_app *a, Uint8 button, int down)
 {
-    SDL_Event e = {0};
+    SDL_Event e;
+    SDL_zero(e);
     e.type = down ? SDL_CONTROLLERBUTTONDOWN : SDL_CONTROLLERBUTTONUP;
     e.cbutton.which = 42;
     e.cbutton.button = button;
