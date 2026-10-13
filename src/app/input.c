@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #include "app.h"
+#include "i18n.h"
 
 #define STICK_ON 16000
 #define STICK_OFF 9000
@@ -135,7 +136,7 @@ void gtn_input_event(gtn_app *a, const SDL_Event *e)
         break;
     case SDL_CONTROLLERDEVICEREMOVED: {
         int who = owner(a, DEV_PAD, e->cdevice.which);
-        if (who >= 0) gtn_set_status(a, "Controller of %s disconnected - press A on any controller to take over", a->pl[who].nick);
+        if (who >= 0) gtn_set_status(a, gtn_tr("Controller of %s disconnected - press A on any controller to take over"), a->pl[who].nick);
         SDL_GameController *gc = SDL_GameControllerFromInstanceID(e->cdevice.which);
         if (gc) SDL_GameControllerClose(gc);
         if (who >= 0) {

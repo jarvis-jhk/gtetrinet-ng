@@ -7,6 +7,7 @@
  */
 #include "app.h"
 #include "fault.h"
+#include "i18n.h"
 #include "render.h"
 #include "version.h"
 #include "tn_bot.h"
@@ -65,12 +66,38 @@ static void changelog_since(char *text, const char *since)
     if (p) *p = 0;
 }
 
+/* The changelog is hard-wrapped for a text editor; joining a paragraph's lines lets the news
+ * screen wrap it at its own width instead of breaking every source line twice. */
+static void reflow(char *text)
+{
+    for (char *p = strchr(text, '\n'); p; p = strchr(p + 1, '\n')) {
+        const char *next = p + 1;
+        int prev_blank = p == text || p[-1] == '\n';
+        if (prev_blank || *next == '\n' || !*next || *next == '#' || *next == '-' || *next == '*' || *next == ' ')
+            continue;
+        /* a heading line keeps its own line */
+        const char *start = p;
+        while (start > text && start[-1] != '\n') start--;
+        if (*start == '#') continue;
+        *p = ' ';
+    }
+}
+
 static void open_news(gtn_app *a, int only_new)
 {
     if (load_changelog(a->news, sizeof a->news) != 0) {
-        snprintf(a->news, sizeof a->news, "The changelog could not be found next to the game.");
-    } else if (only_new) {
-        changelog_since(a->news, a->settings.last_version);
+        snprintf(a->news, sizeof a->news, "%s", gtn_tr("The changelog could not be found next to the game."));
+    } else {
+        if (only_new) changelog_since(a->news, a->settings.last_version);
+        reflow(a->news);
+        /* The entries themselves are written once, in English; say so instead of mixing. */
+        const char *note = gtn_tr("(The changelog is only available in English.)");
+        size_t k = strlen(note);
+        if (gtn_lang_get() != GTN_LANG_EN && strlen(a->news) + k + 2 < sizeof a->news) {
+            memmove(a->news + k + 2, a->news, strlen(a->news) + 1);
+            memcpy(a->news, note, k);
+            a->news[k] = a->news[k + 1] = '\n';
+        }
     }
     a->news_scroll = 0;
     a->news_back = a->screen;
@@ -111,7 +138,7 @@ static void join(gtn_app *a, enum gtn_dev dev, SDL_JoystickID pad)
         for (int i = 0; i < GTN_MAX_LOCAL; i++)
             if (a->pl[i].active && a->pl[i].dev == DEV_PAD && a->pl[i].pad == -1) {
                 a->pl[i].pad = pad;
-                gtn_set_status(a, "%s has a controller again", a->pl[i].nick);
+                gtn_set_status(a, gtn_tr("%s has a controller again"), a->pl[i].nick);
                 return;
             }
     if (a->screen == SCR_GAME) return; /* new players join between games */
@@ -128,7 +155,7 @@ static void join(gtn_app *a, enum gtn_dev dev, SDL_JoystickID pad)
         if (a->screen == SCR_LOBBY || a->screen == SCR_CONNECTING) connect_player(a, i);
         return;
     }
-    gtn_set_status(a, "Eight players is the most that fit");
+    gtn_set_status(a, "%s", gtn_tr("Eight players is the most that fit"));
 }
 
 static void leave_local(gtn_app *a, int i)
@@ -163,7 +190,7 @@ static void host_local(gtn_app *a)
     if (tn_server_start(&a->server, TN_PORT, 0, TN_MAX_SLOTS, err, sizeof err) != 0 &&
         tn_server_start(&a->server, 0, 0, TN_MAX_SLOTS, err, sizeof err) != 0) {
         gtn_fault("starting the local server failed", err);
-        gtn_set_status(a, "Could not start a game here: %s", err);
+        gtn_set_status(a, gtn_tr("Could not start a game here: %s"), err);
         return;
     }
     a->hosting = 1;
@@ -180,7 +207,7 @@ static void connect_online(gtn_app *a)
     int port = TN_PORT;
     char *colon = strrchr(host, ':');
     if (colon && !strchr(colon + 1, ']')) { port = atoi(colon + 1); *colon = 0; }
-    if (!host[0]) { gtn_set_status(a, "Enter a server address first"); return; }
+    if (!host[0]) { gtn_set_status(a, "%s", gtn_tr("Enter a server address first")); return; }
     snprintf(a->host, sizeof a->host, "%s", host);
     a->port = port > 0 ? port : TN_PORT;
     a->fast = a->settings.fast;
@@ -307,7 +334,7 @@ static void lobby_button(gtn_app *a, int who, enum gtn_btn b)
     case BTN_START:
     case BTN_A: {
         int m = local_moderator(a);
-        if (m < 0) { gtn_set_status(a, "Only the moderator (the first player on the server) can start"); break; }
+        if (m < 0) { gtn_set_status(a, "%s", gtn_tr("Only the moderator (the first player on the server) can start")); break; }
         tn_client_start_game(&a->pl[m].client);
         break;
     }
@@ -362,17 +389,26 @@ static void game_button(gtn_app *a, int who, enum gtn_btn b, int down)
 
 static void input_options_button(gtn_app *a, enum gtn_btn b)
 {
-    int profile = a->settings.repeat_profile;
+    int dir = 0;
     switch (b) {
-    case BTN_LEFT: case BTN_UP: profile = (profile + REPEAT_COUNT - 1) % REPEAT_COUNT; break;
-    case BTN_RIGHT: case BTN_DOWN: case BTN_A: profile = (profile + 1) % REPEAT_COUNT; break;
-    case BTN_Y: profile = REPEAT_NORMAL; break;
+    case BTN_UP: case BTN_DOWN: a->options_row = !a->options_row; return;
+    case BTN_LEFT: dir = -1; break;
+    case BTN_RIGHT: case BTN_A: dir = 1; break;
+    case BTN_Y: break;
     case BTN_B: case BTN_START: a->screen = SCR_TITLE; return;
     default: return;
     }
-    a->settings.repeat_profile = profile;
+    if (a->options_row == 1) {
+        a->settings.lang = dir ? (a->settings.lang + LANG_CHOICES + dir) % LANG_CHOICES : LANG_AUTO;
+        gtn_lang_apply(a->settings.lang);
+        if (gtn_settings_save(&a->settings) != 0)
+            gtn_set_status(a, "%s", gtn_tr("The language works for this run, but could not be saved"));
+        return;
+    }
+    int profile = a->settings.repeat_profile;
+    a->settings.repeat_profile = dir ? (profile + REPEAT_COUNT + dir) % REPEAT_COUNT : REPEAT_NORMAL;
     if (gtn_settings_save(&a->settings) != 0)
-        gtn_set_status(a, "Movement repeat works for this run, but could not be saved");
+        gtn_set_status(a, "%s", gtn_tr("Movement repeat works for this run, but could not be saved"));
 }
 
 void gtn_button(gtn_app *a, int who, enum gtn_dev dev, SDL_JoystickID pad, enum gtn_btn b, int down)
@@ -384,6 +420,7 @@ void gtn_button(gtn_app *a, int who, enum gtn_dev dev, SDL_JoystickID pad, enum 
     }
     if (a->screen == SCR_TITLE && down && b == BTN_X) {
         a->screen = SCR_INPUT;
+        a->options_row = 0;
         return;
     }
     if (who < 0) {
@@ -442,7 +479,9 @@ static void update_session(gtn_app *a, int dt)
             continue;
         }
         if (c->state == TN_FAILED) {
-            gtn_set_status(a, "%s could not connect: %s", p->nick, c->err);
+            char why[sizeof c->err + 64];
+            gtn_tr_log(gtn_tr(c->err), why, sizeof why);
+            gtn_set_status(a, gtn_tr("%s could not connect: %s"), p->nick, why);
             p->active = 0;
             continue;
         }
@@ -454,7 +493,7 @@ static void update_session(gtn_app *a, int dt)
     }
     if (active == 0 || (connected == 0 && pending == 0)) {
         if (a->screen != SCR_TITLE) {
-            if (!a->status_ms) gtn_set_status(a, "Disconnected");
+            if (!a->status_ms) gtn_set_status(a, "%s", gtn_tr("Disconnected"));
             stop_session(a);
         }
         return;
@@ -570,7 +609,8 @@ static void demo_tick(gtn_app *a, int t_ms, int nplayers)
 static void usage(void)
 {
     printf("%s %s\n"
-           "usage: gtetrinet-ng [--connect host[:port]] [--nick name] [--fast] [--window|--fullscreen]\n"
+           "usage: gtetrinet-ng [--connect host[:port]] [--nick name] [--fast] [--lang auto|en|de]\n"
+           "                    [--window|--fullscreen]\n"
            "                    [--demo N --frames F --screenshot out.bmp] [--version]\n",
            TN_APP_NAME, TN_VERSION);
 }
@@ -580,12 +620,13 @@ int main(int argc, char **argv)
     static gtn_app app;
     gtn_app *a = &app;
     const char *connect_to = NULL, *shot = NULL, *artdir = NULL;
-    int demo = 0, frames = 0, fullscreen = -1;
+    int demo = 0, frames = 0, fullscreen = -1, cli_lang = 0;
     gtn_fault_install();
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--connect") && i + 1 < argc) connect_to = argv[++i];
         else if (!strcmp(argv[i], "--nick") && i + 1 < argc) snprintf(a->settings.nick, sizeof a->settings.nick, "%s", argv[++i]);
         else if (!strcmp(argv[i], "--fast")) a->fast = 1;
+        else if (!strcmp(argv[i], "--lang") && i + 1 < argc) cli_lang = gtn_lang_parse(argv[++i]) + 1;
         else if (!strcmp(argv[i], "--demo") && i + 1 < argc) demo = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--frames") && i + 1 < argc) frames = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--demo-lobby")) demo_nostart = 1;
@@ -610,6 +651,8 @@ int main(int argc, char **argv)
     gtn_settings_load(&a->settings);
     if (cli_nick[0]) snprintf(a->settings.nick, sizeof a->settings.nick, "%s", cli_nick);
     a->settings.fast |= cli_fast;
+    /* --lang is for this run (screenshots, tests); the saved choice stays as it was */
+    gtn_lang_apply(cli_lang ? cli_lang - 1 : a->settings.lang);
 
     /* SteamOS sets SteamDeck=1; Steam sets SteamGameId when it launched us (Game Mode) */
     a->steamdeck = getenv("SteamDeck") && !strcmp(getenv("SteamDeck"), "1");

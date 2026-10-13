@@ -27,6 +27,13 @@ const char *gtn_special_target_hint(int sb, int self);
 void gtn_fill(int x, int y, int w, int h, gtn_color c);
 void gtn_frame(int x, int y, int w, int h, int thick, gtn_color c);
 
+/* Glyphs: ASCII and Latin-1 (U+00A0..U+00FF, which covers German); anything else is '?'. */
+#define GTN_GLYPHS 224
+unsigned gtn_utf8_next(const char **s); /* invalid UTF-8 bytes decode as Latin-1 */
+int gtn_glyph(unsigned cp);             /* atlas index */
+int gtn_text_len(const char *s);        /* characters, not bytes */
+extern int gtn_text_abbreviated;        /* times gtn_text_fit had to cut text, for layout tests */
+
 /* scale = pixel size of one font pixel (glyphs are 8*scale wide). Returns the width drawn. */
 int gtn_text(int x, int y, int scale, gtn_color c, const char *s);
 int gtn_text_width(int scale, const char *s);

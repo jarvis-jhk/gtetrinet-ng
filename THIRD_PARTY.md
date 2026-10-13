@@ -2,7 +2,8 @@
 
 - GTetrinet (1999–2015): original authors listed in AUTHORS; GPL-2.0-or-later, COPYING.
   Full source/history: https://gitlab.gnome.org/Archive/gtetrinet (retained in legacy/).
-- font8x8: public-domain glyph data, notice preserved in third_party/font8x8_basic.h.
+- font8x8: public-domain glyph data, notices preserved in third_party/font8x8_basic.h and
+  font8x8_ext_latin.h (Latin-1 glyphs for German; declared static const here).
   https://github.com/dhepper/font8x8
 - SDL2: zlib licence, included in binary distribution. Source/releases:
   https://github.com/libsdl-org/SDL/releases ; Linux package source:

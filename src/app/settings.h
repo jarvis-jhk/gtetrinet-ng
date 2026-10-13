@@ -14,6 +14,7 @@ typedef struct gtn_settings {
     char last_version[32];   /* version whose changelog was last shown */
     int fast;                /* tetrifast login for online servers */
     int repeat_profile;      /* shared by keyboard and controllers */
+    int lang;                /* enum gtn_lang_choice: automatic, English, Deutsch */
 } gtn_settings;
 
 /* Folder for settings and logs, ending in a separator. Never NULL. */

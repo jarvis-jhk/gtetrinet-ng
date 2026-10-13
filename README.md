@@ -43,12 +43,20 @@ Keyboard: arrows move/rotate, Space drops, X rotates clockwise / Z counterclockw
 changes target, 1–8 uses it on a numbered player, D discards, P pauses. Online entry has
 a controller keyboard. Choose TetriFast with Y. `--nick Name` sets your nickname.
 
-On the title screen, controller X or keyboard S opens Movement repeat, even before
-joining. D-pad/arrows or A cycle Normal (170 ms delay, 50 ms interval), Relaxed
-(250/100 ms) and Fast (120/30 ms); Y restores Normal and B/Esc/Start returns.
-The choice is saved and applies to held Left/Right on every local keyboard/controller.
-Missing or invalid preferences keep Normal; a failed save shows a warning and keeps
-the choice for the current run. Soft drop and rotation bindings keep their own behavior.
+On the title screen, controller X or keyboard S opens Options, even before joining.
+Up/Down picks a row; Left/Right or A changes it, Y restores its default and
+B/Esc/Start returns. Both choices are saved; a failed save shows a warning and keeps
+the choice for the current run.
+
+- **Movement repeat** cycles Normal (170 ms delay, 50 ms interval), Relaxed
+  (250/100 ms) and Fast (120/30 ms) for held Left/Right on every local
+  keyboard/controller. Missing or invalid preferences keep Normal. Soft drop and
+  rotation keep their own behavior.
+- **Language / Sprache**: Automatic (the system's preferred language), English or
+  Deutsch. The German UI covers menus, hints, special names and effect labels,
+  status/error messages and the game's own lobby/attack messages. Changelog entries,
+  chat, server messages, team names and operating-system error texts stay as written.
+  `--lang de|en|auto` overrides it for one run without saving.
 
 Special tiles keep their classic letters and show their effect on the **recipient**:
 green `+HELP` (C clear line, N nuke field, G gravity), red `-HURT` (A add line),

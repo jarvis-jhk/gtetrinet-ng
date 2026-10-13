@@ -1,6 +1,34 @@
-# Running state — 2026-10-12
+# Running state — 2026-10-13
 
-## Current: saved movement-repeat presets locally verified
+## Current: German translation (v0.1.3 candidate)
+
+Work session t_mv61a1bb0y8rg, combined-roadmap item tetrinet-german-translation.
+New src/app/i18n.{h,c}: English strings are keys, `gtn_tr()` looks up German; `N_()`
+marks stored literals. The core stays language-free: its chat/attack log lines and its
+own error texts are translated at display time by templates (`gtn_tr_log`). Chat,
+server text, team names (wire data) and OS error strings pass through unchanged.
+Font: font8x8_ext_latin (public domain) adds U+00A0..U+00FF; text is decoded as UTF-8,
+invalid bytes as Latin-1 (classic clients' nicknames), typographic dashes/quotes map to
+ASCII. Width/fit count characters and never cut inside a multibyte sequence.
+Options (X/S on the title) now has two rows: Movement repeat and Language
+(Automatic via SDL_GetPreferredLocales, English, Deutsch), saved as lang=auto|en|de;
+`--lang` overrides for one run. Changelog reflows paragraphs; a German note says the
+entries are English. Fixed on the way: empty title cards overflowed with long text;
+the lobby winner list overlapped the start prompt with eight players.
+
+Checks: new tests/test_i18n.c (4175 checks: table placeholders, UTF-8/Latin-1 decoding,
+glyph pixels for ÄÖÜäöüß, whole-character cutting, German log templates, the options
+page by controller and saved/malformed lang values, and every screen drawn at 1280×800
+in both languages with zero cut texts — this caught ZEILEN/STUFE overflowing eight-player
+panels, now STF/ZLN, and an uninitialised index in the attack-line parser under ASan).
+tests/test_i18n_strings.py: every marked literal has a German entry, no stale entries,
+no unmarked English phrase in ui.c/input.c. Debug ASan/UBSan: all six CTests pass;
+seven Python tests pass. MinGW cross-build: test_i18n.exe 4175 and test_repeat.exe 97
+checks pass under Wine/Xvfb. German eight-player demo smoke runs (dummy video).
+Evidence and screenshots: data/tetrinet/german-translation/. Screens were viewed.
+Open: German installer/launcher dialogs; physical Deck legibility of the German UI.
+
+## Previous: saved movement-repeat presets locally verified
 
 One bounded Sol slice (2026-10-12, t_mv4xmp046jk04): title-screen controller X
 or keyboard S opens Movement repeat, including before anyone joins. All local

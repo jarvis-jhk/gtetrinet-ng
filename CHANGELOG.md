@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.3 — 2026-10-13
+
+German translation of the game: menus, hints, special names and effect labels, status
+and connection errors, and the lobby/attack messages. Options (controller X / keyboard S
+on the title screen) now holds Movement repeat and Language: Automatic, English or
+Deutsch, saved like the repeat preset. The font gained Latin-1 letters (ä ö ü ß and
+others); nicknames from classic clients that send Latin-1 now show instead of "?".
+Typographic dashes and quotes in the changelog render, and its paragraphs reflow to the
+screen width. The changelog text itself stays English. Small fixes: the title's empty
+player cards no longer overflow, and the lobby's winner list no longer overlaps the
+start prompt with eight players.
+
 ## 0.1.2 — 2026-10-12
 
 Steam Deck feedback: clickable desktop installer with install/error dialogs, friendly

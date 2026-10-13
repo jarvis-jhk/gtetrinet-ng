@@ -37,9 +37,12 @@ not certified hardware compatibility. Release gates and remaining checks are in 
 
 - [ ] AppImage, Windows installer/update parity, signed releases where practical.
 - [ ] Optional crash-report consent UI and local diagnostic export (redacted).
-- [ ] German translation of the active game: menus, hints, specials, errors and changelog UI;
-  UTF-8 font coverage (including ä/ö/ü/ß), language choice and layout checks on the Deck.
+- [x] German translation of the active game: menus, hints, specials, errors and changelog UI;
+  UTF-8/Latin-1 font coverage (including ä/ö/ü/ß), saved language choice, and a rendered
+  1280×800 layout test that fails on any cut text. Changelog entries stay English.
   Legacy GTK translations are reference material, not a translated modern frontend.
+  - [ ] German Linux installer and Windows launcher dialogs.
+  - [ ] Physical Deck legibility of the German UI (with the M1 hardware session).
 - [x] Color-code specials by effect: beneficial, harmful and situational, with readable
   labels/symbols as well as colors; document how the chosen target changes the effect.
 - [ ] Audit missing TetriNET 2 features and prioritize a documented parity list (rules,

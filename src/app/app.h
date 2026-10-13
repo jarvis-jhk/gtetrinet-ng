@@ -49,6 +49,7 @@ typedef struct gtn_app {
 
     gtn_local pl[GTN_MAX_LOCAL];
     int menu_sel;
+    int options_row;         /* 0 movement repeat, 1 language */
 
     tn_server server;
     int hosting;

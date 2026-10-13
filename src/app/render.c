@@ -4,7 +4,9 @@
  */
 #include "render.h"
 #include "tn_game.h"
+#include "i18n.h"
 #include "font8x8_basic.h"
+#include "font8x8_ext_latin.h"
 
 #include <string.h>
 
@@ -55,20 +57,20 @@ gtn_color gtn_special_color(int sb)
 const char *gtn_special_cue(int sb)
 {
     switch (gtn_special_effect(sb)) {
-    case GTN_EFFECT_HELP: return "+HELP";
-    case GTN_EFFECT_HURT: return "-HURT";
-    case GTN_EFFECT_MIXED: return "?MIX";
-    default: return "?UNKNOWN";
+    case GTN_EFFECT_HELP: return N_("+HELP");
+    case GTN_EFFECT_HURT: return N_("-HURT");
+    case GTN_EFFECT_MIXED: return N_("?MIX");
+    default: return N_("?UNKNOWN");
     }
 }
 
 const char *gtn_special_target_hint(int sb, int self)
 {
-    if (sb == TN_SB_SWITCH) return self ? "?Self" : "?Both";
+    if (sb == TN_SB_SWITCH) return self ? N_("?Self") : N_("?Both");
     switch (gtn_special_effect(sb)) {
-    case GTN_EFFECT_HELP: return self ? "+You" : "+Them";
-    case GTN_EFFECT_HURT: return self ? "-You" : "-Them";
-    case GTN_EFFECT_MIXED: return "?MIX";
+    case GTN_EFFECT_HELP: return self ? N_("+You") : N_("+Them");
+    case GTN_EFFECT_HURT: return self ? N_("-You") : N_("-Them");
+    case GTN_EFFECT_MIXED: return N_("?MIX");
     default: return "?";
     }
 }
@@ -77,19 +79,20 @@ int gtn_render_init(SDL_Renderer *r)
 {
     gtn_ren = r;
     SDL_SetRenderDrawBlendMode(r, SDL_BLENDMODE_BLEND);
-    /* 16x8 glyph atlas, white on transparent, tinted per call */
-    SDL_Surface *s = SDL_CreateRGBSurfaceWithFormat(0, 128, 64, 32, SDL_PIXELFORMAT_RGBA32);
+    /* 16x14 glyph atlas (ASCII, then U+00A0..U+00FF), white on transparent, tinted per call */
+    SDL_Surface *s = SDL_CreateRGBSurfaceWithFormat(0, 128, 8 * GTN_GLYPHS / 16, 32, SDL_PIXELFORMAT_RGBA32);
     if (!s) return -1;
     SDL_LockSurface(s);
     Uint32 *px = (Uint32 *)s->pixels;
     int pitch = s->pitch / 4;
     Uint32 white = SDL_MapRGBA(s->format, 255, 255, 255, 255);
     Uint32 clear = SDL_MapRGBA(s->format, 0, 0, 0, 0);
-    for (int ch = 0; ch < 128; ch++) {
+    for (int ch = 0; ch < GTN_GLYPHS; ch++) {
         int gx = (ch % 16) * 8, gy = (ch / 16) * 8;
-        for (int y = 0; y < 8; y++)
-            for (int x = 0; x < 8; x++)
-                px[(gy + y) * pitch + gx + x] = (font8x8_basic[ch][y] >> x) & 1 ? white : clear;
+        for (int y = 0; y < 8; y++) {
+            unsigned char row = ch < 128 ? font8x8_basic[ch][y] : font8x8_ext_latin[ch - 128][y];
+            for (int x = 0; x < 8; x++) px[(gy + y) * pitch + gx + x] = (row >> x) & 1 ? white : clear;
+        }
     }
     SDL_UnlockSurface(s);
     font_tex = SDL_CreateTextureFromSurface(r, s);
@@ -120,16 +123,61 @@ void gtn_frame(int x, int y, int w, int h, int t, gtn_color c)
     gtn_fill(x + w - t, y, t, h, c);
 }
 
-int gtn_text_width(int scale, const char *s) { return (int)strlen(s) * 8 * scale; }
+unsigned gtn_utf8_next(const char **s)
+{
+    const unsigned char *p = (const unsigned char *)*s;
+    unsigned cp = p[0];
+    int len = cp < 0x80 ? 1 : (cp & 0xe0) == 0xc0 ? 2 : (cp & 0xf0) == 0xe0 ? 3 : (cp & 0xf8) == 0xf0 ? 4 : 0;
+    if (len > 1) {
+        unsigned v = cp & (0x7fu >> len);
+        int k = 1;
+        for (; k < len && (p[k] & 0xc0) == 0x80; k++) v = (v << 6) | (p[k] & 0x3f);
+        /* overlong forms and surrogates are not text */
+        static const unsigned least[] = {0, 0, 0x80, 0x800, 0x10000};
+        if (k == len && v >= least[len] && v <= 0x10ffff && (v < 0xd800 || v > 0xdfff)) {
+            *s += len;
+            return v;
+        }
+    }
+    /* Classic TetriNET clients send Latin-1; a byte that is not UTF-8 is read as that. */
+    *s += 1;
+    return cp;
+}
+
+int gtn_glyph(unsigned cp)
+{
+    if (cp < 0x80) return (int)cp;
+    if (cp >= 0xa0 && cp <= 0xff) return (int)(cp - 0xa0 + 128);
+    /* typographic punctuation, common in the changelog, has a plain ASCII look-alike */
+    switch (cp) {
+    case 0x2010: case 0x2011: case 0x2012: case 0x2013: case 0x2014: case 0x2212: return '-';
+    case 0x2018: case 0x2019: case 0x201a: return '\'';
+    case 0x201c: case 0x201d: case 0x201e: return '"';
+    case 0x2022: return 0xb7 - 0xa0 + 128;
+    case 0x2026: return '.';
+    case 0x2192: return '>';
+    default: return '?';
+    }
+}
+
+int gtn_text_len(const char *s)
+{
+    int n = 0;
+    while (*s) { gtn_utf8_next(&s); n++; }
+    return n;
+}
+
+int gtn_text_width(int scale, const char *s) { return gtn_text_len(s) * 8 * scale; }
+
+int gtn_text_abbreviated;
 
 int gtn_text(int x, int y, int scale, gtn_color c, const char *s)
 {
     int x0 = x;
     SDL_SetTextureColorMod(font_tex, c.r, c.g, c.b);
     SDL_SetTextureAlphaMod(font_tex, c.a);
-    for (; *s; s++) {
-        unsigned char ch = (unsigned char)*s;
-        if (ch >= 128) ch = '?';
+    while (*s) {
+        int ch = gtn_glyph(gtn_utf8_next(&s));
         SDL_Rect src = {(ch % 16) * 8, (ch / 16) * 8, 8, 8};
         SDL_Rect dst = {x, y, 8 * scale, 8 * scale};
         SDL_RenderCopy(gtn_ren, font_tex, &src, &dst);
@@ -149,11 +197,19 @@ void gtn_text_fit(int x, int y, int scale, int maxw, gtn_color c, const char *s)
     while (scale > 1 && gtn_text_width(scale, s) > maxw) scale--;
     int fit = maxw / (8 * scale);
     if (fit <= 0) return;
-    if ((int)strlen(s) <= fit) { gtn_text(x, y, scale, c, s); return; }
+    if (gtn_text_len(s) <= fit) { gtn_text(x, y, scale, c, s); return; }
+    gtn_text_abbreviated++;
     char buf[256];
-    int n = fit - 2 < (int)sizeof buf - 3 ? fit - 2 : (int)sizeof buf - 3;
-    if (n < 0) n = 0;
-    memcpy(buf, s, (size_t)n);
+    size_t n = 0;
+    const char *e = s;
+    /* whole characters only, so a cut never leaves half of an umlaut */
+    for (int k = 0; k < fit - 2 && *e; k++) {
+        const char *before = e;
+        gtn_utf8_next(&e);
+        if ((size_t)(e - s) > sizeof buf - 3) { e = before; break; }
+    }
+    n = (size_t)(e - s);
+    memcpy(buf, s, n);
     strcpy(buf + n, fit == 1 ? "." : "..");
     gtn_text(x, y, scale, c, buf);
 }

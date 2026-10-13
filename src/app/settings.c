@@ -4,6 +4,7 @@
  */
 #include "settings.h"
 #include "fault.h"
+#include "i18n.h"
 
 #include <SDL.h>
 #include <stdio.h>
@@ -17,7 +18,7 @@ static int repeat_index(int profile)
 
 const char *gtn_repeat_name(int profile)
 {
-    static const char *const names[] = {"Normal", "Relaxed", "Fast"};
+    static const char *const names[] = {N_("Normal"), N_("Relaxed"), N_("Fast")};
     return names[repeat_index(profile)];
 }
 
@@ -80,6 +81,7 @@ void gtn_settings_load(gtn_settings *s)
         else if (!strcmp(k, "fast")) s->fast = atoi(v);
         else if (!strcmp(k, "repeat"))
             s->repeat_profile = !strcmp(v, "1") ? REPEAT_RELAXED : !strcmp(v, "2") ? REPEAT_FAST : REPEAT_NORMAL;
+        else if (!strcmp(k, "lang")) s->lang = gtn_lang_parse(v);
     }
     fclose(f);
 }
@@ -91,8 +93,8 @@ int gtn_settings_save(const gtn_settings *s)
     snprintf(tmp, sizeof tmp, "%s.tmp", path);
     FILE *f = fopen(tmp, "w");
     if (!f) { gtn_fault("saving preferences failed", "could not open temporary file"); return -1; }
-    int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\n",
-            s->host, s->nick, s->last_version, s->fast, repeat_index(s->repeat_profile));
+    int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\nlang=%s\n",
+            s->host, s->nick, s->last_version, s->fast, repeat_index(s->repeat_profile), gtn_lang_code(s->lang));
     int closed = fclose(f);
     if (written < 0 || closed != 0) {
         remove(tmp);
