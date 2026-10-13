@@ -1,6 +1,6 @@
 # Running state — 2026-10-13
 
-## Current: German translation (v0.1.3 candidate)
+## Current: German translation released as v0.1.3
 
 Work session t_mv61a1bb0y8rg, combined-roadmap item tetrinet-german-translation.
 New src/app/i18n.{h,c}: English strings are keys, `gtn_tr()` looks up German; `N_()`
@@ -27,6 +27,14 @@ seven Python tests pass. MinGW cross-build: test_i18n.exe 4175 and test_repeat.e
 checks pass under Wine/Xvfb. German eight-player demo smoke runs (dummy video).
 Evidence and screenshots: data/tetrinet/german-translation/. Screens were viewed.
 Open: German installer/launcher dialogs; physical Deck legibility of the German UI.
+
+Released v0.1.3: https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.3
+Source 2ff0469 passed Linux sanitizer + native Windows CI 38335776837 (i18n test ran on
+both). Release workflow 38335957110 (Linux, Windows, publish) succeeded. All six assets
+downloaded HTTP 200 with matching sizes and SHA256SUMS (Linux 802594 B, Windows ZIP
+7158068 B); smoke-release.py passed and the extracted Linux build runs a German eight-player
+demo. Checkpoint data/tetrinet/verified-v0.1.3.json. Next release must exceed v0.1.3.
+No CI continuation needed; regular work schedule db47dddd stays.
 
 ## Previous: saved movement-repeat presets locally verified
 
