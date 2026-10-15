@@ -1,6 +1,31 @@
-# Running state — 2026-10-13
+# Running state — 2026-10-15
 
-## Current: German translation released as v0.1.3
+## Current: rearrangeable controller buttons released as v0.1.4
+
+Work session t_mv8w5tlh0kirs, combined-roadmap item tetrinet-controller-remapping (done).
+Options gains a third row, Controller buttons (Standard/Custom; Y resets), opening
+SCR_CONTROLS: eight in-game actions (rotate CW/CCW, hard drop, special on target/self,
+previous/next target, discard) over the eight bindable buttons Up/A/B/X/Y/LB/RB/Back.
+The layout is always a permutation: binding a taken button swaps (gtn_pad_bind), so no
+action is lost. Saved as pad=A,B,UP,X,Y,LB,RB,BACK in action order; anything not a
+complete permutation keeps the default, and a zeroed/invalid map translates as default.
+Applied only in game_button and only for DEV_PAD (gtn_pad_translate maps the pressed
+button to the default button of its action); keyboard, menus, Left/Right/Down, Start and
+Back+Start stay fixed. Capture waits for a controller button; Start, any key or an
+unbindable button cancels. enum gtn_btn moved from app.h to settings.h.
+Checks: tests/test_controls.c (98: parsing incl. ten malformed files, swap semantics,
+options/controls flow before joining, en/de renders 800x600/1280x800 with zero cut text
+at 1280x800, real two-client TCP game: swapped rotation, Up/stick no longer drops, Y
+drops, keyboard unchanged, Back discards). Debug and ASan/UBSan 7/7 CTests, 7 Python
+tests. Negative control without translation fails 3 intended assertions.
+Evidence data/tetrinet/remap/. Source 04a1e8d passed Linux + native Windows CI 38669264156
+(controls test ran on both). Release workflow 38669529060 succeeded; all six assets
+downloaded HTTP 200 with matching SHA256SUMS (Linux 806374 B, Windows ZIP 7161759 B),
+smoke-release.py passed. https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.4
+Open in remapping: per-player layouts, keyboard remapping; physical controllers unverified.
+Next release must exceed v0.1.4. No CI continuation; work schedule db47dddd stays.
+
+## Previous: German translation released as v0.1.3
 
 Work session t_mv61a1bb0y8rg, combined-roadmap item tetrinet-german-translation.
 New src/app/i18n.{h,c}: English strings are keys, `gtn_tr()` looks up German; `N_()`
