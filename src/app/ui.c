@@ -162,10 +162,52 @@ static void draw_input_options(gtn_app *a)
     y += 40 * s;
     language_value(buf, sizeof buf, a->settings.lang);
     option_row(a, 1, y, gtn_tr("Language"), buf);
-    y += 76 * s;
-    gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, gtn_tr("Saved for all local players, keyboard and controllers."));
+    y += 72 * s;
+    option_row(a, 2, y, gtn_tr("Controller buttons"),
+               gtn_tr(gtn_pad_is_default(a->settings.pad_map) || !gtn_pad_valid(a->settings.pad_map) ? N_("Standard") : N_("Custom")));
+    y += 72 * s;
+    /* the status line (a failed save) takes this place at Deck height */
+    if (!a->status[0])
+        gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, gtn_tr("Saved for all local players, keyboard and controllers."));
     status_line(a);
     hints(a, gtn_tr("Up/Down: choose   Left/Right/A: change   Y: default   B/Esc/Start: back"));
+}
+
+static void draw_controls(gtn_app *a)
+{
+    int s = ts(a), y = a->h / 10;
+    gtn_text_center_fit(a->w / 2, y, 3 * s, a->w - 32, TEXT, gtn_tr("Controller buttons"));
+    y += 34 * s;
+    gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, gtn_tr("In a game, for every controller. Left/Right/Down move, Start pauses."));
+    y += 22 * s;
+    int x0 = a->w / 8, x1 = a->w - a->w / 8, rowh = 26 * s;
+    /* one text size for all rows, the largest at which the longest label still fits */
+    int scale = 2 * s, namew = gtn_text_width(scale, gtn_btn_name(BTN_START)) + 24 * s;
+    for (int i = 0; i < PAD_ACTIONS; i++) {
+        int k = gtn_text_scale(2 * s, x1 - x0 - 16 * s - namew, gtn_tr(gtn_pad_action_name(i)));
+        if (k < scale) scale = k;
+    }
+    int map[PAD_ACTIONS];
+    memcpy(map, a->settings.pad_map, sizeof map);
+    if (!gtn_pad_valid(map)) gtn_pad_defaults(map);
+    for (int i = 0; i < PAD_ACTIONS; i++, y += rowh) {
+        int sel = a->controls_row == i;
+        if (sel) gtn_fill(x0, y - 4 * s, x1 - x0, rowh - 2 * s, gtn_rgb(0x2a, 0x30, 0x48));
+        gtn_text_fit(x0 + 8 * s, y, scale, x1 - x0 - 16 * s - namew, sel ? TEXT : MUTED, gtn_tr(gtn_pad_action_name(i)));
+        const char *name = sel && a->controls_capture ? "?" : gtn_btn_name(map[i]);
+        gtn_text(x1 - 8 * s - gtn_text_width(scale, name), y, scale, sel ? ACCENT : TEXT, name);
+    }
+    y += 8 * s;
+    if (a->controls_capture) {
+        char buf[160];
+        snprintf(buf, sizeof buf, gtn_tr("Press the controller button for: %s"), gtn_tr(gtn_pad_action_name(a->controls_row)));
+        gtn_text_center_fit(a->w / 2, y, s, a->w - 32, ACCENT, buf);
+    } else {
+        gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, gtn_tr("A button that is taken swaps with the old one."));
+    }
+    status_line(a);
+    hints(a, a->controls_capture ? gtn_tr("Press a button on the controller   Start or any key: cancel")
+                                 : gtn_tr("Up/Down: choose   A: new button   Y: all standard   B/Start: back"));
 }
 
 static void draw_online(gtn_app *a)
@@ -488,5 +530,6 @@ void gtn_draw(gtn_app *a)
     case SCR_GAME: draw_game(a); break;
     case SCR_NEWS: draw_news(a); break;
     case SCR_INPUT: draw_input_options(a); break;
+    case SCR_CONTROLS: draw_controls(a); break;
     }
 }

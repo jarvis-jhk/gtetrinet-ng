@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4 — 2026-10-15
+
+Controller buttons can be rearranged: Options → Controller buttons lists the eight
+in-game actions; pick one, press A and then the button it should use. A button that is
+already taken swaps with the old one, Y restores the standard layout, and the choice is
+saved for every controller. Movement, Start and the menus stay where they are, and the
+keyboard keeps its classic keys. German translation included.
+
 ## 0.1.3 — 2026-10-13
 
 German translation of the game: menus, hints, special names and effect labels, status

@@ -22,7 +22,10 @@ not certified hardware compatibility. Release gates and remaining checks are in 
   dock/undock and 1280×800 legibility. No hardware certification until this passes.
 - [ ] Controller remapping, repeat settings, nickname editing and accessible typography.
   - [x] Saved Normal/Relaxed/Fast horizontal-repeat presets, controller/keyboard options
-    entry and real TCP/input timing tests; remapping, nicknames and typography remain open.
+    entry and real TCP/input timing tests.
+  - [x] Shared in-game controller button layout (eight actions over Up/A/B/X/Y/LB/RB/Back,
+    swap-on-conflict, saved, Options → Controller buttons) with real TCP play tests;
+    per-player layouts, keyboard remapping, nicknames and typography remain open.
 - [ ] Sound, haptics and offline bot opponents selectable in the lobby.
 
 ## M2 — online interoperability

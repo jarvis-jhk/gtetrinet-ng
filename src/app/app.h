@@ -13,13 +13,6 @@
 
 #define GTN_MAX_LOCAL 8
 
-/* Every device speaks in these, keyboard included. */
-enum gtn_btn {
-    BTN_UP, BTN_DOWN, BTN_LEFT, BTN_RIGHT,
-    BTN_A, BTN_B, BTN_X, BTN_Y, BTN_LB, BTN_RB, BTN_START, BTN_BACK,
-    BTN_COUNT
-};
-
 enum gtn_dev { DEV_NONE, DEV_KEYBOARD, DEV_PAD };
 
 typedef struct gtn_local {
@@ -37,7 +30,7 @@ typedef struct gtn_local {
     int nick_tries;
 } gtn_local;
 
-enum gtn_screen { SCR_TITLE, SCR_ONLINE, SCR_CONNECTING, SCR_LOBBY, SCR_GAME, SCR_NEWS, SCR_INPUT };
+enum gtn_screen { SCR_TITLE, SCR_ONLINE, SCR_CONNECTING, SCR_LOBBY, SCR_GAME, SCR_NEWS, SCR_INPUT, SCR_CONTROLS };
 
 typedef struct gtn_app {
     SDL_Window *win;
@@ -49,7 +42,9 @@ typedef struct gtn_app {
 
     gtn_local pl[GTN_MAX_LOCAL];
     int menu_sel;
-    int options_row;         /* 0 movement repeat, 1 language */
+    int options_row;         /* 0 movement repeat, 1 language, 2 controller buttons */
+    int controls_row;        /* action chosen on the controller-buttons screen */
+    int controls_capture;    /* waiting for the button to give that action */
 
     tn_server server;
     int hosting;

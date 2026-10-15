@@ -362,6 +362,8 @@ static void game_button(gtn_app *a, int who, enum gtn_btn b, int down)
 {
     gtn_local *p = &a->pl[who];
     tn_client *c = &p->client;
+    /* A controller's own layout; the keyboard keeps classic TetriNET keys. */
+    if (p->dev == DEV_PAD) b = (enum gtn_btn)gtn_pad_translate(a->settings.pad_map, b);
     if (b == BTN_DOWN) { tn_client_action(c, down ? TN_ACT_SOFT_PRESS : TN_ACT_SOFT_RELEASE); return; }
     if (!down) return;
     switch (b) {
@@ -387,16 +389,60 @@ static void game_button(gtn_app *a, int who, enum gtn_btn b, int down)
     }
 }
 
+#define OPTION_ROWS 3
+
+static void save_controls(gtn_app *a)
+{
+    if (gtn_settings_save(&a->settings) != 0)
+        gtn_set_status(a, "%s", gtn_tr("The controller buttons work for this run, but could not be saved"));
+}
+
+/* Choose an action, press A, then press the button it should have. The keyboard cannot
+ * stand in for a controller here, so any key cancels the wait. */
+static void controls_button(gtn_app *a, enum gtn_dev dev, enum gtn_btn b)
+{
+    if (a->controls_capture) {
+        a->controls_capture = 0;
+        if (dev != DEV_PAD || !gtn_pad_bindable(b)) return;
+        gtn_pad_bind(a->settings.pad_map, a->controls_row, b);
+        save_controls(a);
+        return;
+    }
+    switch (b) {
+    case BTN_UP: a->controls_row = (a->controls_row + PAD_ACTIONS - 1) % PAD_ACTIONS; break;
+    case BTN_DOWN: a->controls_row = (a->controls_row + 1) % PAD_ACTIONS; break;
+    case BTN_A: a->controls_capture = 1; break;
+    case BTN_Y:
+        gtn_pad_defaults(a->settings.pad_map);
+        save_controls(a);
+        break;
+    case BTN_B: case BTN_START: a->screen = SCR_INPUT; break;
+    default: break;
+    }
+}
+
 static void input_options_button(gtn_app *a, enum gtn_btn b)
 {
     int dir = 0;
     switch (b) {
-    case BTN_UP: case BTN_DOWN: a->options_row = !a->options_row; return;
+    case BTN_UP: a->options_row = (a->options_row + OPTION_ROWS - 1) % OPTION_ROWS; return;
+    case BTN_DOWN: a->options_row = (a->options_row + 1) % OPTION_ROWS; return;
     case BTN_LEFT: dir = -1; break;
     case BTN_RIGHT: case BTN_A: dir = 1; break;
     case BTN_Y: break;
     case BTN_B: case BTN_START: a->screen = SCR_TITLE; return;
     default: return;
+    }
+    if (a->options_row == 2) {
+        if (b == BTN_Y) {
+            gtn_pad_defaults(a->settings.pad_map);
+            save_controls(a);
+        } else {
+            a->screen = SCR_CONTROLS;
+            a->controls_row = 0;
+            a->controls_capture = 0;
+        }
+        return;
     }
     if (a->options_row == 1) {
         a->settings.lang = dir ? (a->settings.lang + LANG_CHOICES + dir) % LANG_CHOICES : LANG_AUTO;
@@ -416,6 +462,10 @@ void gtn_button(gtn_app *a, int who, enum gtn_dev dev, SDL_JoystickID pad, enum 
     /* Options work before joining too; their A button must not claim a player seat. */
     if (a->screen == SCR_INPUT) {
         if (down) input_options_button(a, b);
+        return;
+    }
+    if (a->screen == SCR_CONTROLS) {
+        if (down) controls_button(a, dev, b);
         return;
     }
     if (a->screen == SCR_TITLE && down && b == BTN_X) {

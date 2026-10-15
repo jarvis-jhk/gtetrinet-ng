@@ -6,6 +6,20 @@
 #ifndef GTN_SETTINGS_H
 #define GTN_SETTINGS_H
 
+/* Every device speaks in these, keyboard included. */
+enum gtn_btn {
+    BTN_UP, BTN_DOWN, BTN_LEFT, BTN_RIGHT,
+    BTN_A, BTN_B, BTN_X, BTN_Y, BTN_LB, BTN_RB, BTN_START, BTN_BACK,
+    BTN_COUNT
+};
+
+/* What a controller button does in a game. Left/Right/Down and Start stay where they are:
+ * moving and pausing must work the same on every pad, and menus never change. */
+enum gtn_pad_action {
+    PAD_ROT_CW, PAD_ROT_CCW, PAD_DROP, PAD_SPECIAL, PAD_SPECIAL_SELF,
+    PAD_TARGET_PREV, PAD_TARGET_NEXT, PAD_DISCARD, PAD_ACTIONS
+};
+
 enum gtn_repeat_profile { REPEAT_NORMAL, REPEAT_RELAXED, REPEAT_FAST, REPEAT_COUNT };
 
 typedef struct gtn_settings {
@@ -15,6 +29,7 @@ typedef struct gtn_settings {
     int fast;                /* tetrifast login for online servers */
     int repeat_profile;      /* shared by keyboard and controllers */
     int lang;                /* enum gtn_lang_choice: automatic, English, Deutsch */
+    int pad_map[PAD_ACTIONS]; /* enum gtn_btn per action, shared by all controllers */
 } gtn_settings;
 
 /* Folder for settings and logs, ending in a separator. Never NULL. */
@@ -25,5 +40,20 @@ int gtn_settings_save(const gtn_settings *s);
 const char *gtn_repeat_name(int profile);
 int gtn_repeat_delay(int profile);
 int gtn_repeat_interval(int profile);
+
+
+/* The controller layout is always a one-to-one assignment of the eight bindable buttons,
+ * so no action can be lost and no button can do two things. */
+void gtn_pad_defaults(int map[PAD_ACTIONS]);
+int gtn_pad_valid(const int map[PAD_ACTIONS]);
+int gtn_pad_is_default(const int map[PAD_ACTIONS]);
+int gtn_pad_bindable(int b);
+/* Gives act the button b; the action that had b takes act's old button. */
+void gtn_pad_bind(int map[PAD_ACTIONS], int act, int b);
+/* The button whose default game action the pressed button b performs now; b itself when it
+ * is not bindable or the layout is invalid. */
+int gtn_pad_translate(const int map[PAD_ACTIONS], int b);
+const char *gtn_pad_action_name(int act);
+const char *gtn_btn_name(int b);
 
 #endif

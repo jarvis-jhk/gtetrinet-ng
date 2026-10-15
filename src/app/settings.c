@@ -34,6 +34,91 @@ int gtn_repeat_interval(int profile)
     return intervals[repeat_index(profile)];
 }
 
+static const int pad_default[PAD_ACTIONS] = {BTN_A, BTN_B, BTN_UP, BTN_X, BTN_Y, BTN_LB, BTN_RB, BTN_BACK};
+
+void gtn_pad_defaults(int map[PAD_ACTIONS])
+{
+    memcpy(map, pad_default, sizeof pad_default);
+}
+
+int gtn_pad_bindable(int b)
+{
+    for (int i = 0; i < PAD_ACTIONS; i++)
+        if (pad_default[i] == b) return 1;
+    return 0;
+}
+
+int gtn_pad_valid(const int map[PAD_ACTIONS])
+{
+    for (int i = 0; i < PAD_ACTIONS; i++) {
+        if (!gtn_pad_bindable(map[i])) return 0;
+        for (int j = 0; j < i; j++)
+            if (map[j] == map[i]) return 0;
+    }
+    return 1;
+}
+
+int gtn_pad_is_default(const int map[PAD_ACTIONS])
+{
+    return !memcmp(map, pad_default, sizeof pad_default);
+}
+
+void gtn_pad_bind(int map[PAD_ACTIONS], int act, int b)
+{
+    if (act < 0 || act >= PAD_ACTIONS || !gtn_pad_bindable(b)) return;
+    if (!gtn_pad_valid(map)) gtn_pad_defaults(map);
+    for (int i = 0; i < PAD_ACTIONS; i++)
+        if (map[i] == b) map[i] = map[act];
+    map[act] = b;
+}
+
+int gtn_pad_translate(const int map[PAD_ACTIONS], int b)
+{
+    if (!gtn_pad_valid(map)) return b;
+    for (int i = 0; i < PAD_ACTIONS; i++)
+        if (map[i] == b) return pad_default[i];
+    return b;
+}
+
+const char *gtn_pad_action_name(int act)
+{
+    static const char *const names[] = {
+        N_("Rotate clockwise"), N_("Rotate counterclockwise"), N_("Hard drop"), N_("Special on target"),
+        N_("Special on yourself"), N_("Previous target"), N_("Next target"), N_("Discard special"),
+    };
+    return act >= 0 && act < PAD_ACTIONS ? names[act] : "?";
+}
+
+/* Controller names as printed on an Xbox-layout pad, which is what SDL reports for every pad. */
+static const char *const btn_names[BTN_COUNT] = {"UP", "DOWN", "LEFT", "RIGHT", "A", "B", "X", "Y", "LB", "RB", "START", "BACK"};
+
+const char *gtn_btn_name(int b)
+{
+    return b >= 0 && b < BTN_COUNT ? btn_names[b] : "?";
+}
+
+/* "pad=A,B,UP,..." in action order; anything that is not a complete layout keeps the default. */
+static void parse_pad(int map[PAD_ACTIONS], const char *v)
+{
+    int m[PAD_ACTIONS], n = 0;
+    char word[16];
+    while (*v && n < PAD_ACTIONS) {
+        size_t k = strcspn(v, ",");
+        if (k >= sizeof word) return;
+        memcpy(word, v, k);
+        word[k] = 0;
+        int b = -1;
+        for (int i = 0; i < BTN_COUNT; i++)
+            if (!strcmp(word, btn_names[i])) b = i;
+        if (b < 0) return;
+        m[n++] = b;
+        v += k;
+        if (*v != ',') break;
+        if (!*++v) return; /* a trailing comma is not a complete layout */
+    }
+    if (n == PAD_ACTIONS && !*v && gtn_pad_valid(m)) memcpy(map, m, sizeof m);
+}
+
 const char *gtn_pref_dir(void)
 {
     static char dir[1024];
@@ -64,6 +149,7 @@ void gtn_settings_load(gtn_settings *s)
 {
     memset(s, 0, sizeof *s);
     default_nick(s->nick, sizeof s->nick);
+    gtn_pad_defaults(s->pad_map);
     char path[1200];
     snprintf(path, sizeof path, "%ssettings.ini", gtn_pref_dir());
     FILE *f = fopen(path, "r");
@@ -82,6 +168,7 @@ void gtn_settings_load(gtn_settings *s)
         else if (!strcmp(k, "repeat"))
             s->repeat_profile = !strcmp(v, "1") ? REPEAT_RELAXED : !strcmp(v, "2") ? REPEAT_FAST : REPEAT_NORMAL;
         else if (!strcmp(k, "lang")) s->lang = gtn_lang_parse(v);
+        else if (!strcmp(k, "pad")) parse_pad(s->pad_map, v);
     }
     fclose(f);
 }
@@ -93,8 +180,14 @@ int gtn_settings_save(const gtn_settings *s)
     snprintf(tmp, sizeof tmp, "%s.tmp", path);
     FILE *f = fopen(tmp, "w");
     if (!f) { gtn_fault("saving preferences failed", "could not open temporary file"); return -1; }
-    int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\nlang=%s\n",
-            s->host, s->nick, s->last_version, s->fast, repeat_index(s->repeat_profile), gtn_lang_code(s->lang));
+    int pad[PAD_ACTIONS];
+    memcpy(pad, s->pad_map, sizeof pad);
+    if (!gtn_pad_valid(pad)) gtn_pad_defaults(pad);
+    char padline[96] = "";
+    for (int i = 0; i < PAD_ACTIONS; i++)
+        snprintf(padline + strlen(padline), sizeof padline - strlen(padline), "%s%s", i ? "," : "", btn_names[pad[i]]);
+    int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\nlang=%s\npad=%s\n",
+            s->host, s->nick, s->last_version, s->fast, repeat_index(s->repeat_profile), gtn_lang_code(s->lang), padline);
     int closed = fclose(f);
     if (written < 0 || closed != 0) {
         remove(tmp);

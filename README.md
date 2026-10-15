@@ -38,6 +38,7 @@ and board. Controllers: d-pad/stick moves, Down soft-drops, Up hard-drops, A rot
 X uses a special on the selected target, Y uses it on yourself, shoulders select targets,
 Back discards a special, Start pauses, Back+Start ends the game. A disconnected seat can
 be reclaimed by pressing A on an unclaimed controller. Eight fields are a dense layout.
+These face, shoulder, Up and Back buttons can be rearranged under Options → Controller buttons.
 
 Keyboard: arrows move/rotate, Space drops, X rotates clockwise / Z counterclockwise, S uses a special, Q/E or Tab
 changes target, 1–8 uses it on a numbered player, D discards, P pauses. Online entry has
@@ -57,6 +58,14 @@ the choice for the current run.
   status/error messages and the game's own lobby/attack messages. Changelog entries,
   chat, server messages, team names and operating-system error texts stay as written.
   `--lang de|en|auto` overrides it for one run without saving.
+- **Controller buttons** opens a list of the eight in-game actions (rotate clockwise and
+  counterclockwise, hard drop, special on target / on yourself, previous / next target,
+  discard). Pick one, press A, then press the controller button it should use; the action
+  that had that button takes the old one, so nothing is ever unbound. Y restores the
+  standard layout. Up, A, B, X, Y, LB, RB and Back can be assigned (the left stick's up
+  and the triggers follow Up and LB/RB). Left/Right/Down, Start, Back+Start and all menus
+  stay fixed. The layout is shared by every controller and is used only in a game; the
+  keyboard keeps its classic keys.
 
 Special tiles keep their classic letters and show their effect on the **recipient**:
 green `+HELP` (C clear line, N nuke field, G gravity), red `-HURT` (A add line),
