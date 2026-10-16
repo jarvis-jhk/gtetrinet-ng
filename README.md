@@ -20,6 +20,11 @@ supplies graphics/audio libraries (SteamOS, Mint or Ubuntu 22.04+). Python 3 and
 required by the installer/launcher. Windows x86_64: extract the ZIP, run `Play.cmd`;
 `gtetrinet-ng.exe` also works directly, without launcher fault reporting.
 
+AppImage (any Linux x86_64, no installation): download `gtetrinet-ng-x86_64.AppImage`, mark
+it executable (`chmod +x`, or Properties → Executable) and open it. It needs no libfuse2.
+It does not update itself; AppImageUpdate or Gear Lever (Steam Deck) can, using the embedded
+update information. Add it to Steam with "Add a Non-Steam Game" if you want it in Game Mode.
+
 Steam Deck: switch to Desktop Mode and download `Install-GTetrinet-NG.desktop` from the
 release. Open it (confirm “Execute”/“Trust” if your desktop asks) and follow the install
 dialogs. Fully exit Steam when prompted, so its shortcut can be safely added or renamed.

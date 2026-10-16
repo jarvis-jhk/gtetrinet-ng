@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev xvfb xauth python3-pil desktop-file-utils
+      - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev xvfb xauth python3-pil desktop-file-utils zsync
       - run: |
           tag='${{ github.ref_name }}'
           [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
@@ -36,11 +36,23 @@ jobs:
           cp tools/linux/launcher.py dist/launcher.py
           sed "s/@TAG@/$tag/g" tools/linux/Install-GTetrinet-NG.desktop > dist/Install-GTetrinet-NG.desktop
           desktop-file-validate dist/Install-GTetrinet-NG.desktop
+          # Pinned AppImage tooling; the static type2 runtime needs no libfuse2 (SteamOS has none).
+          curl -fsSL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+          curl -fsSL -o appimage-runtime https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64
+          printf '%s  %s\n' ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0 appimagetool 2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d appimage-runtime | sha256sum -c
+          chmod +x appimagetool
+          bash tools/linux/build-appimage.sh dist/gtetrinet-ng dist/gtetrinet-ng-x86_64.AppImage "$PWD/appimagetool" "$PWD/appimage-runtime"
+          test -s dist/gtetrinet-ng-x86_64.AppImage.zsync
+          ./dist/gtetrinet-ng-x86_64.AppImage --appimage-extract-and-run --version | grep -qx "gtetrinet-ng ${tag#v}"
+          GTN_NO_REPORT=1 xvfb-run -a ./dist/gtetrinet-ng-x86_64.AppImage --appimage-extract-and-run --window --demo 8 --frames 600 --screenshot appimage-smoke.bmp
+          test -s appimage-smoke.bmp
       - uses: actions/upload-artifact@v4
         with:
           name: linux-release
           path: |
             dist/*.tar.gz
+            dist/*.AppImage
+            dist/*.AppImage.zsync
             dist/Install-GTetrinet-NG.desktop
             dist/install.sh
             dist/launcher.py
@@ -93,7 +105,7 @@ jobs:
           path: dist
       - run: |
           cd dist
-          sha256sum *.tar.gz *.zip Install-GTetrinet-NG.desktop install.sh launcher.py > SHA256SUMS
-          gh release create "$GITHUB_REF_NAME" --title "gtetrinet-ng ${GITHUB_REF_NAME} — preview" --notes-file ../CHANGELOG.md *.tar.gz *.zip Install-GTetrinet-NG.desktop install.sh launcher.py SHA256SUMS
+          sha256sum *.tar.gz *.AppImage *.zip Install-GTetrinet-NG.desktop install.sh launcher.py > SHA256SUMS
+          gh release create "$GITHUB_REF_NAME" --title "gtetrinet-ng ${GITHUB_REF_NAME} — preview" --notes-file ../CHANGELOG.md *.tar.gz *.AppImage *.AppImage.zsync *.zip Install-GTetrinet-NG.desktop install.sh launcher.py SHA256SUMS
         env:
           GH_TOKEN: ${{ github.token }}

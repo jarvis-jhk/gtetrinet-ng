@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.10 — 2026-10-16
+
+An AppImage. Every release now also comes as one file, `gtetrinet-ng-x86_64.AppImage`:
+download it, make it executable and open it — nothing to install, no libfuse2 needed, so
+it also runs on the Steam Deck. AppImageUpdate and Gear Lever can update it from the
+releases. The archive, the Deck installer and the Windows ZIP stay as they were.
+
 ## 0.1.9 — 2026-10-16
 
 A server list. "Play online" now opens a list of the servers you played on and three

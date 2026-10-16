@@ -58,6 +58,7 @@ not certified hardware compatibility. Release gates and remaining checks are in 
 ## M3 — distribution polish
 
 - [ ] AppImage, Windows installer/update parity, signed releases where practical.
+  - [x] AppImage: `gtetrinet-ng-x86_64.AppImage` in every release (static runtime, zsync update info).
 - [ ] Optional crash-report consent UI and local diagnostic export (redacted).
 - [x] German translation of the active game: menus, hints, specials, errors and changelog UI;
   UTF-8/Latin-1 font coverage (including ä/ö/ü/ß), saved language choice, and a rendered
