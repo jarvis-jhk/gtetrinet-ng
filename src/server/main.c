@@ -13,12 +13,19 @@
 #ifdef _WIN32
 #include <windows.h>
 static void sleep_ms(int ms) { Sleep((DWORD)ms); }
+static unsigned now_ms(void) { return (unsigned)GetTickCount(); }
 #else
 #include <time.h>
 static void sleep_ms(int ms)
 {
     struct timespec ts = {ms / 1000, (long)(ms % 1000) * 1000000L};
     nanosleep(&ts, NULL);
+}
+static unsigned now_ms(void)
+{
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (unsigned)((unsigned long long)t.tv_sec * 1000 + (unsigned long long)t.tv_nsec / 1000000);
 }
 #endif
 
@@ -77,8 +84,12 @@ int main(int argc, char **argv)
     signal(SIGINT, on_signal);
     signal(SIGTERM, on_signal);
     if (!quiet) fprintf(stderr, "[server] %s %s listening on port %d, %d slots\n", TN_APP_NAME, TN_VERSION, s.port, s.max_slots);
+    /* real elapsed time: the login timeout and the message rate limit count in it */
+    unsigned last = now_ms();
     while (!stop) {
-        tn_server_update(&s, 10);
+        unsigned t = now_ms(), dt = t - last; /* unsigned: survives the counter wrapping */
+        tn_server_update(&s, (int)(dt > 1000 ? 1000 : dt));
+        last = t;
         sleep_ms(10);
     }
     tn_server_stop(&s);

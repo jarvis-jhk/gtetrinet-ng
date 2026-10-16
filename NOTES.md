@@ -1,5 +1,27 @@
 # Running state — 2026-10-16
 
+## Current: fuzzing and server limits (item tetrinet-fuzzing-limits), release v0.1.13 pending CI
+
+Opus filler t_mvb4071afcmch. Goal: a released server keeps serving honest players while a
+hostile client floods it with random bytes, oversized lines, unread output and connection
+spam; a sanitizer fuzz test over every parser and the server runs in CI.
+tn_server: pending 16 -> 32, max 8 per tn_tcp_peer_key (IPv4, or IPv6 /64), 32 queries per
+pending connection, per-player token bucket (burst 200, 100/s, in 1/1000 units, dt clamped
+10 s) -- when empty the server stops reading (TCP backpressure); a player whose 16 KiB input
+buffer is full behind the limit is dropped as "flooding". tn_conn.outmax (server: 1 MiB,
+default still 4 MiB). Network levels clamped 0..100 in server and client (average_levels
+summed raw ints before). Standalone server now passes real elapsed time to update (was a
+fixed 10 ms per loop, which made timeouts/rates run slow).
+tests/test_fuzz.c (ctest "fuzz", UBSAN_OPTIONS=halt_on_error=1): 120k mangled/random
+messages through login decode, field apply, rules parse (+ games played with the result),
+tn_word, query parsers/split and tn_client_handle; then a live dual-stack server with two
+honest clients vs a raw hostile player (mangled + random bytes), a 600-line chat flood
+(299 relayed in 1 s of server time, honest chat still through), an endless line (dropped),
+40 connections from 127.0.0.1 (<= 8 pending, ::1 player still joins), 200 queries (<= 32
+answered, closed), then the honest pair plays. Found no memory error in the parsers under
+ASan/UBSan. Negative control (no rate limit, no per-address cap) fails 2 checks.
+Local Debug+ASan/UBSan: test_fuzz and test_core pass (only those were run here).
+
 ## Current: IPv6 and asynchronous DNS released as v0.1.12 (item tetrinet-ipv6-async-dns, done)
 
 Opus filler t_mvb2e9jz4tzqwa. Goal: a released build connects by IPv6 address/hostname

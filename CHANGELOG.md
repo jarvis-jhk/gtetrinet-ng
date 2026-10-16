@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.13 — 2026-10-16
+
+Server limits for hosting on the internet. `gtetrinet-ng-server` (and a game hosted here)
+now keeps serving its players when somebody hostile connects: one address can hold at most
+8 of the 32 places for connections that have not logged in yet, a connection gets 32 query
+commands, a player's messages are read at 100 per second (a flood waits in its own queue
+and does not drown the chat or the game of the others) and a player sending more than
+that, or not reading what is sent to them, is dropped. Levels from the network are kept
+between 0 and 100. A new fuzz test throws half a million mangled messages at every parser
+and attacks a running server with random bytes, floods, endless lines and connection spam
+while two players keep playing.
+
 ## 0.1.12 — 2026-10-16
 
 IPv6. You can type an IPv6 address in "Type an address..." (`[2001:db8::7]:31457`, or a

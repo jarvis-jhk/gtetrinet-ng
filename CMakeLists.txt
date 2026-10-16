@@ -87,6 +87,11 @@ if(BUILD_TESTING)
   target_link_libraries(test_core tncore)
   add_test(NAME core COMMAND test_core)
   set_tests_properties(core PROPERTIES TIMEOUT 60)
+  add_executable(test_fuzz tests/test_fuzz.c)
+  target_link_libraries(test_fuzz tncore)
+  add_test(NAME fuzz COMMAND test_fuzz)
+  # a sanitizer report anywhere fails the test instead of scrolling past
+  set_tests_properties(fuzz PROPERTIES TIMEOUT 240 ENVIRONMENT "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1")
   # Needs a running server; tests/interop.sh starts third-party ones, so it is not a CTest.
   add_executable(test_interop tests/test_interop.c)
   target_link_libraries(test_interop tncore)

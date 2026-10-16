@@ -52,7 +52,8 @@ not certified hardware compatibility. Release gates and remaining checks are in 
   (tier 2), guests over the Warpzone peer channel so nobody forwards ports, the declared
   ranked FFA queue (up to 6), and the built-in updater silent in `.warpzone-managed`
   installs. Descriptor games/gtetrinet-ng.toml in that repo; no free-text player content.
-- [ ] Malformed-message fuzzing and limits for public-facing hosting.
+- [x] Malformed-message fuzzing and limits for public-facing hosting (v0.1.13): per-address
+  waiting cap, query cap, message rate limit, flood/slow-reader drop, tests/test_fuzz.c.
 - [x] IPv6 and asynchronous DNS; avoid blocking the render loop on lookup (v0.1.12).
 
 ## M3 — distribution polish

@@ -354,6 +354,23 @@ void tn_tcp_peer_ipv4(tn_socket s, unsigned char ip[4])
     }
 }
 
+void tn_tcp_peer_key(tn_socket s, unsigned char key[16])
+{
+    struct sockaddr_storage ss;
+    socklen_t len = sizeof ss;
+    memset(key, 0, 16);
+    if (getpeername(s, (struct sockaddr *)&ss, &len) != 0) return;
+    if (ss.ss_family == AF_INET) {
+        key[10] = key[11] = 0xFF;
+        memcpy(key + 12, &((struct sockaddr_in *)&ss)->sin_addr, 4);
+    } else if (ss.ss_family == AF_INET6) {
+        const unsigned char *b = (const unsigned char *)&((struct sockaddr_in6 *)&ss)->sin6_addr;
+        static const unsigned char mapped[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF};
+        /* one host usually owns a whole /64, so that is what counts as one address */
+        memcpy(key, b, memcmp(b, mapped, 12) == 0 ? 16 : 8);
+    }
+}
+
 void tn_tcp_close(tn_socket s)
 {
     if (s != TN_BAD_SOCKET) CLOSESOCK(s);
@@ -372,7 +389,7 @@ static void queue(tn_conn *c, const char *msg, char term)
     if (c->outlen + n + 1 > c->outcap) {
         size_t cap = c->outcap ? c->outcap : 4096;
         while (cap < c->outlen + n + 1) cap *= 2;
-        if (cap > (1u << 22)) { c->dead = 1; snprintf(c->err, sizeof c->err, "send buffer overflow"); return; }
+        if (cap > (c->outmax ? c->outmax : (size_t)1 << 22)) { c->dead = 1; snprintf(c->err, sizeof c->err, "send buffer overflow"); return; }
         char *p = realloc(c->out, cap);
         if (!p) { c->dead = 1; return; }
         c->out = p;

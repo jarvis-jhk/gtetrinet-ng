@@ -243,6 +243,8 @@ static void login(tn_server *s, tn_server_pending *pd, const char *msg)
     tn_server_player *p = &s->p[slot];
     memset(p, 0, sizeof *p);
     p->conn = pd->conn;
+    p->conn.outmax = TN_SERVER_OUT_MAX;
+    p->budget = TN_SERVER_MSG_BURST * 1000;
     p->used = 1;
     p->fast = fast;
     snprintf(p->nick, sizeof p->nick, "%s", nick);
@@ -271,6 +273,12 @@ static void login(tn_server *s, tn_server_pending *pd, const char *msg)
 }
 
 /* the slot number a message names must be the sender's own */
+static int level_arg(const char *s)
+{
+    long v = strtol(s, NULL, 10);
+    return v < 0 ? 0 : v > 100 ? 100 : (int)v;
+}
+
 static int own_slot(const char **rest, int i)
 {
     char w[16];
@@ -327,7 +335,7 @@ static void handle(tn_server *s, int i, const char *msg)
         broadcast(s, i, "sb %d %s %d", atoi(to), id, i);
     } else if (strcmp(cmd, "lvl") == 0) {
         if (!own_slot(&rest, i)) return;
-        p->level = atoi(rest);
+        p->level = level_arg(rest);
         broadcast(s, i, "lvl %d %d", i, p->level);
     } else if (strcmp(cmd, "playerlost") == 0) {
         if (atoi(rest) != i || !p->playing) return;
@@ -347,13 +355,24 @@ void tn_server_update(tn_server *s, int dt_ms)
     for (;;) {
         tn_socket ns = tn_tcp_accept(s->listener);
         if (ns == TN_BAD_SOCKET) break;
-        int k;
-        for (k = 0; k < TN_SERVER_PENDING; k++)
-            if (!s->pending[k].used) break;
-        if (k == TN_SERVER_PENDING) { tn_tcp_close(ns); continue; }
-        tn_conn_init(&s->pending[k].conn, ns);
-        s->pending[k].used = 1;
-        s->pending[k].age_ms = 0;
+        unsigned char addr[16];
+        tn_tcp_peer_key(ns, addr);
+        int k, free_k = -1, same = 0;
+        for (k = 0; k < TN_SERVER_PENDING; k++) {
+            if (!s->pending[k].used) { if (free_k < 0) free_k = k; }
+            else same += memcmp(s->pending[k].addr, addr, sizeof addr) == 0;
+        }
+        if (free_k < 0 || same >= TN_SERVER_PER_ADDR) {
+            slog(s, "connection refused: %s", free_k < 0 ? "too many waiting" : "too many from one address");
+            tn_tcp_close(ns);
+            continue;
+        }
+        tn_server_pending *pd = &s->pending[free_k];
+        tn_conn_init(&pd->conn, ns);
+        pd->conn.outmax = TN_SERVER_OUT_MAX;
+        pd->used = 1;
+        pd->age_ms = pd->queries = 0;
+        memcpy(pd->addr, addr, sizeof addr);
     }
     for (int k = 0; k < TN_SERVER_PENDING; k++) {
         tn_server_pending *pd = &s->pending[k];
@@ -361,7 +380,12 @@ void tn_server_update(tn_server *s, int dt_ms)
         tn_conn_pump(&pd->conn);
         pd->age_ms += dt_ms;
         while (!pd->conn.dead && tn_conn_next(&pd->conn, msg, sizeof msg)) {
-            if (query(s, pd, msg)) { tn_conn_pump(&pd->conn); continue; }
+            if (query(s, pd, msg)) {
+                tn_conn_pump(&pd->conn);
+                if (++pd->queries >= TN_SERVER_QUERIES) pd->age_ms = LOGIN_TIMEOUT_MS + 1;
+                if (pd->queries >= TN_SERVER_QUERIES) break;
+                continue;
+            }
             login(s, pd, msg);
             if (!pd->used) break;             /* became a player */
             tn_conn_pump(&pd->conn);          /* flush the refusal */
@@ -376,8 +400,19 @@ void tn_server_update(tn_server *s, int dt_ms)
     }
     for (int i = 1; i <= TN_MAX_SLOTS; i++) {
         if (!s->p[i].used) continue;
-        tn_conn_pump(&s->p[i].conn);
-        while (s->p[i].used && tn_conn_next(&s->p[i].conn, msg, sizeof msg)) handle(s, i, msg);
+        tn_server_player *p = &s->p[i];
+        tn_conn_pump(&p->conn);
+        p->budget += (dt_ms <= 0 ? 0 : dt_ms > 10000 ? 10000 : dt_ms) * TN_SERVER_MSG_RATE;
+        if (p->budget > TN_SERVER_MSG_BURST * 1000) p->budget = TN_SERVER_MSG_BURST * 1000;
+        while (s->p[i].used && p->budget >= 1000 && tn_conn_next(&p->conn, msg, sizeof msg)) {
+            p->budget -= 1000;
+            handle(s, i, msg);
+        }
+        /* a whole buffer waiting behind the rate limit is no game client, it is a flood */
+        if (p->used && !p->conn.dead && p->conn.inlen == sizeof p->conn.in) {
+            p->conn.dead = 1;
+            snprintf(p->conn.err, sizeof p->conn.err, "flooding");
+        }
     }
     for (int i = 1; i <= TN_MAX_SLOTS; i++) {
         if (!s->p[i].used) continue;

@@ -136,7 +136,12 @@ classic wire protocol.
 LAN server: `bin/gtetrinet-ng-server --port 31457 --slots 6` (Windows: server EXE).
 Our local game hosts on 31457, or a free port if busy; both listen on IPv6 and IPv4. Firewall/router configuration is
 your responsibility. Only use eight slots with clients that support our extension.
-No public-server hardening guarantee is made for this preview.
+Limits for a server on the internet: at most 32 connections waiting to log in (8 from one
+address or IPv6 /64), 15 seconds to log in, 32 query commands per connection; a player's
+messages are read at 100 per second (200 in a burst) and one with 16 KiB waiting is dropped
+as a flood, as is one that stops reading (1 MiB unsent). Every build runs a fuzz test
+(tests/test_fuzz.c) that throws mangled messages at every parser and attacks a live server
+while two players keep playing. That is hardening, not a security audit.
 
 ## Build
 

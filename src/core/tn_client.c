@@ -352,7 +352,10 @@ void tn_client_handle(tn_client *c, const char *msg)
             send_msg(c, "clientinfo %s %s", TN_APP_NAME, TN_VERSION);
             return;
         }
-        if (n >= 1) c->slot[n].level = atoi(rest);
+        if (n >= 1) {
+            long v = strtol(rest, NULL, 10);
+            c->slot[n].level = v < 0 ? 0 : v > 100 ? 100 : (int)v;
+        }
         return;
     }
     if (strcmp(cmd, "gmsg") == 0) {

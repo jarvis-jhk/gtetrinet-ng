@@ -44,6 +44,9 @@ int tn_tcp_port(tn_socket s);
 tn_socket tn_tcp_accept(tn_socket ls);
 /* IPv4 address of the other end (zeros for IPv6 that is not v4-mapped) */
 void tn_tcp_peer_ipv4(tn_socket s, unsigned char ip[4]);
+/* Who is on the other end, for per-address limits: the IPv4 address (v4-mapped), or the /64
+ * prefix of an IPv6 one. All zeros if unknown. */
+void tn_tcp_peer_key(tn_socket s, unsigned char key[16]);
 void tn_tcp_close(tn_socket s);
 
 /* A message connection: buffered, framed with 0xFF (a bare \n is accepted on input too). */
@@ -53,6 +56,7 @@ typedef struct tn_conn {
     size_t inlen;
     char *out;
     size_t outlen, outcap;
+    size_t outmax;      /* queued bytes before the peer counts as dead; 0 = 4 MiB */
     int dead;
     char err[128];
 } tn_conn;
