@@ -53,6 +53,22 @@ class InstallerTests(unittest.TestCase):
                 self.apply(self.archive(True))
             self.assertFalse((Path(tmp) / 'current').exists())
 
+    def test_warpzone_managed_install_never_updates(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(launcher, 'ROOT', Path(tmp)):
+            tree = Path(tmp) / 'v0.0.1'
+            (tree / 'tools/linux').mkdir(parents=True)
+            (tree / 'VERSION').write_text('v0.0.1')
+            self.assertFalse(launcher.warpzone_managed(tree))
+            (Path(tmp) / '.warpzone-managed').write_text('')
+            self.assertTrue(launcher.warpzone_managed(tree))
+            script = str(tree / 'tools/linux/launcher.py')
+            with patch.object(launcher, '__file__', script), patch.object(launcher.sys, 'argv', [script]), \
+                    patch.object(launcher, 'update', side_effect=AssertionError('updated')) as update, \
+                    patch.object(launcher.subprocess, 'call', return_value=0) as call:
+                self.assertEqual(launcher.main(), 0)
+            update.assert_not_called()
+            call.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main()

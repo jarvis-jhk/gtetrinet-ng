@@ -89,11 +89,17 @@ def update(required=False):
     print('Installed ' + tag, flush=True)
 
 
+def warpzone_managed(here):
+    """The Warpzone launcher updates installs it marks; ours then stays out of the way."""
+    return any((d / '.warpzone-managed').exists() for d in (here, here.parent))
+
+
 def main():
     install = '--install' in sys.argv
     here = Path(__file__).resolve().parents[2]
     managed = here.parent == ROOT
-    if install or (managed and os.environ.get('GTN_AUTO_UPDATE') != '0'):
+    checking = managed and os.environ.get('GTN_AUTO_UPDATE') != '0' and not warpzone_managed(here)
+    if install or checking:
         try:
             update(install)
         except Exception as error:

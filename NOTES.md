@@ -22,8 +22,16 @@ TCP ours/silent/closed, close-while-asking, keys, connect+remember, en/de 1280x8
 zero cut text). Negative control with the server's query answers disabled: 4 failures.
 interop.sh queries all three servers (ours 0, tetrinet-server 3, tetrinetx 3). Local Debug
 ctest 11/11, python tests OK, interop (own + tetrinet-server) passed.
-Open: channel choice (/join) belongs to the partyline item; Warpzone rooms are a new
-roadmap item (request t_mvavxtn02aupkt).
+Open: channel choice (/join) belongs to the partyline item.
+
+Warpzone handoff (request t_mvavxtn02aupkt, from the laptop's warpzone work, not Jan):
+descriptor games/gtetrinet-ng.toml in jarvis-jhk/warpzone checked against the v0.1.8
+assets — asset names, SHA256SUMS, exec paths (gtetrinet-ng/gtetrinet-ng.sh, .exe) all
+match; tier 0 is honest (no --warpzone-join/--warpzone-host in the game yet); no [[data]]
+needed; no [steam] URLs because our artwork exists only inside the archive (Warpzone then
+generates it). No PR needed today. launcher.py now skips its update check when the
+install dir or its parent has .warpzone-managed (test_launcher). Integration itself
+(tier 2 rooms via the C API, peer channel, FFA ladder) is a new M2 roadmap item.
 
 ## Current: online interop released as v0.1.8 (item tetrinet-online-interop, done)
 
