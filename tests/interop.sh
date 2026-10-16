@@ -48,7 +48,8 @@ run() {
 }
 
 # the server list's query: EXPECT is gtetrinet-ng-server --query's exit status, 0 when the
-# server answers the query protocol, 3 when it only waits for a login (and must not mind)
+# server answers the query protocol (ours, tetrinetx), 3 when it only waits for a login and
+# must not mind being asked (tetrinet-server)
 query() {
     echo "== query 127.0.0.1:$1 (expect $2)"
     local rc=0
@@ -99,7 +100,7 @@ if [[ $skip != *" tetrinetx "* ]]; then
     # it forks into the background and wants a fully qualified host name
     (cd "$work/tetrinetx/bin" && HOSTNAME=interop.test ./tetrix.linux >/dev/null)
     wait_port 31457
-    query 31457 3
+    query 31457 0
     classic_suite 31457
     kill -0 "$(cat "$work/tetrinetx/bin/game.pid")" || { echo "FAILED: tetrinetx is no longer running"; failed=1; }
 fi

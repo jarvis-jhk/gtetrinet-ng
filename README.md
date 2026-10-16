@@ -48,7 +48,7 @@ sets your nickname.
 
 Playing online: "Play online" lists the servers you played on (up to six, newest first)
 and the public servers tetrinet.de, tetrinet.fr and tetrinet.us. Each is asked in the
-background, with the TetriNET query protocol that tetrinetx-derived servers speak, how
+background, with the TetriNET query protocol that tetrinetx and its descendants speak, how
 many are playing and which channels it has; servers without that protocol show as
 "online" with their response time. A/Enter connects, X/S asks again, Y/N switches
 classic/TetriFast, B goes back. "Type an address..." opens an address entry with a

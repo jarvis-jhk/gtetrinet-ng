@@ -236,7 +236,8 @@ int main(int argc, char **argv)
     stop_session(&a);
     snprintf(a.entry, sizeof a.entry, "%s", shut);
     connect_online(&a);
-    step(&a, 300);
+    /* Windows retries a refused connect for about two seconds */
+    for (int t = 0; t < 6000 && a.screen != SCR_TITLE; t += 20) step(&a, 20);
     CHECK(a.screen == SCR_TITLE);
     gtn_settings_load(&loaded);
     CHECK(!strcmp(loaded.recent[0], ours) && !loaded.recent[1][0] && !strcmp(loaded.host, shut));

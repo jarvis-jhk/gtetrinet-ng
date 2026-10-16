@@ -8,7 +8,8 @@ port (one connection, several commands): "playerquery" -> "Number of players log
 "+OK", all newline-terminated. Checked live 2026-10-16: tetrinet.de (1.13.28a-Sandrini, 31
 channels, incl. "Only TetriFast 1.14" ones — a TetriFast candidate), tetrinet.fr (1.13.2ice,
 44 channels), tetrinet.us (accepts our login, does not answer queries). tetrinetx 1.13.16
-and tetrinet-server 0.11 do not speak it either (wait for a login; neither minds the probe).
+answers too (CI: "1.13.16+qirc-1.40b", one channel #tetrinet); tetrinet-server 0.11 does
+not (waits for a login, does not mind the probe).
 Core: src/core/tn_query.{h,c} (blocking tn_query, parsers, tn_query_split for host[:port]
 and [v6]:port, now also used by connect_online); tn_conn_send_line; tn_server answers
 playerquery/version/listchan/listuser before login and keeps the connection open.
@@ -20,7 +21,9 @@ remembered only once a local client got on it. "Type an address..." = the old SC
 B there returns to the list. tests/test_browser.c (63 checks: parsers, recent list, real
 TCP ours/silent/closed, close-while-asking, keys, connect+remember, en/de 1280x800+800x600
 zero cut text). Negative control with the server's query answers disabled: 4 failures.
-interop.sh queries all three servers (ours 0, tetrinet-server 3, tetrinetx 3). Local Debug
+interop.sh queries all three servers (ours 0, tetrinet-server 3, tetrinetx 0). First CI
+38894329876 on 43ac37c: tetrinetx answered (expectation was wrong) and Windows needs ~2 s
+to refuse a connect, so the failed-connect check now waits up to 6 s. Local Debug
 ctest 11/11, python tests OK, interop (own + tetrinet-server) passed.
 Open: channel choice (/join) belongs to the partyline item.
 
