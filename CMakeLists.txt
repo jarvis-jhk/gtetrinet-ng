@@ -30,6 +30,10 @@ add_library(tncore STATIC
 target_include_directories(tncore PUBLIC src/core ${CMAKE_CURRENT_BINARY_DIR}/generated)
 if(WIN32)
   target_link_libraries(tncore PUBLIC ws2_32)
+else()
+  # the name lookup runs on its own thread (tn_connector)
+  find_package(Threads REQUIRED)
+  target_link_libraries(tncore PUBLIC Threads::Threads)
 endif()
 
 add_executable(gtetrinet-ng-server src/server/main.c)

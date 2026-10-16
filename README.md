@@ -67,7 +67,7 @@ background, with the TetriNET query protocol that tetrinetx and its descendants 
 many are playing and which channels it has; servers without that protocol show as
 "online" with their response time. A/Enter connects, X/S asks again, Y/N switches
 classic/TetriFast, B goes back. "Type an address..." opens an address entry with a
-controller keyboard (`host` or `host:port`). Everybody who joined plays on that server,
+controller keyboard (`host`, `host:port`, or an IPv6 address as `[addr]:port`). Everybody who joined plays on that server,
 each as their own player, in the server's first channel. Our own server answers the
 same queries; `gtetrinet-ng-server --query HOST[:PORT]` shows what a server says.
 
@@ -134,7 +134,7 @@ Aim with the shoulders/Q/E before sending. Colors never change targeting or the
 classic wire protocol.
 
 LAN server: `bin/gtetrinet-ng-server --port 31457 --slots 6` (Windows: server EXE).
-Our local game hosts on 31457, or a free port if busy. Firewall/router configuration is
+Our local game hosts on 31457, or a free port if busy; both listen on IPv6 and IPv4. Firewall/router configuration is
 your responsibility. Only use eight slots with clients that support our extension.
 No public-server hardening guarantee is made for this preview.
 

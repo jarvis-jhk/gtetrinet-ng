@@ -5,15 +5,26 @@
 #include "tn_client.h"
 #include "tn_server.h"
 #include "tn_bot.h"
+#include "tn_query.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef _WIN32
+#include <ws2tcpip.h>
 #include <windows.h>
 static void sleep_ms(int ms) { Sleep((DWORD)ms); }
+static long clock_ms(void) { return (long)GetTickCount(); }
 #else
+#include <netdb.h>
+#include <sys/socket.h>
 #include <time.h>
+static long clock_ms(void)
+{
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (long)(t.tv_sec * 1000 + t.tv_nsec / 1000000);
+}
 static void sleep_ms(int ms)
 {
     struct timespec ts = {0, (long)ms * 1000000L};
@@ -603,6 +614,108 @@ static void test_tn2_network(void)
     CHECK(cl.dark_ms == 0 && cl.confused_ms == 0 && cl.attacks.count == 0);
 }
 
+/* does the resolver give an address of this family for the name? */
+static int resolves_to(const char *host, int family)
+{
+    struct addrinfo hints, *res = NULL;
+    memset(&hints, 0, sizeof hints);
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_family = family;
+    if (getaddrinfo(host, "31457", &hints, &res) != 0 || !res) return 0;
+    freeaddrinfo(res);
+    return 1;
+}
+
+static int connect_one(tn_server *s, tn_client *c, const char *nick, const char *host, int port)
+{
+    tn_client_init(c, nick, "", 5);
+    tn_client_connect(c, host, port, 0);
+    for (int t = 0; t < 400 && c->state != TN_CONNECTED && c->state != TN_FAILED; t++) pump(s, c, 1, 4);
+    if (c->state != TN_CONNECTED) fprintf(stderr, "%s -> %s: %s\n", nick, host, c->err);
+    return c->state == TN_CONNECTED;
+}
+
+static void test_ipv6_and_lookup(void)
+{
+    char err[160] = "", host[160];
+    int port;
+    tn_client c, d;
+
+    /* the address field: [v6]:port, a bare v6 address, host:port */
+    CHECK(tn_query_split("[::1]:31460", host, sizeof host, &port) == 0 && !strcmp(host, "::1") && port == 31460);
+    CHECK(tn_query_split("::1", host, sizeof host, &port) == 0 && !strcmp(host, "::1") && port == TN_PORT);
+    CHECK(tn_query_split("[2001:db8::7]", host, sizeof host, &port) == 0 && !strcmp(host, "2001:db8::7") && port == TN_PORT);
+    CHECK(tn_query_split("tetrinet.example:9000", host, sizeof host, &port) == 0 && port == 9000);
+
+    /* a LAN server takes IPv6 and IPv4 clients on one port */
+    tn_server s;
+    CHECK(tn_server_start(&s, 0, 0, 8, err, sizeof err) == 0);
+    if (!resolves_to("::1", AF_INET6)) {
+        fprintf(stderr, "no IPv6 here: skipping the IPv6 checks\n");
+    } else {
+        CHECK(connect_one(&s, &c, "Six", "::1", s.port));
+        CHECK(connect_one(&s, &d, "Four", "127.0.0.1", s.port));
+        CHECK(c.me >= 1 && d.me >= 1 && c.me != d.me);
+        pump(&s, &c, 1, 40);
+        pump(&s, &d, 1, 40);
+        CHECK(c.slot[d.me].present && d.slot[c.me].present); /* one lobby */
+        tn_client_disconnect(&c);
+        tn_client_disconnect(&d);
+    }
+    tn_server_stop(&s);
+
+    /* an address that refuses is passed over for the next one */
+    CHECK(tn_server_start(&s, 0, 1, 8, err, sizeof err) == 0); /* 127.0.0.1 only */
+    if (resolves_to("localhost", AF_INET6) && resolves_to("localhost", AF_INET)) {
+        tn_net_test_prefer_ipv6 = 1; /* ::1 first, where nobody listens */
+        CHECK(connect_one(&s, &c, "Fallback", "localhost", s.port));
+        tn_client_disconnect(&c);
+        tn_net_test_prefer_ipv6 = 0;
+    } else {
+        fprintf(stderr, "localhost lacks IPv4 or IPv6: skipping the fallback check\n");
+    }
+
+    /* a slow name server holds up nobody: connect and update return at once */
+    tn_net_test_resolve_delay_ms = 1200;
+    long t0 = clock_ms();
+    tn_client_init(&c, "Patient", "", 6);
+    tn_client_connect(&c, "127.0.0.1", s.port, 0);
+    tn_client_update(&c, 2);
+    long spent = clock_ms() - t0;
+    CHECK(spent < 300);
+    CHECK(c.state == TN_CONNECTING && tn_connector_resolving(c.connector));
+    int frames = 0;
+    while (c.state == TN_CONNECTING && clock_ms() - t0 < 5000) {
+        long f0 = clock_ms();
+        tn_server_update(&s, 2);
+        tn_client_update(&c, 2);
+        if (clock_ms() - f0 > 200) { CHECK(!"a frame waited for the lookup"); break; }
+        frames++;
+        sleep_ms(5);
+    }
+    for (int t = 0; t < 200 && c.state != TN_CONNECTED; t++) pump(&s, &c, 1, 4);
+    CHECK(c.state == TN_CONNECTED);
+    CHECK(clock_ms() - t0 >= 1200 && frames > 50);
+    tn_client_disconnect(&c);
+
+    /* backing out mid-lookup: the lookup finishes on its own and frees itself */
+    tn_client_init(&d, "Impatient", "", 7);
+    tn_client_connect(&d, "127.0.0.1", s.port, 0);
+    tn_client_update(&d, 2);
+    tn_client_disconnect(&d);
+    CHECK(d.state == TN_OFFLINE && d.connector == NULL);
+    tn_net_test_resolve_delay_ms = 0;
+    tn_server_stop(&s);
+
+    /* a name that does not exist fails with a message, not a hang */
+    tn_client_init(&d, "Lost", "", 8);
+    tn_client_connect(&d, "no-such-server.invalid", 0, 0);
+    for (int t = 0; t < 3000 && d.state == TN_CONNECTING; t++) { tn_client_update(&d, 2); sleep_ms(2); }
+    CHECK(d.state == TN_FAILED && strstr(d.err, "cannot find server"));
+    tn_client_disconnect(&d);
+    for (int t = 0; t < 150; t++) sleep_ms(10); /* let the abandoned lookup end before the leak check */
+}
+
 int main(void)
 {
     if (tn_net_init() != 0) { fprintf(stderr, "network init failed\n"); return 1; }
@@ -617,6 +730,7 @@ int main(void)
     test_tn2_rules();
     test_tn2_game();
     test_tn2_network();
+    test_ipv6_and_lookup();
     printf("%d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;
 }

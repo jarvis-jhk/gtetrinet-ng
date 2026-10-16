@@ -118,19 +118,20 @@ int tn_query(const char *host, int port, int timeout_ms, tn_query_result *r)
     memset(r, 0, sizeof *r);
     tn_net_init();
     long t0 = now_ms();
-    tn_socket s = tn_tcp_connect(host, port, r->err, sizeof r->err);
-    if (s == TN_BAD_SOCKET) return 0;
+    tn_connector *k = tn_connector_start(host, port);
+    tn_socket s = TN_BAD_SOCKET;
     for (;;) {
-        int st = tn_tcp_connected(s, r->err, sizeof r->err);
+        int st = tn_connector_poll(k, &s, r->err, sizeof r->err);
         if (st > 0) break;
-        if (st < 0) { tn_tcp_close(s); return 0; }
+        if (st < 0) { tn_connector_free(k); return 0; }
         if (now_ms() - t0 > timeout_ms) {
-            snprintf(r->err, sizeof r->err, "no answer");
-            tn_tcp_close(s);
+            snprintf(r->err, sizeof r->err, "%s", tn_connector_resolving(k) ? "cannot find server" : "no answer");
+            tn_connector_free(k);
             return 0;
         }
         nap();
     }
+    tn_connector_free(k);
     r->reachable = 1;
     r->ms = (int)(now_ms() - t0);
     r->err[0] = 0;

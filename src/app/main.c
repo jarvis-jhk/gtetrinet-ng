@@ -131,6 +131,7 @@ static int connected_any(gtn_app *a)
 static void connect_player(gtn_app *a, int i)
 {
     gtn_local *p = &a->pl[i];
+    tn_connector_free(p->client.connector); /* NULL unless a lookup is still running */
     tn_client_init(&p->client, p->nick, "", (uint32_t)time(NULL) * 2654435761u + (uint32_t)i * 7919u);
     tn_client_connect(&p->client, a->host, a->port, a->fast);
     p->target = 0;

@@ -18,12 +18,27 @@ typedef int tn_socket;
 
 int tn_net_init(void);
 
-/* Resolves (blocking) and starts a non-blocking connect, preferring IPv4 because the login
- * obfuscation needs the server's IPv4 address. */
-tn_socket tn_tcp_connect(const char *host, int port, char *err, size_t errsz);
+/* An outgoing connection that never blocks the caller: the name lookup runs on its own
+ * thread, then every address is tried in turn (IPv4 first, because the classic login
+ * obfuscation needs the server's IPv4 address; IPv6 after that). */
+typedef struct tn_connector tn_connector;
+/* NULL only when out of memory. */
+tn_connector *tn_connector_start(const char *host, int port);
+/* 1 connected (*out is the socket, now owned by the caller), 0 still busy, -1 failed (err). */
+int tn_connector_poll(tn_connector *c, tn_socket *out, char *err, size_t errsz);
+/* 1 while the name lookup has not answered yet */
+int tn_connector_resolving(const tn_connector *c);
+/* Gives up at any point; a lookup still running finishes and frees itself. */
+void tn_connector_free(tn_connector *c);
+/* Tests only: every lookup sleeps this long first, as a slow DNS server would. */
+extern int tn_net_test_resolve_delay_ms;
+/* Tests only: try IPv6 addresses before IPv4 ones. */
+extern int tn_net_test_prefer_ipv6;
+
 /* 1 connected, 0 still connecting, -1 failed */
 int tn_tcp_connected(tn_socket s, char *err, size_t errsz);
-/* loopback_only: bind 127.0.0.1 instead of every interface. port 0 picks a free one. */
+/* loopback_only: bind 127.0.0.1 instead of every interface (IPv6 and IPv4 where the system
+ * has IPv6, else IPv4). port 0 picks a free one. */
 tn_socket tn_tcp_listen(int port, int loopback_only, char *err, size_t errsz);
 int tn_tcp_port(tn_socket s);
 tn_socket tn_tcp_accept(tn_socket ls);

@@ -124,6 +124,7 @@ static const char *const strings[][GTN_LANG_COUNT] = {
     {"D-pad/A: type   X: delete   Start/GO/Enter: connect   B/Esc: back",
      "Kreuz/A: tippen   X: löschen   Start/LOS/Enter: verbinden   B/Esc: zurück"},
     {"Connecting to %s ...", "Verbinde mit %s ..."},
+    {"Looking up %s ...", "Suche %s ..."},
     {"the game on this machine", "dem Spiel auf diesem Gerät"},
     {"B: cancel", "B: abbrechen"},
     /* lobby */

@@ -63,6 +63,7 @@ typedef struct tn_client {
     int fast;                       /* tetrifast mode */
     char nick[TN_NICK_MAX], team[TN_TEAM_MAX];
     tn_conn conn;
+    tn_connector *connector; /* while TN_CONNECTING: the lookup and connect attempts */
 
     int me;                         /* our slot, 0 until the server said */
     tn_slot slot[TN_MAX_SLOTS + 1]; /* index 1..TN_MAX_SLOTS */

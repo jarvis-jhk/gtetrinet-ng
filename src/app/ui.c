@@ -372,7 +372,13 @@ static void draw_connecting(gtn_app *a)
 {
     int s = ts(a);
     char buf[200];
-    snprintf(buf, sizeof buf, gtn_tr("Connecting to %s ..."), a->hosting ? gtn_tr("the game on this machine") : a->host);
+    int looking = 0;
+    for (int i = 0; i < GTN_MAX_LOCAL; i++)
+        looking |= a->pl[i].active && tn_connector_resolving(a->pl[i].client.connector);
+    if (looking && !a->hosting)
+        snprintf(buf, sizeof buf, gtn_tr("Looking up %s ..."), a->host);
+    else
+        snprintf(buf, sizeof buf, gtn_tr("Connecting to %s ..."), a->hosting ? gtn_tr("the game on this machine") : a->host);
     gtn_text_center_fit(a->w / 2, a->h / 2 - 10 * s, 2 * s, a->w - 32, TEXT, buf);
     status_line(a);
     hints(a, gtn_tr("B: cancel"));

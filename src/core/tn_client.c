@@ -69,9 +69,8 @@ void tn_client_connect(tn_client *c, const char *host, int port, int fast)
     c->port = port ? port : TN_PORT;
     c->fast = fast;
     c->err[0] = 0;
-    tn_socket s = tn_tcp_connect(host, c->port, c->err, sizeof c->err);
-    if (s == TN_BAD_SOCKET) { c->state = TN_FAILED; return; }
-    tn_conn_init(&c->conn, s);
+    c->connector = tn_connector_start(host, c->port);
+    if (!c->connector) { snprintf(c->err, sizeof c->err, "out of memory"); c->state = TN_FAILED; return; }
     c->state = TN_CONNECTING;
 }
 
@@ -84,6 +83,8 @@ static void reset_lobby(tn_client *c)
 
 void tn_client_disconnect(tn_client *c)
 {
+    tn_connector_free(c->connector);
+    c->connector = NULL;
     if (c->conn.sock != TN_BAD_SOCKET) tn_conn_close(&c->conn);
     if (c->state != TN_FAILED) c->state = TN_OFFLINE;
     reset_lobby(c);
@@ -429,9 +430,15 @@ void tn_client_update(tn_client *c, int dt_ms)
 {
     char msg[TN_MSG_MAX];
     if (c->state == TN_CONNECTING) {
-        int r = tn_tcp_connected(c->conn.sock, c->err, sizeof c->err);
-        if (r < 0) { tn_conn_close(&c->conn); c->state = TN_FAILED; return; }
+        tn_socket s = TN_BAD_SOCKET;
+        int r = tn_connector_poll(c->connector, &s, c->err, sizeof c->err);
+        if (r != 0) {
+            tn_connector_free(c->connector);
+            c->connector = NULL;
+        }
+        if (r < 0) { c->state = TN_FAILED; return; }
         if (r == 1) {
+            tn_conn_init(&c->conn, s);
             unsigned char ip[4];
             char login[128], enc[512];
             tn_tcp_peer_ipv4(c->conn.sock, ip);

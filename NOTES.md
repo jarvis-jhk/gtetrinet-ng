@@ -1,6 +1,25 @@
 # Running state — 2026-10-16
 
-## Current: TetriNET 2 rules released as v0.1.11 (item tetrinet-tetrinet-2-parity, done)
+## Current: IPv6 and asynchronous DNS (item tetrinet-ipv6-async-dns)
+
+Opus filler t_mvb2e9jz4tzqwa. Goal: a released build connects by IPv6 address/hostname
+([v6]:port), the LAN server accepts IPv6 clients, a slow lookup no longer freezes the screen.
+tn_net: tn_tcp_connect (blocking getaddrinfo, first address only) replaced by tn_connector:
+getaddrinfo(AF_UNSPEC) on a detached pthread/CreateThread job with an atomic refcount (the
+client can give up mid-lookup, the job frees itself), then every address in turn, IPv4 first
+(classic login obfuscation keys on the server's IPv4; IPv6 peers get zeros, which our server
+decodes anyway - it brute-forces the key), 3 s per address while more remain. No thread ->
+synchronous fallback. tn_query uses it too. tn_tcp_listen: non-loopback binds a dual-stack
+:: socket (IPV6_V6ONLY=0, Windows defaults to 1), IPv4 fallback; embedded/--local stay on
+127.0.0.1. Connecting screen says "Looking up %s ..." (de: "Suche %s ...") while resolving.
+Test hooks tn_net_test_resolve_delay_ms / tn_net_test_prefer_ipv6; test_core
+test_ipv6_and_lookup (split forms, ::1 + 127.0.0.1 in one lobby, ::1-refused -> v4 fallback,
+1.2 s delayed lookup with no frame >200 ms, cancel mid-lookup, .invalid fails). Negative
+controls: synchronous lookup fails 3 checks, no fallback fails 1. Debug+ASan/UBSan ctest
+11/11, python tests OK, MinGW test_core.exe builds. tetrinet.fr has AAAA 2001:41d0:8:6717::3 (de/us IPv4 only); the container has no IPv6 egress,
+so a real internet IPv6 game is untested here - open for Jan on an IPv6 network.
+
+## Earlier: TetriNET 2 rules released as v0.1.11 (item tetrinet-tetrinet-2-parity, done)
 
 Opus filler t_mvb097po3u2yg7. Goal: docs/TN2-PARITY.md lists TN2 features with status and
 priority, and a released local game can switch on TN2 rules (hold + Immunity, Clear Column,

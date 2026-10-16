@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.12 — 2026-10-16
+
+IPv6. You can type an IPv6 address in "Type an address..." (`[2001:db8::7]:31457`, or a
+bare address for the usual port), and server names that only have an IPv6 address work
+too. When a name has several addresses, the next one is tried if one does not answer
+(IPv4 first, because classic servers check the login against their IPv4 address). A LAN
+server (`gtetrinet-ng-server`, or a game hosted here) now takes IPv6 players as well as
+IPv4 ones on the same port. Looking up a server name no longer freezes the screen: the
+connecting screen says "Looking up ..." until the name server answers, and B cancels it.
+
 ## 0.1.11 — 2026-10-16
 
 TetriNET 2 rules. Options → Rules for games here → TetriNET 2 gives games on this machine

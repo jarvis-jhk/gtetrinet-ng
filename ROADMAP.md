@@ -53,7 +53,7 @@ not certified hardware compatibility. Release gates and remaining checks are in 
   ranked FFA queue (up to 6), and the built-in updater silent in `.warpzone-managed`
   installs. Descriptor games/gtetrinet-ng.toml in that repo; no free-text player content.
 - [ ] Malformed-message fuzzing and limits for public-facing hosting.
-- [ ] IPv6 and asynchronous DNS; avoid blocking the render loop on lookup.
+- [x] IPv6 and asynchronous DNS; avoid blocking the render loop on lookup (v0.1.12).
 
 ## M3 — distribution polish
 
