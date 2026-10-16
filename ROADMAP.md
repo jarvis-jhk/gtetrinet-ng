@@ -25,7 +25,9 @@ not certified hardware compatibility. Release gates and remaining checks are in 
     entry and real TCP/input timing tests.
   - [x] Shared in-game controller button layout (eight actions over Up/A/B/X/Y/LB/RB/Back,
     swap-on-conflict, saved, Options → Controller buttons) with real TCP play tests;
-    per-player layouts, keyboard remapping, nicknames and typography remain open.
+    per-player layouts, keyboard remapping and typography remain open.
+  - [x] Nickname editing per seat (title screen Y/N, on-screen keyboard or typing, one word
+    up to 15 characters, saved per seat, used in the lobby and online) with real TCP tests.
 - [ ] Sound, haptics and offline bot opponents selectable in the lobby.
 
 ## M2 — online interoperability

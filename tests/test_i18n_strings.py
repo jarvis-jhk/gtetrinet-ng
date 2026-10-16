@@ -64,7 +64,7 @@ class TranslationTable(unittest.TestCase):
             for lit in LITERAL.findall(text):
                 with self.subTest(file=name, literal=lit):
                     # proper names, protocol words and key labels translated where drawn
-                    self.assertTrue(lit in {'GTetrinet NG', 'TetriFast', 'DEL GO', 'LB/RB'}
+                    self.assertTrue(lit in {'GTetrinet NG', 'TetriFast', 'DEL GO', 'Aa DEL OK', 'LB/RB'}
                                     or not re.search(r'[A-Za-z]{2}', lit), lit)
 
 

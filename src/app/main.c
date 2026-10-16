@@ -110,6 +110,10 @@ static int back_held[GTN_MAX_LOCAL];
 
 static void local_nick(gtn_app *a, int idx, char *out, size_t n)
 {
+    if (idx > 0 && idx < GTN_SEATS && a->settings.seat_nick[idx][0]) {
+        snprintf(out, n, "%s", a->settings.seat_nick[idx]);
+        return;
+    }
     int k = 0;
     for (int i = 0; i < idx; i++) k += a->pl[i].active;
     if (k == 0) snprintf(out, n, "%s", a->settings.nick);
@@ -256,8 +260,58 @@ static void online_key(gtn_app *a, const char *key)
     else gtn_text_input(a, key);
 }
 
+/* ---------------------------------------------------------------- names */
+
+static void open_name(gtn_app *a, int who)
+{
+    a->name_who = who;
+    gtn_nick_clean(a->entry, sizeof a->entry, a->pl[who].nick);
+    a->osk_row = a->osk_col = 0;
+    a->osk_shift = 0;
+    a->screen = SCR_NAME;
+    SDL_StartTextInput();
+}
+
+static void save_name(gtn_app *a)
+{
+    char name[GTN_NAME_MAX];
+    int who = a->name_who;
+    if (!gtn_nick_clean(name, sizeof name, a->entry)) {
+        gtn_set_status(a, "%s", gtn_tr("A name needs at least one letter or digit"));
+        return;
+    }
+    for (int i = 0; i < GTN_MAX_LOCAL; i++)
+        if (i != who && a->pl[i].active && !strcmp(a->pl[i].nick, name)) {
+            gtn_set_status(a, gtn_tr("%s is already playing here"), name);
+            return;
+        }
+    if (who == 0) snprintf(a->settings.nick, sizeof a->settings.nick, "%s", name);
+    else snprintf(a->settings.seat_nick[who], sizeof a->settings.seat_nick[who], "%s", name);
+    /* Seats still on their default name follow P1's new one. */
+    for (int i = 0; i < GTN_MAX_LOCAL; i++) {
+        gtn_local *p = &a->pl[i];
+        if (!p->active) continue;
+        if (i == who) snprintf(p->nick, sizeof p->nick, "%s", name);
+        else if (!a->settings.seat_nick[i][0]) local_nick(a, i, p->nick, sizeof p->nick);
+        tn_client_init(&p->client, p->nick, "", 1);
+    }
+    if (gtn_settings_save(&a->settings) != 0)
+        gtn_set_status(a, "%s", gtn_tr("The name works for this run, but could not be saved"));
+    SDL_StopTextInput();
+    a->screen = SCR_TITLE;
+}
+
 void gtn_text_input(gtn_app *a, const char *t)
 {
+    if (a->screen == SCR_NAME) {
+        size_t n = strlen(a->entry);
+        if (!strcmp(t, "\b")) { if (n) a->entry[n - 1] = 0; return; }
+        if (!strcmp(t, "\n")) { save_name(a); return; }
+        for (; *t && n + 1 < GTN_NAME_MAX; t++)
+            if ((unsigned char)*t > ' ' && (unsigned char)*t < 127) a->entry[n++] = *t;
+        a->entry[n] = 0;
+        return;
+    }
     if (a->screen != SCR_ONLINE) return;
     size_t n = strlen(a->entry);
     if (!strcmp(t, "\b")) { if (n) a->entry[n - 1] = 0; return; }
@@ -273,6 +327,7 @@ static void title_button(gtn_app *a, int who, enum gtn_btn b)
     case BTN_UP: a->menu_sel = (a->menu_sel + MENU_COUNT - 1) % MENU_COUNT; break;
     case BTN_DOWN: a->menu_sel = (a->menu_sel + 1) % MENU_COUNT; break;
     case BTN_B: leave_local(a, who); break;
+    case BTN_Y: open_name(a, who); break;
     case BTN_A:
     case BTN_START:
         switch (a->menu_sel) {
@@ -291,40 +346,70 @@ static void title_button(gtn_app *a, int who, enum gtn_btn b)
     }
 }
 
-static void online_button(gtn_app *a, enum gtn_btn b)
+static int osk_cols(const char *row)
 {
-    int rows = gtn_osk_nrows();
+    char key[8];
+    int n = 0;
+    for (const char *q = row; *q; ) { q = tn_word(q, key, sizeof key); n++; }
+    return n;
+}
+
+/* Moves over an on-screen keyboard given as space-separated rows; on A copies the chosen
+ * key to key and returns 1. */
+static int osk_button(gtn_app *a, const char *const *rows, int nrows, enum gtn_btn b, char *key, size_t n)
+{
+    int pressed = 0;
     switch (b) {
-    case BTN_UP: a->osk_row = (a->osk_row + rows - 1) % rows; break;
-    case BTN_DOWN: a->osk_row = (a->osk_row + 1) % rows; break;
+    case BTN_UP: a->osk_row = (a->osk_row + nrows - 1) % nrows; break;
+    case BTN_DOWN: a->osk_row = (a->osk_row + 1) % nrows; break;
     case BTN_LEFT: a->osk_col--; break;
     case BTN_RIGHT: a->osk_col++; break;
-    case BTN_A: {
-        /* the row is a space-separated list of keys */
-        char key[8];
-        const char *s = gtn_osk_rows[a->osk_row];
-        int col = 0, ncols = 0;
-        for (const char *q = s; *q; ) { q = tn_word(q, key, sizeof key); ncols++; }
-        if (a->osk_col < 0) a->osk_col = ncols - 1;
-        if (a->osk_col >= ncols) a->osk_col = 0;
-        for (const char *q = s; *q; col++) {
-            q = tn_word(q, key, sizeof key);
-            if (col == a->osk_col) { online_key(a, key); break; }
-        }
-        break;
+    case BTN_A: pressed = 1; break;
+    default: break;
     }
+    /* keep the column inside the row after moving */
+    int ncols = osk_cols(rows[a->osk_row]);
+    if (a->osk_col < 0) a->osk_col = ncols - 1;
+    if (a->osk_col >= ncols) a->osk_col = 0;
+    if (!pressed) return 0;
+    const char *q = rows[a->osk_row];
+    for (int col = 0; col <= a->osk_col; col++) q = tn_word(q, key, n);
+    return 1;
+}
+
+static void online_button(gtn_app *a, enum gtn_btn b)
+{
+    char key[8];
+    if (osk_button(a, gtn_osk_rows, gtn_osk_nrows(), b, key, sizeof key)) { online_key(a, key); return; }
+    switch (b) {
     case BTN_X: gtn_text_input(a, "\b"); break;
     case BTN_Y: a->settings.fast = !a->settings.fast; break;
     case BTN_START: gtn_text_input(a, "\n"); break;
     case BTN_B: SDL_StopTextInput(); a->screen = SCR_TITLE; break;
     default: break;
     }
-    /* keep the column inside the row after moving */
+}
+
+static void name_button(gtn_app *a, enum gtn_btn b)
+{
     char key[8];
-    int ncols = 0;
-    for (const char *q = gtn_osk_rows[a->osk_row]; *q; ) { q = tn_word(q, key, sizeof key); ncols++; }
-    if (a->osk_col < 0) a->osk_col = ncols - 1;
-    if (a->osk_col >= ncols) a->osk_col = 0;
+    if (osk_button(a, gtn_name_rows, gtn_name_nrows(), b, key, sizeof key)) {
+        if (!strcmp(key, "DEL")) gtn_text_input(a, "\b");
+        else if (!strcmp(key, "OK")) gtn_text_input(a, "\n");
+        else if (!strcmp(key, "Aa")) a->osk_shift = !a->osk_shift;
+        else {
+            if (a->osk_shift && key[0] >= 'a' && key[0] <= 'z') key[0] = (char)(key[0] - 'a' + 'A');
+            gtn_text_input(a, key);
+        }
+        return;
+    }
+    switch (b) {
+    case BTN_X: gtn_text_input(a, "\b"); break;
+    case BTN_Y: a->osk_shift = !a->osk_shift; break;
+    case BTN_START: gtn_text_input(a, "\n"); break;
+    case BTN_B: SDL_StopTextInput(); a->screen = SCR_TITLE; break;
+    default: break;
+    }
 }
 
 static void lobby_button(gtn_app *a, int who, enum gtn_btn b)
@@ -466,6 +551,14 @@ void gtn_button(gtn_app *a, int who, enum gtn_dev dev, SDL_JoystickID pad, enum 
     }
     if (a->screen == SCR_CONTROLS) {
         if (down) controls_button(a, dev, b);
+        return;
+    }
+    /* Only the player being named types; the keyboard can always help, and anyone may
+     * close the screen when that player's controller is gone. */
+    if (a->screen == SCR_NAME) {
+        const gtn_local *p = &a->pl[a->name_who];
+        int lost = !p->active || (p->dev == DEV_PAD && p->pad < 0);
+        if (down && (who == a->name_who || dev == DEV_KEYBOARD || (lost && b == BTN_B))) name_button(a, b);
         return;
     }
     if (a->screen == SCR_TITLE && down && b == BTN_X) {

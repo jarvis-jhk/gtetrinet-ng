@@ -30,7 +30,7 @@ typedef struct gtn_local {
     int nick_tries;
 } gtn_local;
 
-enum gtn_screen { SCR_TITLE, SCR_ONLINE, SCR_CONNECTING, SCR_LOBBY, SCR_GAME, SCR_NEWS, SCR_INPUT, SCR_CONTROLS };
+enum gtn_screen { SCR_TITLE, SCR_ONLINE, SCR_CONNECTING, SCR_LOBBY, SCR_GAME, SCR_NEWS, SCR_INPUT, SCR_CONTROLS, SCR_NAME };
 
 typedef struct gtn_app {
     SDL_Window *win;
@@ -55,6 +55,8 @@ typedef struct gtn_app {
     /* online screen: text entry with an on-screen keyboard for controllers */
     char entry[128];
     int osk_row, osk_col;
+    int name_who;            /* name screen: the local player whose name is being typed */
+    int osk_shift;           /* name screen: letters on the on-screen keyboard are capitals */
 
     char news[16384];        /* changelog text shown on the news screen */
     int news_scroll;
@@ -83,5 +85,7 @@ void gtn_draw(gtn_app *a);
 void gtn_logo_at(gtn_app *a, int y, int scale);
 extern const char *const gtn_osk_rows[];
 int gtn_osk_nrows(void);
+extern const char *const gtn_name_rows[];
+int gtn_name_nrows(void);
 
 #endif

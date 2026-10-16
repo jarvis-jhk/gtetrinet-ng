@@ -6,6 +6,8 @@
 #ifndef GTN_SETTINGS_H
 #define GTN_SETTINGS_H
 
+#include <stddef.h>
+
 /* Every device speaks in these, keyboard included. */
 enum gtn_btn {
     BTN_UP, BTN_DOWN, BTN_LEFT, BTN_RIGHT,
@@ -20,11 +22,17 @@ enum gtn_pad_action {
     PAD_TARGET_PREV, PAD_TARGET_NEXT, PAD_DISCARD, PAD_ACTIONS
 };
 
+/* Local seats P1..P8 and how long a name typed in the game may be (classic servers show
+ * about this much, and it fits a player card). */
+#define GTN_SEATS 8
+#define GTN_NAME_MAX 16
+
 enum gtn_repeat_profile { REPEAT_NORMAL, REPEAT_RELAXED, REPEAT_FAST, REPEAT_COUNT };
 
 typedef struct gtn_settings {
     char host[128];          /* last online server */
-    char nick[64];           /* base nickname; local players 2.. get a number appended */
+    char nick[64];           /* P1's name, and the base other seats append a number to */
+    char seat_nick[GTN_SEATS][GTN_NAME_MAX]; /* names chosen for P2..P8; [0] unused, "" = default */
     char last_version[32];   /* version whose changelog was last shown */
     int fast;                /* tetrifast login for online servers */
     int repeat_profile;      /* shared by keyboard and controllers */
@@ -38,6 +46,9 @@ void gtn_settings_load(gtn_settings *s);
 /* Returns zero when persisted, -1 after forwarding a real write failure to the fault relay. */
 int gtn_settings_save(const gtn_settings *s);
 const char *gtn_repeat_name(int profile);
+/* A TetriNET name is one word: copies the printable ASCII of in, without spaces, at most
+ * GTN_NAME_MAX - 1 characters. Returns its length; zero means no usable name. */
+int gtn_nick_clean(char *out, size_t n, const char *in);
 int gtn_repeat_delay(int profile);
 int gtn_repeat_interval(int profile);
 

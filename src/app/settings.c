@@ -16,6 +16,15 @@ static int repeat_index(int profile)
     return profile >= 0 && profile < REPEAT_COUNT ? profile : REPEAT_NORMAL;
 }
 
+int gtn_nick_clean(char *out, size_t n, const char *in)
+{
+    size_t k = 0;
+    for (; in && *in && k + 1 < n && k + 1 < GTN_NAME_MAX; in++)
+        if ((unsigned char)*in > ' ' && (unsigned char)*in < 127) out[k++] = *in;
+    if (n) out[k] = 0;
+    return (int)k;
+}
+
 const char *gtn_repeat_name(int profile)
 {
     static const char *const names[] = {N_("Normal"), N_("Relaxed"), N_("Fast")};
@@ -169,6 +178,8 @@ void gtn_settings_load(gtn_settings *s)
             s->repeat_profile = !strcmp(v, "1") ? REPEAT_RELAXED : !strcmp(v, "2") ? REPEAT_FAST : REPEAT_NORMAL;
         else if (!strcmp(k, "lang")) s->lang = gtn_lang_parse(v);
         else if (!strcmp(k, "pad")) parse_pad(s->pad_map, v);
+        else if (!strncmp(k, "nick", 4) && k[4] >= '2' && k[4] <= '0' + GTN_SEATS && !k[5])
+            gtn_nick_clean(s->seat_nick[k[4] - '1'], sizeof s->seat_nick[0], v);
     }
     fclose(f);
 }
@@ -188,6 +199,8 @@ int gtn_settings_save(const gtn_settings *s)
         snprintf(padline + strlen(padline), sizeof padline - strlen(padline), "%s%s", i ? "," : "", btn_names[pad[i]]);
     int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\nlang=%s\npad=%s\n",
             s->host, s->nick, s->last_version, s->fast, repeat_index(s->repeat_profile), gtn_lang_code(s->lang), padline);
+    for (int i = 1; i < GTN_SEATS && written >= 0; i++)
+        if (s->seat_nick[i][0]) written = fprintf(f, "nick%d=%s\n", i + 1, s->seat_nick[i]);
     int closed = fclose(f);
     if (written < 0 || closed != 0) {
         remove(tmp);

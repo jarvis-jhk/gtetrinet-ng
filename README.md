@@ -44,6 +44,12 @@ Keyboard: arrows move/rotate, Space drops, X rotates clockwise / Z counterclockw
 changes target, 1–8 uses it on a numbered player, D discards, P pauses. Online entry has
 a controller keyboard. Choose TetriFast with Y. `--nick Name` sets your nickname.
 
+Names: after joining, press Y on your controller (N on the keyboard) on the title screen
+to type your name with the on-screen keyboard (Y switches capitals, X deletes, Start
+saves, B cancels); a keyboard can type directly. A name is one word of up to 15
+characters and is saved for that seat (P1–P8), so it comes back the next time someone
+joins there. Seats without their own name use P1's name with a number.
+
 On the title screen, controller X or keyboard S opens Options, even before joining.
 Up/Down picks a row; Left/Right or A changes it, Y restores its default and
 B/Esc/Start returns. Both choices are saved; a failed save shows a warning and keeps

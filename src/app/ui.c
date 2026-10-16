@@ -19,6 +19,16 @@ const char *const gtn_osk_rows[] = {
 };
 int gtn_osk_nrows(void) { return (int)(sizeof gtn_osk_rows / sizeof *gtn_osk_rows); }
 
+/* Names are one word, so there is no space key; Aa switches to capitals. */
+const char *const gtn_name_rows[] = {
+    "1 2 3 4 5 6 7 8 9 0",
+    "q w e r t y u i o p",
+    "a s d f g h j k l _",
+    "z x c v b n m . - !",
+    "Aa DEL OK",
+};
+int gtn_name_nrows(void) { return (int)(sizeof gtn_name_rows / sizeof *gtn_name_rows); }
+
 static gtn_color BG = {0x0b, 0x0d, 0x14, 255};
 static gtn_color PANEL = {0x16, 0x19, 0x24, 255};
 static gtn_color TEXT = {0xe6, 0xe8, 0xf0, 255};
@@ -125,6 +135,8 @@ static void draw_title(gtn_app *a)
     }
     if (gtn_local_count(a) == 0)
         gtn_text_center_fit(a->w / 2, y + 6 * s, s, a->w - 32, ACCENT, gtn_tr("Everyone who wants to play: press A on your controller (or Enter)"));
+    else
+        gtn_text_center_fit(a->w / 2, y + 6 * s, s, a->w - 32, MUTED, gtn_tr("Your name: press Y on your controller (or N on the keyboard)"));
     hints(a, gtn_tr("A/Enter: join / choose   B: leave   Up/Down: menu   X/S: options"));
 }
 
@@ -210,6 +222,49 @@ static void draw_controls(gtn_app *a)
                                  : gtn_tr("Up/Down: choose   A: new button   Y: all standard   B/Start: back"));
 }
 
+/* Draws the keys from y down and returns the y below the last row. */
+static int draw_osk(gtn_app *a, const char *const *rows, int nrows, int ky, int shift)
+{
+    int s = ts(a), kh = 30 * s;
+    for (int r = 0; r < nrows; r++) {
+        char key[8];
+        int n = 0;
+        for (const char *q = rows[r]; *q; ) { q = tn_word(q, key, sizeof key); n++; }
+        int kw = r == nrows - 1 ? 80 * s : 34 * s;
+        int x = (a->w - n * (kw + 4 * s)) / 2, col = 0;
+        for (const char *q = rows[r]; *q; col++) {
+            q = tn_word(q, key, sizeof key);
+            int sel = r == a->osk_row && col == a->osk_col;
+            if (shift && !key[1] && key[0] >= 'a' && key[0] <= 'z') key[0] = (char)(key[0] - 'a' + 'A');
+            gtn_fill(x, ky, kw, kh, sel ? gtn_rgb(0x3a, 0x44, 0x6a) : PANEL);
+            if (sel) gtn_frame(x, ky, kw, kh, s, ACCENT);
+            gtn_text_center(x + kw / 2, ky + kh / 2 - 8 * s, 2 * s, sel ? ACCENT : TEXT, gtn_tr(key));
+            x += kw + 4 * s;
+        }
+        ky += kh + 4 * s;
+    }
+    return ky;
+}
+
+static void draw_name(gtn_app *a)
+{
+    int s = ts(a), who = a->name_who;
+    char buf[160];
+    snprintf(buf, sizeof buf, gtn_tr("Name for P%d"), who + 1);
+    gtn_text_center_fit(a->w / 2, a->h / 10, 3 * s, a->w - 32, gtn_player_color(who), buf);
+    gtn_text_center_fit(a->w / 2, a->h / 10 + 36 * s, s, a->w - 32, MUTED,
+                        gtn_tr("Everyone sees it, online too. One word, at most 15 characters."));
+    int bw = a->w / 2, bx = (a->w - bw) / 2, by = a->h / 10 + 56 * s;
+    gtn_fill(bx, by, bw, 28 * s, PANEL);
+    gtn_frame(bx, by, bw, 28 * s, s, gtn_player_color(who));
+    snprintf(buf, sizeof buf, "%s_", a->entry);
+    gtn_text_fit(bx + 8 * s, by + 6 * s, 2 * s, bw - 16 * s, TEXT, buf);
+    int ky = draw_osk(a, gtn_name_rows, gtn_name_nrows(), by + 50 * s, a->osk_shift);
+    gtn_text_center_fit(a->w / 2, ky + 12 * s, s, a->w - 32, MUTED, gtn_tr("Saved for this seat; the next game uses it."));
+    status_line(a);
+    hints(a, gtn_tr("D-pad/A: type   X: delete   Y: Aa   Start: save   B: back"));
+}
+
 static void draw_online(gtn_app *a)
 {
     int s = ts(a);
@@ -222,23 +277,7 @@ static void draw_online(gtn_app *a)
     snprintf(buf, sizeof buf, "%s_", a->entry);
     gtn_text_fit(bx + 8 * s, by + 6 * s, 2 * s, bw - 16 * s, TEXT, buf);
 
-    int ky = by + 50 * s, kh = 30 * s;
-    for (int r = 0; r < gtn_osk_nrows(); r++) {
-        char key[8];
-        int n = 0;
-        for (const char *q = gtn_osk_rows[r]; *q; ) { q = tn_word(q, key, sizeof key); n++; }
-        int kw = r == gtn_osk_nrows() - 1 ? 80 * s : 34 * s;
-        int x = (a->w - n * (kw + 4 * s)) / 2, col = 0;
-        for (const char *q = gtn_osk_rows[r]; *q; col++) {
-            q = tn_word(q, key, sizeof key);
-            int sel = r == a->osk_row && col == a->osk_col;
-            gtn_fill(x, ky, kw, kh, sel ? gtn_rgb(0x3a, 0x44, 0x6a) : PANEL);
-            if (sel) gtn_frame(x, ky, kw, kh, s, ACCENT);
-            gtn_text_center(x + kw / 2, ky + kh / 2 - 8 * s, 2 * s, sel ? ACCENT : TEXT, gtn_tr(key));
-            x += kw + 4 * s;
-        }
-        ky += kh + 4 * s;
-    }
+    int ky = draw_osk(a, gtn_osk_rows, gtn_osk_nrows(), by + 50 * s, 0);
     snprintf(buf, sizeof buf, gtn_tr("Mode: %s (Y to change)"), a->settings.fast ? "TetriFast" : gtn_tr("classic TetriNET"));
     gtn_text_center_fit(a->w / 2, ky + 12 * s, s, a->w - 32, MUTED, buf);
     gtn_text_center_fit(a->w / 2, ky + 28 * s, s, a->w - 32, MUTED, gtn_tr("Everybody who joined plays on that server, each as their own player."));
@@ -531,5 +570,6 @@ void gtn_draw(gtn_app *a)
     case SCR_NEWS: draw_news(a); break;
     case SCR_INPUT: draw_input_options(a); break;
     case SCR_CONTROLS: draw_controls(a); break;
+    case SCR_NAME: draw_name(a); break;
     }
 }

@@ -50,6 +50,7 @@ static int key_button(SDL_Keycode k, int in_game)
     case SDLK_TAB: case SDLK_e: return BTN_RB;
     case SDLK_q: return BTN_LB;
     case SDLK_d: return BTN_BACK;
+    case SDLK_n: return in_game ? -1 : BTN_Y; /* in a game the number keys pick specials */
     case SDLK_RETURN: case SDLK_KP_ENTER: return in_game ? BTN_START : BTN_A;
     case SDLK_p: return BTN_START;
     case SDLK_ESCAPE: return BTN_B;
@@ -102,17 +103,18 @@ static void stick(gtn_app *a, SDL_JoystickID pad, int axis, int v)
 void gtn_input_event(gtn_app *a, const SDL_Event *e)
 {
     int in_game = a->screen == SCR_GAME;
+    int typing = a->screen == SCR_ONLINE || a->screen == SCR_NAME;
     switch (e->type) {
     case SDL_KEYDOWN:
     case SDL_KEYUP: {
         if (e->key.repeat) {
             /* text entry wants repeats for backspace; the game does its own repeat */
-            if (a->screen == SCR_ONLINE && e->key.keysym.sym == SDLK_BACKSPACE) gtn_text_input(a, "\b");
+            if (typing && e->key.keysym.sym == SDLK_BACKSPACE) gtn_text_input(a, "\b");
             return;
         }
         SDL_Keycode k = e->key.keysym.sym;
         int down = e->type == SDL_KEYDOWN;
-        if (a->screen == SCR_ONLINE && down) {
+        if (typing && down) {
             if (k == SDLK_BACKSPACE) { gtn_text_input(a, "\b"); return; }
             if (k == SDLK_RETURN || k == SDLK_KP_ENTER) { gtn_text_input(a, "\n"); return; }
         }
@@ -121,7 +123,7 @@ void gtn_input_event(gtn_app *a, const SDL_Event *e)
             if (who >= 0) tn_client_special(&a->pl[who].client, (int)(k - SDLK_0));
             return;
         }
-        if (a->screen == SCR_ONLINE && k != SDLK_ESCAPE && k != SDLK_UP && k != SDLK_DOWN &&
+        if (typing && k != SDLK_ESCAPE && k != SDLK_UP && k != SDLK_DOWN &&
             k != SDLK_LEFT && k != SDLK_RIGHT && k != SDLK_TAB)
             return; /* typed characters arrive as text input */
         int b = key_button(k, in_game);
@@ -129,7 +131,7 @@ void gtn_input_event(gtn_app *a, const SDL_Event *e)
         break;
     }
     case SDL_TEXTINPUT:
-        if (a->screen == SCR_ONLINE) gtn_text_input(a, e->text.text);
+        if (typing) gtn_text_input(a, e->text.text);
         break;
     case SDL_CONTROLLERDEVICEADDED:
         SDL_GameControllerOpen(e->cdevice.which);

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5 — 2026-10-16
+
+Every player can choose their own name: after joining, press Y on the controller (N on
+the keyboard) on the title screen and type it on the on-screen keyboard, or with a real
+keyboard. Names are one word of up to 15 characters, are saved per seat P1–P8 and are
+what the lobby, the boards and online servers show. Seats without a name of their own
+keep following P1's name with a number. German translation included.
+
 ## 0.1.4 — 2026-10-15
 
 Controller buttons can be rearranged: Options → Controller buttons lists the eight
