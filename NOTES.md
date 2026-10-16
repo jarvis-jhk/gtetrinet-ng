@@ -21,6 +21,7 @@ so a real internet IPv6 game is untested here - open for Jan on an IPv6 network.
 871fe3f passed linux/windows/interop CI 38917487601; tag v0.1.12 release 38920030973 passed.
 All assets downloaded, SHA256SUMS OK (AppImage too); packaged server answers --query on
 [::1], 127.0.0.1 and localhost. https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.12
+Announcement: jarvis_reply was tried 3x and every call was interrupted without a result; whether Jan got it is unknown. Do not resend blindly.
 Next release > v0.1.12.
 
 ## Earlier: TetriNET 2 rules released as v0.1.11 (item tetrinet-tetrinet-2-parity, done)
