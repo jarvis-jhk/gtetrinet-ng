@@ -1,6 +1,6 @@
 # Running state — 2026-10-16
 
-## Current: original GTetrinet theme (item tetrinet-original-theme)
+## Current: original GTetrinet theme released as v0.1.14 (item tetrinet-original-theme, done)
 
 Opus filler t_mvbayspk9sttr. Goal: Options → Block style 'Original' draws every field, piece
 and special with GTetrinet's own blocks.png, saved, shipped in a release.
@@ -16,6 +16,10 @@ tests/test_blocks.c: rendered pixels vs the decoded sheet (big + small blocks, b
 frame color, TN2 fallback, modern unchanged) and the Options row/save; a wrong source
 offset fails 744/1200 pixels. test_i18n got options-blocks, game1-orig and game8-orig views
 (classic stack fixture, ingame=3). Only test_blocks and test_i18n were run here.
+dc371ae passed linux/windows/interop CI 38948594108 (blocks ctest ran on both); tag v0.1.14
+release 38949680684 passed. All assets downloaded, SHA256SUMS OK; the packaged game with
+blocks=original drew the original blocks and backdrop. Item done. Next release > v0.1.14.
+https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.14
 
 ## Current: fuzzing and server limits released as v0.1.13 (item tetrinet-fuzzing-limits, done)
 
