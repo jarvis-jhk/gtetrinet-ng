@@ -104,6 +104,7 @@ static void player_lost(tn_client *c)
     if (!c->playing) return;
     c->playing = 0;
     c->slot[c->me].playing = 0;
+    c->ev.losses++;
     tn_game_fill_lost(&c->game);
     send_field(c, 1);
     send_msg(c, "playerlost %d", c->me);
@@ -132,7 +133,11 @@ static void do_special(tn_client *c, int from, int to, int sb)
     if (to == 0 && c->team[0] && from >= 1 && from <= TN_MAX_SLOTS && strcmp(c->slot[from].team, c->team) == 0)
         return;
     const char (*other)[TN_FIELD_W] = (from >= 1 && from <= TN_MAX_SLOTS) ? (const char (*)[TN_FIELD_W])c->slot[from].field : NULL;
-    if (from != c->me) c->hits++;
+    if (from != c->me) {
+        c->hits++;
+        c->ev.hits++;
+        c->ev.last_hit = sb;
+    }
     if (tn_game_apply_special(&c->game, sb, other) < 0) {
         player_lost(c);
         return;
@@ -257,6 +262,7 @@ void tn_client_handle(tn_client *c, const char *msg)
         n = atoi(rest);
         if (n < 1 || n > TN_MAX_SLOTS) return;
         c->last_winner = n;
+        if (c->me && (n == c->me || (c->team[0] && strcmp(c->slot[n].team, c->team) == 0))) c->ev.wins++;
         if (c->slot[n].team[0]) tn_log_add(&c->chat, "*** Team %s has won the game", c->slot[n].team);
         else tn_log_add(&c->chat, "*** %s has won the game", slot_name(c, n));
         return;
@@ -342,6 +348,11 @@ static void after_solidify(tn_client *c)
     int lvl_changed = 0;
     int lines = tn_game_clear_lines(&c->game, &lvl_changed);
     c->lines_total += (unsigned)lines;
+    c->ev.locks++;
+    if (lines > 0) {
+        c->ev.clears++;
+        c->ev.last_clear = lines;
+    }
     if (lvl_changed) {
         c->slot[c->me].level = c->game.level;
         send_msg(c, "lvl %d %d", c->me, c->game.level);
@@ -474,6 +485,7 @@ void tn_client_special(tn_client *c, int target)
     int sb = tn_game_pop_special(&c->game);
     if (sb < 0) return;
     send_msg(c, "sb %d %s %d", target, tn_sb_id(sb), c->me);
+    c->ev.specials++;
     do_special(c, c->me, target, sb);
 }
 

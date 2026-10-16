@@ -29,6 +29,10 @@ not certified hardware compatibility. Release gates and remaining checks are in 
   - [x] Nickname editing per seat (title screen Y/N, on-screen keyboard or typing, one word
     up to 15 characters, saved per seat, used in the lobby and online) with real TCP tests.
 - [ ] Sound, haptics and offline bot opponents selectable in the lobby.
+  - [x] Synthesized sound effects (lock, 1–4 line clears, special used, harmful/helpful/
+    mixed hits, top-out, win) and per-player controller rumble, with Sound effects and
+    Controller rumble rows in Options; real TCP game tests. Physical rumble feel unverified.
+  - [ ] Offline bot opponents selectable in the lobby.
 
 ## M2 — online interoperability
 

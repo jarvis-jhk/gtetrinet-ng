@@ -38,6 +38,8 @@ typedef struct gtn_settings {
     int repeat_profile;      /* shared by keyboard and controllers */
     int lang;                /* enum gtn_lang_choice: automatic, English, Deutsch */
     int pad_map[PAD_ACTIONS]; /* enum gtn_btn per action, shared by all controllers */
+    int volume;              /* enum gtn_volume, sound effects */
+    int rumble_off;          /* controllers do not rumble on hits, losses and wins */
 } gtn_settings;
 
 /* Folder for settings and logs, ending in a separator. Never NULL. */

@@ -27,6 +27,8 @@ typedef struct gtn_local {
     int stick_x, stick_y;    /* left stick as a d-pad: -1/0/1 */
     int flash_ms;            /* red border after being hit */
     unsigned seen_hits;
+    tn_events seen;          /* client events already turned into sound and rumble */
+    unsigned rumbles;        /* rumble requests for this player's controller, for tests */
     int nick_tries;
 } gtn_local;
 
@@ -42,7 +44,7 @@ typedef struct gtn_app {
 
     gtn_local pl[GTN_MAX_LOCAL];
     int menu_sel;
-    int options_row;         /* 0 movement repeat, 1 language, 2 controller buttons */
+    int options_row;         /* 0 movement repeat, 1 language, 2 controller buttons, 3 sound, 4 rumble */
     int controls_row;        /* action chosen on the controller-buttons screen */
     int controls_capture;    /* waiting for the button to give that action */
 

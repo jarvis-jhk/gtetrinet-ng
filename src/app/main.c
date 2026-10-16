@@ -9,6 +9,7 @@
 #include "fault.h"
 #include "i18n.h"
 #include "render.h"
+#include "sound.h"
 #include "version.h"
 #include "tn_bot.h"
 
@@ -474,7 +475,7 @@ static void game_button(gtn_app *a, int who, enum gtn_btn b, int down)
     }
 }
 
-#define OPTION_ROWS 3
+#define OPTION_ROWS 5
 
 static void save_controls(gtn_app *a)
 {
@@ -506,7 +507,59 @@ static void controls_button(gtn_app *a, enum gtn_dev dev, enum gtn_btn b)
     }
 }
 
-static void input_options_button(gtn_app *a, enum gtn_btn b)
+/* A short rumble on one controller; nothing for the keyboard or a controller that is gone. */
+static void rumble_pad(gtn_app *a, SDL_JoystickID pad, float low, float high, int ms)
+{
+    if (a->settings.rumble_off || pad < 0) return;
+    SDL_GameController *gc = SDL_GameControllerFromInstanceID(pad);
+    if (gc) SDL_GameControllerRumble(gc, (Uint16)(low * 65535), (Uint16)(high * 65535), (Uint32)ms);
+}
+
+static void rumble(gtn_app *a, int i, float low, float high, int ms)
+{
+    gtn_local *p = &a->pl[i];
+    if (a->settings.rumble_off || p->dev != DEV_PAD) return;
+    p->rumbles++;
+    rumble_pad(a, p->pad, low, high, ms);
+}
+
+/* Turns what happened to a local player since the last frame into sound and rumble. The screen
+ * is shared, so sounds are for everyone (and the same sound plays once per frame); the rumble
+ * is the personal channel that tells a player it was them. */
+static void feedback(gtn_app *a, int i)
+{
+    gtn_local *p = &a->pl[i];
+    const tn_events *e = &p->client.ev, *o = &p->seen;
+    if (e->locks < o->locks || e->clears < o->clears || e->specials < o->specials || e->hits < o->hits ||
+        e->losses < o->losses || e->wins < o->wins) {
+        p->seen = *e;                /* a new client session: its counters started again */
+        return;
+    }
+    if (e->losses != o->losses) {
+        gtn_sound_play(SFX_LOSE);
+        rumble(a, i, 0.9f, 0.9f, 450);
+    }
+    if (e->wins != o->wins) {
+        gtn_sound_play(SFX_WIN);
+        rumble(a, i, 0.3f, 0.6f, 300);
+    }
+    if (e->hits != o->hits) {
+        switch (gtn_special_effect(e->last_hit)) {
+        case GTN_EFFECT_HURT: gtn_sound_play(SFX_HIT_HURT); rumble(a, i, 0.75f, 0.35f, 220); break;
+        case GTN_EFFECT_HELP: gtn_sound_play(SFX_HIT_HELP); rumble(a, i, 0.0f, 0.35f, 90); break;
+        default: gtn_sound_play(SFX_HIT_MIXED); rumble(a, i, 0.45f, 0.45f, 160); break;
+        }
+    }
+    if (e->specials != o->specials) gtn_sound_play(SFX_SPECIAL);
+    if (e->clears != o->clears) {
+        int n = e->last_clear < 1 ? 1 : e->last_clear > 4 ? 4 : e->last_clear;
+        gtn_sound_play((enum gtn_sfx)(SFX_CLEAR1 + n - 1));
+        if (n == 4) rumble(a, i, 0.2f, 0.5f, 150);
+    } else if (e->locks != o->locks) gtn_sound_play(SFX_LOCK);
+    p->seen = *e;
+}
+
+static void input_options_button(gtn_app *a, enum gtn_btn b, enum gtn_dev dev, SDL_JoystickID pad)
 {
     int dir = 0;
     switch (b) {
@@ -517,6 +570,21 @@ static void input_options_button(gtn_app *a, enum gtn_btn b)
     case BTN_Y: break;
     case BTN_B: case BTN_START: a->screen = SCR_TITLE; return;
     default: return;
+    }
+    if (a->options_row == 3) {
+        a->settings.volume = dir ? (a->settings.volume + VOLUME_COUNT + dir) % VOLUME_COUNT : VOLUME_NORMAL;
+        gtn_sound_volume(a->settings.volume);
+        gtn_sound_play(SFX_CLEAR2);  /* so the new level can be heard */
+        if (gtn_settings_save(&a->settings) != 0)
+            gtn_set_status(a, "%s", gtn_tr("Sound works for this run, but could not be saved"));
+        return;
+    }
+    if (a->options_row == 4) {
+        a->settings.rumble_off = dir ? !a->settings.rumble_off : 0;
+        if (dev == DEV_PAD) rumble_pad(a, pad, 0.5f, 0.5f, 200);  /* feel it switch on */
+        if (gtn_settings_save(&a->settings) != 0)
+            gtn_set_status(a, "%s", gtn_tr("Rumble works for this run, but could not be saved"));
+        return;
     }
     if (a->options_row == 2) {
         if (b == BTN_Y) {
@@ -546,7 +614,7 @@ void gtn_button(gtn_app *a, int who, enum gtn_dev dev, SDL_JoystickID pad, enum 
 {
     /* Options work before joining too; their A button must not claim a player seat. */
     if (a->screen == SCR_INPUT) {
-        if (down) input_options_button(a, b);
+        if (down) input_options_button(a, b, dev, pad);
         return;
     }
     if (a->screen == SCR_CONTROLS) {
@@ -605,6 +673,7 @@ void gtn_button(gtn_app *a, int who, enum gtn_dev dev, SDL_JoystickID pad, enum 
 
 static void update_session(gtn_app *a, int dt)
 {
+    gtn_sound_frame();
     if (a->hosting) tn_server_update(&a->server, dt);
     if (a->screen != SCR_CONNECTING && a->screen != SCR_LOBBY && a->screen != SCR_GAME) return;
     int any_ingame = 0, connected = 0, pending = 0, active = 0;
@@ -633,6 +702,7 @@ static void update_session(gtn_app *a, int dt)
         if (c->ingame) any_ingame = 1;
         if (c->hits != p->seen_hits) { p->seen_hits = c->hits; p->flash_ms = 350; }
         if (p->flash_ms > 0) p->flash_ms -= dt;
+        feedback(a, i);
     }
     if (active == 0 || (connected == 0 && pending == 0)) {
         if (a->screen != SCR_TITLE) {
@@ -796,6 +866,8 @@ int main(int argc, char **argv)
     a->settings.fast |= cli_fast;
     /* --lang is for this run (screenshots, tests); the saved choice stays as it was */
     gtn_lang_apply(cli_lang ? cli_lang - 1 : a->settings.lang);
+    gtn_sound_volume(a->settings.volume);
+    gtn_sound_init();
 
     /* SteamOS sets SteamDeck=1; Steam sets SteamGameId when it launched us (Game Mode) */
     a->steamdeck = getenv("SteamDeck") && !strcmp(getenv("SteamDeck"), "1");
@@ -856,6 +928,7 @@ int main(int argc, char **argv)
         (void)t0;
     }
     stop_session(a);
+    gtn_sound_quit();
     gtn_render_quit();
     SDL_DestroyRenderer(a->ren);
     SDL_DestroyWindow(a->win);

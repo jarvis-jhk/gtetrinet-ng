@@ -5,6 +5,7 @@
 #include "settings.h"
 #include "fault.h"
 #include "i18n.h"
+#include "sound.h"
 
 #include <SDL.h>
 #include <stdio.h>
@@ -154,11 +155,21 @@ static void default_nick(char *out, size_t n)
     if (out[0] >= 'a' && out[0] <= 'z') out[0] = (char)(out[0] - 'a' + 'A');
 }
 
+static const char *volume_codes[VOLUME_COUNT] = {"off", "quiet", "normal", "loud"};
+
+static int parse_volume(const char *v)
+{
+    for (int i = 0; i < VOLUME_COUNT; i++)
+        if (!strcmp(v, volume_codes[i])) return i;
+    return VOLUME_NORMAL;
+}
+
 void gtn_settings_load(gtn_settings *s)
 {
     memset(s, 0, sizeof *s);
     default_nick(s->nick, sizeof s->nick);
     gtn_pad_defaults(s->pad_map);
+    s->volume = VOLUME_NORMAL;
     char path[1200];
     snprintf(path, sizeof path, "%ssettings.ini", gtn_pref_dir());
     FILE *f = fopen(path, "r");
@@ -178,6 +189,8 @@ void gtn_settings_load(gtn_settings *s)
             s->repeat_profile = !strcmp(v, "1") ? REPEAT_RELAXED : !strcmp(v, "2") ? REPEAT_FAST : REPEAT_NORMAL;
         else if (!strcmp(k, "lang")) s->lang = gtn_lang_parse(v);
         else if (!strcmp(k, "pad")) parse_pad(s->pad_map, v);
+        else if (!strcmp(k, "sound")) s->volume = parse_volume(v);
+        else if (!strcmp(k, "rumble")) s->rumble_off = !strcmp(v, "off");
         else if (!strncmp(k, "nick", 4) && k[4] >= '2' && k[4] <= '0' + GTN_SEATS && !k[5])
             gtn_nick_clean(s->seat_nick[k[4] - '1'], sizeof s->seat_nick[0], v);
     }
@@ -197,8 +210,10 @@ int gtn_settings_save(const gtn_settings *s)
     char padline[96] = "";
     for (int i = 0; i < PAD_ACTIONS; i++)
         snprintf(padline + strlen(padline), sizeof padline - strlen(padline), "%s%s", i ? "," : "", btn_names[pad[i]]);
-    int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\nlang=%s\npad=%s\n",
-            s->host, s->nick, s->last_version, s->fast, repeat_index(s->repeat_profile), gtn_lang_code(s->lang), padline);
+    int vol = s->volume >= 0 && s->volume < VOLUME_COUNT ? s->volume : VOLUME_NORMAL;
+    int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\nlang=%s\npad=%s\nsound=%s\nrumble=%s\n",
+            s->host, s->nick, s->last_version, s->fast, repeat_index(s->repeat_profile), gtn_lang_code(s->lang), padline,
+            volume_codes[vol], s->rumble_off ? "off" : "on");
     for (int i = 1; i < GTN_SEATS && written >= 0; i++)
         if (s->seat_nick[i][0]) written = fprintf(f, "nick%d=%s\n", i + 1, s->seat_nick[i]);
     int closed = fclose(f);

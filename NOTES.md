@@ -1,5 +1,29 @@
 # Running state — 2026-10-16
 
+## Current: sound effects and rumble (combined-roadmap item tetrinet-sound-haptics)
+
+Opus filler t_mvarohlmr1h6j. Core: tn_client.ev (tn_events) counts locks, clears
+(+last_clear), specials used, hits (+last_hit sb), losses and wins (playerwon for our slot
+or our team). App: src/app/sound.{h,c} synthesizes 12 effects at start-up into a bank
+(22050 Hz mono S16, triangle/square/pitched-noise notes with decay and end fade) and mixes
+up to 12 voices in an SDL audio callback; no device = silent, never a fault.
+gtn_sound_play dedupes one effect per frame (gtn_sound_frame runs at the start of
+update_session), so eight simultaneous locks are one sound. main.c feedback() diffs
+p->seen against client.ev each frame; a counter going backwards = new session, resync.
+Rumble (SDL_GameControllerRumble, DEV_PAD only): hurt 0.75/0.35 220 ms, help 0/0.35 90 ms,
+mixed 0.45 160 ms, four lines 0.2/0.5 150 ms, loss 0.9 450 ms, win 0.3/0.6 300 ms.
+Settings sound=off|quiet|normal|loud (default normal), rumble=on|off; malformed = default.
+Options rows 3 Sound effects (preview plays CLEAR2) and 4 Controller rumble (switching
+rumbles the pressing controller). Options layout tightened to fit five rows at 1280x800.
+Checks: tests/test_sound.c (133: effect lengths/peaks/no clicks/determinism, settings,
+options flow, en/de renders with zero cut text at 1280x800, real two-pad TCP game: lock
+dedupe, four-line clear + classic add-to-all hit, harmful/helpful/mixed specials with
+rumble on the receiving pad only, rumble off, top-out + win, no burst on a new session,
+dummy audio driver mixing). Negative control without feedback(): 16 failures.
+test_controls adapted (Up from row 0 now wraps to rumble). Debug 9/9 CTests local.
+Open: actual sound/rumble feel on the Deck and real pads; bot opponents remain the other
+half of the M1 line.
+
 ## Current: nickname editing per seat released as v0.1.5
 
 Work session t_mvaqgvr2dvbaa, combined-roadmap item tetrinet-nickname-editing.

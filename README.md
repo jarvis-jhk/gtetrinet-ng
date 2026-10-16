@@ -52,7 +52,7 @@ joins there. Seats without their own name use P1's name with a number.
 
 On the title screen, controller X or keyboard S opens Options, even before joining.
 Up/Down picks a row; Left/Right or A changes it, Y restores its default and
-B/Esc/Start returns. Both choices are saved; a failed save shows a warning and keeps
+B/Esc/Start returns. All choices are saved; a failed save shows a warning and keeps
 the choice for the current run.
 
 - **Movement repeat** cycles Normal (170 ms delay, 50 ms interval), Relaxed
@@ -72,6 +72,14 @@ the choice for the current run.
   and the triggers follow Up and LB/RB). Left/Right/Down, Start, Back+Start and all menus
   stay fixed. The layout is shared by every controller and is used only in a game; the
   keyboard keeps its classic keys.
+- **Sound effects**: Off, Quiet, Normal or Loud. The game plays short synthesized sounds
+  (no audio files) when a piece lands, for one to four cleared lines, when a special is
+  used, when one hits (harmful, helpful and mixed effects sound different), on topping
+  out and on winning. The screen is shared, so the same sound plays once even when
+  several players trigger it at the same moment. Changing the level plays a sample.
+- **Controller rumble**: On or Off. The controller of the player concerned rumbles when
+  a harmful special hits them (a light tap for a helpful one), when they clear four lines,
+  top out or win — on a shared screen it is how you know it was you. The keyboard has none.
 
 Special tiles keep their classic letters and show their effect on the **recipient**:
 green `+HELP` (C clear line, N nuke field, G gravity), red `-HURT` (A add line),

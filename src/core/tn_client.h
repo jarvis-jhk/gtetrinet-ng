@@ -36,6 +36,19 @@ typedef struct tn_slot {
     tn_field field;
 } tn_slot;
 
+/* Things that happened to us, for sound and rumble: the UI compares them with the values it
+ * saw last frame. Counters only grow; last_* describe the newest event of that kind. */
+typedef struct tn_events {
+    unsigned locks;                 /* pieces placed */
+    unsigned clears;                /* placements that cleared lines */
+    int last_clear;                 /* lines in the newest clear */
+    unsigned specials;              /* specials we used (not classic add-to-all) */
+    unsigned hits;                  /* specials from others that reached us */
+    int last_hit;                   /* TN_SB_* of the newest hit */
+    unsigned losses;                /* we lost a game */
+    unsigned wins;                  /* we, or our team, won a game */
+} tn_events;
+
 typedef struct tn_client {
     enum tn_client_state state;
     char err[160];
@@ -63,6 +76,7 @@ typedef struct tn_client {
     /* counters the UI can watch for effects */
     unsigned hits;                  /* specials that hit us */
     unsigned lines_total;
+    tn_events ev;
     uint32_t seed;
 } tn_client;
 
