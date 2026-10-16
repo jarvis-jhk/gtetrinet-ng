@@ -1,6 +1,6 @@
 # Running state — 2026-10-16
 
-## Current: fuzzing and server limits (item tetrinet-fuzzing-limits), release v0.1.13 pending CI
+## Current: fuzzing and server limits released as v0.1.13 (item tetrinet-fuzzing-limits, done)
 
 Opus filler t_mvb4071afcmch. Goal: a released server keeps serving honest players while a
 hostile client floods it with random bytes, oversized lines, unread output and connection
@@ -21,6 +21,11 @@ honest clients vs a raw hostile player (mangled + random bytes), a 600-line chat
 answered, closed), then the honest pair plays. Found no memory error in the parsers under
 ASan/UBSan. Negative control (no rate limit, no per-address cap) fails 2 checks.
 Local Debug+ASan/UBSan: test_fuzz and test_core pass (only those were run here).
+b39da46 passed linux/windows/interop CI 38923311822 (fuzz ctest ran on both: 4 s / 29 s);
+tag v0.1.13 release 38923916689 passed. All eight assets downloaded, SHA256SUMS OK; the
+packaged server (VERSION v0.1.13) refused 12 of 20 connections from one address and
+answered 32 of 50 queries. https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.13
+Open: a real internet-facing host under real abuse; not a security audit. Next release > v0.1.13.
 
 ## Current: IPv6 and asynchronous DNS released as v0.1.12 (item tetrinet-ipv6-async-dns, done)
 
