@@ -24,6 +24,11 @@ enum gtn_effect gtn_special_effect(int sb);
 gtn_color gtn_special_color(int sb);
 const char *gtn_special_cue(int sb); /* symbol + word, readable without color */
 const char *gtn_special_target_hint(int sb, int self);
+/* Block style: GTN_BLOCKS_MODERN draws flat bevelled cells, GTN_BLOCKS_ORIGINAL uses GTetrinet's
+ * own blocks.png (compiled in). Specials the sheet has no picture for stay modern either way. */
+enum gtn_block_style { GTN_BLOCKS_MODERN, GTN_BLOCKS_ORIGINAL, GTN_BLOCK_STYLES };
+extern int gtn_block_style;
+int gtn_original_blocks_loaded(void); /* the sheet decoded at start-up */
 void gtn_fill(int x, int y, int w, int h, gtn_color c);
 void gtn_frame(int x, int y, int w, int h, int thick, gtn_color c);
 

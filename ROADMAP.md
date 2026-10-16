@@ -80,7 +80,10 @@ not certified hardware compatibility. Release gates and remaining checks are in 
 - [x] Two-way rotation exists: controller A clockwise / B counterclockwise, keyboard
   X clockwise / Z counterclockwise. Keep explicit help and verify both on physical Deck
   controls; configurable bindings and rotation behavior remain M1 work.
-- [ ] Original upstream theme migration.
+- [x] Original upstream theme migration: Options → Block style → Original GTetrinet draws
+  every field, piece and classic special from legacy/themes/default/blocks.png (built in,
+  decoded by stb_image), small fields from its small row; effect-color frame on specials.
+  - [ ] The "small" theme and loading other old GTetrinet theme folders from disk.
 
 ## Deck feedback — 2026-10-11
 

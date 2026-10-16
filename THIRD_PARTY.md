@@ -2,6 +2,10 @@
 
 - GTetrinet (1999–2015): original authors listed in AUTHORS; GPL-2.0-or-later, COPYING.
   Full source/history: https://gitlab.gnome.org/Archive/gtetrinet (retained in legacy/).
+- GTetrinet default theme (legacy/themes/default/blocks.png, by Zillidot): part of
+  GTetrinet, GPL-2.0-or-later; compiled into the game for Options → Block style.
+- stb_image v2.30 (third_party/stb_image.h, PNG decoder only): public domain / MIT,
+  notice in the file. https://github.com/nothings/stb
 - font8x8: public-domain glyph data, notices preserved in third_party/font8x8_basic.h and
   font8x8_ext_latin.h (Latin-1 glyphs for German; declared static const here).
   https://github.com/dhepper/font8x8

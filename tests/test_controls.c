@@ -139,7 +139,7 @@ int main(int argc, char **argv)
     a.screen = SCR_TITLE;
     tap(&a, SDL_CONTROLLER_BUTTON_X);
     CHECK(a.screen == SCR_INPUT);
-    for (int i = 0; i < 4; i++) tap(&a, SDL_CONTROLLER_BUTTON_DPAD_UP); /* past rules, rumble and sound */
+    for (int i = 0; i < 5; i++) tap(&a, SDL_CONTROLLER_BUTTON_DPAD_UP); /* past blocks, rules, rumble and sound */
     CHECK(a.options_row == 2);
     tap(&a, SDL_CONTROLLER_BUTTON_A);
     CHECK(a.screen == SCR_CONTROLS && a.controls_row == 0 && !a.controls_capture && gtn_local_count(&a) == 0);

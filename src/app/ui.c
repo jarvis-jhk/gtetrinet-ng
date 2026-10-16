@@ -153,7 +153,7 @@ static void option_row(gtn_app *a, int row, int y, const char *label, const char
 {
     int s = ts(a), sel = a->options_row == row;
     char buf[128];
-    if (sel) gtn_fill(a->w / 6, y - 5 * s, a->w * 2 / 3, 42 * s, gtn_rgb(0x2a, 0x30, 0x48));
+    if (sel) gtn_fill(a->w / 6, y - 4 * s, a->w * 2 / 3, 40 * s, gtn_rgb(0x2a, 0x30, 0x48));
     gtn_text_center_fit(a->w / 2, y, 2 * s, a->w - 32, sel ? TEXT : MUTED, label);
     snprintf(buf, sizeof buf, "< %s >", value);
     gtn_text_center_fit(a->w / 2, y + 20 * s, 2 * s, a->w - 32, sel ? ACCENT : TEXT, buf);
@@ -166,25 +166,34 @@ static void draw_input_options(gtn_app *a)
     gtn_text_center_fit(a->w / 2, y, 3 * s, a->w - 32, TEXT, gtn_tr("Options"));
     y += 36 * s;
     option_row(a, 0, y, gtn_tr("Movement repeat"), gtn_tr(gtn_repeat_name(a->settings.repeat_profile)));
-    y += 46 * s;
-    gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, gtn_tr("Holding Left/Right moves repeatedly after a short delay."));
-    y += 11 * s;
-    snprintf(buf, sizeof buf, gtn_tr("First repeat: %d ms   Next repeats: every %d ms"),
-             gtn_repeat_delay(a->settings.repeat_profile), gtn_repeat_interval(a->settings.repeat_profile));
-    gtn_text_center_fit(a->w / 2, y, s, a->w - 32, TEXT, buf);
-    y += 18 * s;
+    /* seven rows leave room for the repeat timings only on a tall screen, or while that row is chosen */
+    int roomy = a->h >= 440 * s;
+    if (roomy || a->options_row == 0) {
+        y += 46 * s;
+        gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, gtn_tr("Holding Left/Right moves repeatedly after a short delay."));
+        y += 11 * s;
+        snprintf(buf, sizeof buf, gtn_tr("First repeat: %d ms   Next repeats: every %d ms"),
+                 gtn_repeat_delay(a->settings.repeat_profile), gtn_repeat_interval(a->settings.repeat_profile));
+        gtn_text_center_fit(a->w / 2, y, s, a->w - 32, TEXT, buf);
+        y += 18 * s;
+    } else {
+        y += 42 * s;
+    }
     language_value(buf, sizeof buf, a->settings.lang);
+    int gap = roomy || a->options_row != 0 ? 42 * s : 38 * s;
     option_row(a, 1, y, gtn_tr("Language"), buf);
-    y += 42 * s;
+    y += gap;
     option_row(a, 2, y, gtn_tr("Controller buttons"),
                gtn_tr(gtn_pad_is_default(a->settings.pad_map) || !gtn_pad_valid(a->settings.pad_map) ? N_("Standard") : N_("Custom")));
-    y += 42 * s;
+    y += gap;
     option_row(a, 3, y, gtn_tr("Sound effects"), gtn_tr(gtn_volume_name(a->settings.volume)));
-    y += 42 * s;
+    y += gap;
     option_row(a, 4, y, gtn_tr("Controller rumble"), gtn_tr(a->settings.rumble_off ? N_("Off") : N_("On")));
-    y += 42 * s;
+    y += gap;
     option_row(a, 5, y, gtn_tr("Rules for games here"), gtn_tr(a->settings.rules_tn2 ? N_("TetriNET 2") : N_("Classic TetriNET")));
-    y += 46 * s;
+    y += gap;
+    option_row(a, 6, y, gtn_tr("Block style"), gtn_tr(a->settings.blocks ? N_("Original GTetrinet") : N_("Modern")));
+    y += gap + 4 * s;
     /* the status line (a failed save) takes this place at Deck height */
     if (!a->status[0] && y + 10 * s <= a->h - 14 * s)
         gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, gtn_tr("Saved for all local players, keyboard and controllers."));

@@ -48,6 +48,9 @@ be reclaimed by pressing A on an unclaimed controller. Eight fields are a dense 
 Under TetriNET 2 rules the right trigger (or a right stick click) holds a piece.
 These face, shoulder, Up, Back and right-trigger buttons can be rearranged under Options → Controller buttons.
 
+Original look: Options → Block style → Original GTetrinet draws the blocks and field
+backdrop of GTetrinet's own default theme.
+
 TetriNET 2 rules: Options → Rules for games here → TetriNET 2 makes games hosted on this
 machine use the hold piece and the five TetriNET 2 specials — Immunity (15 s, nothing from
 others reaches you), Clear Column, Mutate Pieces (three odd five- or six-cell pieces),

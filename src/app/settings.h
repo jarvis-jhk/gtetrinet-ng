@@ -46,6 +46,7 @@ typedef struct gtn_settings {
     int volume;              /* enum gtn_volume, sound effects */
     int rumble_off;          /* controllers do not rumble on hits, losses and wins */
     int bot_level;           /* enum tn_bot_level for computer players added in the lobby */
+    int blocks;              /* enum gtn_block_style: modern or the original GTetrinet blocks */
     int rules_tn2;           /* games hosted here use the TetriNET 2 rules (hold, 14 specials) */
 } gtn_settings;
 

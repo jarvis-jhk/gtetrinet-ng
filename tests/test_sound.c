@@ -154,6 +154,7 @@ int main(int argc, char **argv)
     press(&a, 42, SDL_CONTROLLER_BUTTON_Y);
     gtn_settings_load(&loaded);
     CHECK(a.settings.rules_tn2 == 0 && loaded.rules_tn2 == 0);
+    press(&a, 42, SDL_CONTROLLER_BUTTON_DPAD_DOWN); /* block style, then around */
     press(&a, 42, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
     CHECK(a.options_row == 0);
     press(&a, 42, SDL_CONTROLLER_BUTTON_B);

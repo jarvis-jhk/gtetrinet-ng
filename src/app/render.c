@@ -10,8 +10,50 @@
 
 #include <string.h>
 
+/* stb_image keeps decoders and helpers this file never calls */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_PNG
+#define STBI_NO_STDIO
+#define STBI_NO_LINEAR
+#define STBI_NO_HDR
+#include "stb_image.h"
+#pragma GCC diagnostic pop
+#include "blocks_png.h"
+
 SDL_Renderer *gtn_ren;
 static SDL_Texture *font_tex;
+static SDL_Texture *sheet_tex;
+int gtn_block_style = GTN_BLOCKS_MODERN;
+
+/* The original sheet (legacy/themes/default, 20 px blocks): row 0 holds the five colors and the
+ * nine classic specials at full size, the 10 px row below them the same at half size, then the
+ * backdrop of the player's own field (12x22 blocks) and, right of it, the small fields' one. */
+#define SHEET_BS 20
+#define SHEET_SMALL_Y SHEET_BS
+#define SHEET_BG_Y (SHEET_BS + SHEET_BS / 2)
+#define SHEET_CELLS 15 /* cells 1..14: colors and a c n r s b g q o */
+
+int gtn_original_blocks_loaded(void) { return sheet_tex != NULL; }
+
+static int original(void) { return gtn_block_style == GTN_BLOCKS_ORIGINAL && sheet_tex; }
+
+static void load_sheet(SDL_Renderer *r)
+{
+    int w, h, n;
+    unsigned char *px = stbi_load_from_memory(gtn_blocks_png, (int)sizeof gtn_blocks_png, &w, &h, &n, 4);
+    if (!px) return;
+    if (w >= SHEET_BS * (SHEET_CELLS - 1) && h >= SHEET_BG_Y + SHEET_BS * TN_FIELD_H) {
+        SDL_Surface *s = SDL_CreateRGBSurfaceWithFormatFrom(px, w, h, 32, w * 4, SDL_PIXELFORMAT_RGBA32);
+        if (s) {
+            sheet_tex = SDL_CreateTextureFromSurface(r, s);
+            SDL_FreeSurface(s);
+        }
+        if (sheet_tex) SDL_SetTextureBlendMode(sheet_tex, SDL_BLENDMODE_BLEND);
+    }
+    stbi_image_free(px);
+}
 
 gtn_color gtn_rgb(Uint8 r, Uint8 g, Uint8 b)
 {
@@ -103,6 +145,7 @@ int gtn_render_init(SDL_Renderer *r)
     SDL_FreeSurface(s);
     if (!font_tex) return -1;
     SDL_SetTextureBlendMode(font_tex, SDL_BLENDMODE_BLEND);
+    load_sheet(r);  /* without it the original style draws modern blocks */
     return 0;
 }
 
@@ -110,6 +153,8 @@ void gtn_render_quit(void)
 {
     if (font_tex) SDL_DestroyTexture(font_tex);
     font_tex = NULL;
+    if (sheet_tex) SDL_DestroyTexture(sheet_tex);
+    sheet_tex = NULL;
 }
 
 void gtn_fill(int x, int y, int w, int h, gtn_color c)
@@ -256,9 +301,27 @@ static gtn_color shade(gtn_color c, int pct)
     return o;
 }
 
+/* One block from the sheet; the half-size row reads better once a block is drawn small. */
+static void sheet_cell(int x, int y, int size, int cell, int alpha)
+{
+    SDL_Rect src = size >= 14 ? (SDL_Rect){(cell - 1) * SHEET_BS, 0, SHEET_BS, SHEET_BS}
+                              : (SDL_Rect){(cell - 1) * SHEET_BS / 2, SHEET_SMALL_Y, SHEET_BS / 2, SHEET_BS / 2};
+    SDL_Rect dst = {x, y, size, size};
+    SDL_SetTextureAlphaMod(sheet_tex, (Uint8)alpha);
+    SDL_RenderCopy(gtn_ren, sheet_tex, &src, &dst);
+    SDL_SetTextureAlphaMod(sheet_tex, 255);
+}
+
 void gtn_cell(int x, int y, int size, int cell)
 {
     if (cell <= 0) return;
+    if (original() && cell < SHEET_CELLS) {
+        sheet_cell(x, y, size, cell, 255);
+        /* the original letters, framed in the effect color so help and harm still read apart */
+        if (cell >= 6 && size >= 8)
+            gtn_frame(x, y, size, size, size >= 16 ? 2 : 1, gtn_special_color(tn_sb_from_cell(cell)));
+        return;
+    }
     if (cell < 6) {
         gtn_color c = cell_colors[cell];
         int b = size >= 8 ? size / 8 : 1;
@@ -282,8 +345,16 @@ void gtn_cell(int x, int y, int size, int cell)
 
 void gtn_field(int x, int y, int cs, const tn_field f, int dim)
 {
-    gtn_fill(x, y, cs * TN_FIELD_W, cs * TN_FIELD_H, cell_colors[0]);
-    if (cs >= 10) {
+    if (original()) {
+        /* the backdrop is drawn to the field's size: own-field art when large, small-field art when not */
+        SDL_Rect src = cs >= 14 ? (SDL_Rect){0, SHEET_BG_Y, SHEET_BS * TN_FIELD_W, SHEET_BS * TN_FIELD_H}
+                                : (SDL_Rect){SHEET_BS * TN_FIELD_W, SHEET_BG_Y, SHEET_BS / 2 * TN_FIELD_W, SHEET_BS / 2 * TN_FIELD_H};
+        SDL_Rect dst = {x, y, cs * TN_FIELD_W, cs * TN_FIELD_H};
+        SDL_RenderCopy(gtn_ren, sheet_tex, &src, &dst);
+    } else {
+        gtn_fill(x, y, cs * TN_FIELD_W, cs * TN_FIELD_H, cell_colors[0]);
+    }
+    if (cs >= 10 && !original()) {
         gtn_color grid = gtn_rgb(0x1b, 0x1e, 0x29);
         for (int i = 1; i < TN_FIELD_W; i++) gtn_fill(x + i * cs, y, 1, cs * TN_FIELD_H, grid);
         for (int i = 1; i < TN_FIELD_H; i++) gtn_fill(x, y + i * cs, cs * TN_FIELD_W, 1, grid);
@@ -306,6 +377,8 @@ void gtn_shape(int x, int y, int cs, const char (*sh)[4], int alpha)
             if (!sh[r][c]) continue;
             if (alpha >= 255) {
                 gtn_cell(x + c * cs, y + r * cs, cs, sh[r][c]);
+            } else if (original() && sh[r][c] < SHEET_CELLS) {
+                sheet_cell(x + c * cs, y + r * cs, cs, sh[r][c], alpha);
             } else {
                 gtn_color col = cell_colors[(int)sh[r][c]];
                 col.a = (Uint8)alpha;

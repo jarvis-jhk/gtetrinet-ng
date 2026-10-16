@@ -1,5 +1,22 @@
 # Running state — 2026-10-16
 
+## Current: original GTetrinet theme (item tetrinet-original-theme)
+
+Opus filler t_mvbayspk9sttr. Goal: Options → Block style 'Original' draws every field, piece
+and special with GTetrinet's own blocks.png, saved, shipped in a release.
+render.c decodes legacy/themes/default/blocks.png (CMake writes generated/blocks_png.h from
+it at configure time) with third_party/stb_image.h (PNG only) into one texture. Sheet: row 0
+cells 1..14 at 20 px, row y=20 the same at 10 px, y=30 own-field backdrop 240x440, right of
+it the small-field backdrop 120x220. Cells >= 14 px use the 20 px row, smaller the 10 px row;
+fields >= 14 px the big backdrop. Grid lines off in original style. Specials 6..14 get a
+1-2 px effect-color frame; TN2 specials 15..19 have no art and stay modern. Ghost piece uses
+texture alpha. settings.ini blocks=original|modern (default modern), Options row 6;
+Options at Deck height hides the repeat timing lines unless row 0 is chosen (seven rows).
+tests/test_blocks.c: rendered pixels vs the decoded sheet (big + small blocks, backdrop,
+frame color, TN2 fallback, modern unchanged) and the Options row/save; a wrong source
+offset fails 744/1200 pixels. test_i18n got options-blocks, game1-orig and game8-orig views
+(classic stack fixture, ingame=3). Only test_blocks and test_i18n were run here.
+
 ## Current: fuzzing and server limits released as v0.1.13 (item tetrinet-fuzzing-limits, done)
 
 Opus filler t_mvb4071afcmch. Goal: a released server keeps serving honest players while a

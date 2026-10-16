@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.14 — 2026-10-16
+
+The original GTetrinet look. Options → Block style → Original GTetrinet draws the blocks,
+the lettered specials and the shaded field backdrop from GTetrinet's own default theme
+(the blocks.png that shipped with it, now built into the game), in every field and at
+every size; small fields use the theme's small blocks. Specials keep a thin frame in their
+effect color, so help and harm still read apart. The TetriNET 2 specials, which the old
+theme never had, keep the modern look. Modern stays the default.
+
 ## 0.1.13 — 2026-10-16
 
 Server limits for hosting on the internet. `gtetrinet-ng-server` (and a game hosted here)

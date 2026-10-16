@@ -573,7 +573,7 @@ static void game_button(gtn_app *a, int who, enum gtn_btn b, int down)
     }
 }
 
-#define OPTION_ROWS 6
+#define OPTION_ROWS 7
 
 static void save_controls(gtn_app *a)
 {
@@ -675,6 +675,13 @@ static void input_options_button(gtn_app *a, enum gtn_btn b, enum gtn_dev dev, S
         gtn_sound_play(SFX_CLEAR2);  /* so the new level can be heard */
         if (gtn_settings_save(&a->settings) != 0)
             gtn_set_status(a, "%s", gtn_tr("Sound works for this run, but could not be saved"));
+        return;
+    }
+    if (a->options_row == 6) {
+        a->settings.blocks = dir ? !a->settings.blocks : GTN_BLOCKS_MODERN;
+        gtn_block_style = a->settings.blocks;
+        if (gtn_settings_save(&a->settings) != 0)
+            gtn_set_status(a, "%s", gtn_tr("The block style works for this run, but could not be saved"));
         return;
     }
     if (a->options_row == 5) {
@@ -990,6 +997,7 @@ int main(int argc, char **argv)
     gtn_lang_apply(cli_lang ? cli_lang - 1 : a->settings.lang);
     gtn_sound_volume(a->settings.volume);
     gtn_sound_init();
+    gtn_block_style = a->settings.blocks;
 
     /* SteamOS sets SteamDeck=1; Steam sets SteamGameId when it launched us (Game Mode) */
     a->steamdeck = getenv("SteamDeck") && !strcmp(getenv("SteamDeck"), "1");

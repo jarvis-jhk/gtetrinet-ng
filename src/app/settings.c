@@ -199,6 +199,7 @@ void gtn_settings_load(gtn_settings *s)
         else if (!strcmp(k, "sound")) s->volume = parse_volume(v);
         else if (!strcmp(k, "rumble")) s->rumble_off = !strcmp(v, "off");
         else if (!strcmp(k, "rules")) s->rules_tn2 = !strcmp(v, "tn2");
+        else if (!strcmp(k, "blocks")) s->blocks = !strcmp(v, "original");
         else if (!strcmp(k, "bots"))
             for (int i = 0; i < TN_BOT_LEVELS; i++) { if (!strcmp(v, bot_codes[i])) s->bot_level = i; }
         else if (!strncmp(k, "server", 6) && k[6] >= '1' && k[6] < '1' + GTN_RECENT && !k[7])
@@ -251,10 +252,10 @@ int gtn_settings_save(const gtn_settings *s)
         snprintf(padline + strlen(padline), sizeof padline - strlen(padline), "%s%s", i ? "," : "", btn_names[pad[i]]);
     int vol = s->volume >= 0 && s->volume < VOLUME_COUNT ? s->volume : VOLUME_NORMAL;
     int bots = s->bot_level >= 0 && s->bot_level < TN_BOT_LEVELS ? s->bot_level : TN_BOT_NORMAL;
-    int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\nlang=%s\npad=%s\nsound=%s\nrumble=%s\nbots=%s\nrules=%s\n",
+    int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\nlang=%s\npad=%s\nsound=%s\nrumble=%s\nbots=%s\nrules=%s\nblocks=%s\n",
             s->host, s->nick, s->last_version, s->fast, repeat_index(s->repeat_profile), gtn_lang_code(s->lang), padline,
             volume_codes[vol], s->rumble_off ? "off" : "on", bot_codes[bots],
-            s->rules_tn2 ? "tn2" : "classic");
+            s->rules_tn2 ? "tn2" : "classic", s->blocks == 1 ? "original" : "modern");
     for (int i = 1; i < GTN_SEATS && written >= 0; i++)
         if (s->seat_nick[i][0]) written = fprintf(f, "nick%d=%s\n", i + 1, s->seat_nick[i]);
     for (int i = 0; i < GTN_RECENT && written >= 0; i++)
