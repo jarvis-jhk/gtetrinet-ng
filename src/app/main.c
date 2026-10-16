@@ -258,6 +258,7 @@ static void host_local(gtn_app *a)
         gtn_set_status(a, gtn_tr("Could not start a game here: %s"), err);
         return;
     }
+    if (a->settings.rules_tn2) tn_rules_tn2(&a->server.rules);
     a->hosting = 1;
     snprintf(a->host, sizeof a->host, "127.0.0.1");
     a->port = a->server.port;
@@ -561,6 +562,7 @@ static void game_button(gtn_app *a, int who, enum gtn_btn b, int down)
     case BTN_LB: cycle_target(p, -1); break;
     case BTN_RB: cycle_target(p, 1); break;
     case BTN_BACK: tn_client_action(c, TN_ACT_DISCARD); break;
+    case BTN_RT: tn_client_action(c, TN_ACT_HOLD); break;
     case BTN_START: {
         int m = local_moderator(a);
         if (m >= 0) tn_client_pause(&a->pl[m].client, !a->pl[m].client.paused);
@@ -570,7 +572,7 @@ static void game_button(gtn_app *a, int who, enum gtn_btn b, int down)
     }
 }
 
-#define OPTION_ROWS 5
+#define OPTION_ROWS 6
 
 static void save_controls(gtn_app *a)
 {
@@ -672,6 +674,12 @@ static void input_options_button(gtn_app *a, enum gtn_btn b, enum gtn_dev dev, S
         gtn_sound_play(SFX_CLEAR2);  /* so the new level can be heard */
         if (gtn_settings_save(&a->settings) != 0)
             gtn_set_status(a, "%s", gtn_tr("Sound works for this run, but could not be saved"));
+        return;
+    }
+    if (a->options_row == 5) {
+        a->settings.rules_tn2 = dir ? !a->settings.rules_tn2 : 0;
+        if (gtn_settings_save(&a->settings) != 0)
+            gtn_set_status(a, "%s", gtn_tr("The rules work for this run, but could not be saved"));
         return;
     }
     if (a->options_row == 4) {

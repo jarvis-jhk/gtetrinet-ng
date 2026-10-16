@@ -47,5 +47,6 @@ void gtn_cell(int x, int y, int size, int cell);
 /* Draws a whole field; ghost_y >= 0 draws the falling piece's landing place (block/orient). */
 void gtn_field(int x, int y, int cellsize, const tn_field f, int dim);
 void gtn_piece(int x, int y, int cellsize, int block, int orient, int alpha);
+void gtn_shape(int x, int y, int cellsize, const char (*shape)[4], int alpha);
 
 #endif

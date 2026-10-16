@@ -21,6 +21,11 @@ int tn_rng_int(tn_rng *r, int n); /* 0..n-1 */
 int tn_block_orients(int block);
 const char (*tn_block_shape(int block, int orient))[4];
 
+/* Mutated pieces (TetriNET 2's Mutate Pieces) are drawn per game, so their block numbers name
+ * where the shape is kept: the falling piece, the next one or the held one. */
+enum { TN_MUTANT_CUR = 7, TN_MUTANT_NEXT, TN_MUTANT_HOLD, TN_BLOCK_KINDS };
+#define TN_MUTATE_PIECES 3
+
 typedef struct tn_game {
     tn_field field;
     tn_rules rules;
@@ -31,7 +36,15 @@ typedef struct tn_game {
     int level, lines, slines, llines;
     unsigned char specials[256];
     int nspecials;
+    int hold;                   /* held piece (TN2 rules), TN_NO_BLOCK if none */
+    int hold_used;              /* the falling piece came from or went to the hold already */
+    int mutate_left;            /* pieces still to be drawn mutated */
+    char mutant[3][4][4][4];    /* shapes of TN_MUTANT_CUR/NEXT/HOLD, 4 orientations */
 } tn_game;
+
+/* Shape and orientation count of any block this game can hold, mutants included. */
+const char (*tn_game_shape(const tn_game *g, int block, int orient))[4];
+int tn_game_orients(const tn_game *g, int block);
 
 void tn_game_start(tn_game *g, const tn_rules *rules, uint32_t seed);
 
@@ -43,6 +56,9 @@ int tn_game_down(tn_game *g);
 void tn_game_move(tn_game *g, int dir);
 void tn_game_rotate(tn_game *g, int dir);
 void tn_game_drop(tn_game *g);
+/* Swaps the falling piece with the held one (or the next one when nothing is held). Once per
+ * piece and only under rules with hold. 0 swapped, 1 refused, -1 the new piece did not fit. */
+int tn_game_hold(tn_game *g);
 /* Writes the piece into the field. Returns -1 if there is no room (lost). */
 int tn_game_solidify(tn_game *g);
 

@@ -12,6 +12,7 @@
 enum gtn_btn {
     BTN_UP, BTN_DOWN, BTN_LEFT, BTN_RIGHT,
     BTN_A, BTN_B, BTN_X, BTN_Y, BTN_LB, BTN_RB, BTN_START, BTN_BACK,
+    BTN_RT,                  /* right trigger or right stick click; C/Shift on the keyboard */
     BTN_COUNT
 };
 
@@ -19,7 +20,7 @@ enum gtn_btn {
  * moving and pausing must work the same on every pad, and menus never change. */
 enum gtn_pad_action {
     PAD_ROT_CW, PAD_ROT_CCW, PAD_DROP, PAD_SPECIAL, PAD_SPECIAL_SELF,
-    PAD_TARGET_PREV, PAD_TARGET_NEXT, PAD_DISCARD, PAD_ACTIONS
+    PAD_TARGET_PREV, PAD_TARGET_NEXT, PAD_DISCARD, PAD_HOLD, PAD_ACTIONS
 };
 
 /* Local seats P1..P8 and how long a name typed in the game may be (classic servers show
@@ -45,6 +46,7 @@ typedef struct gtn_settings {
     int volume;              /* enum gtn_volume, sound effects */
     int rumble_off;          /* controllers do not rumble on hits, losses and wins */
     int bot_level;           /* enum tn_bot_level for computer players added in the lobby */
+    int rules_tn2;           /* games hosted here use the TetriNET 2 rules (hold, 14 specials) */
 } gtn_settings;
 
 /* Folder for settings and logs, ending in a separator. Never NULL. */
@@ -62,7 +64,7 @@ int gtn_repeat_delay(int profile);
 int gtn_repeat_interval(int profile);
 
 
-/* The controller layout is always a one-to-one assignment of the eight bindable buttons,
+/* The controller layout is always a one-to-one assignment of the nine bindable buttons,
  * so no action can be lost and no button can do two things. */
 void gtn_pad_defaults(int map[PAD_ACTIONS]);
 int gtn_pad_valid(const int map[PAD_ACTIONS]);

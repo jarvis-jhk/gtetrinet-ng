@@ -192,6 +192,16 @@ static const char *const strings[][GTN_LANG_COUNT] = {
     {"the server does not accept TetriFast - pick classic with Y", "der Server kennt kein TetriFast - mit Y klassisch wählen"},
     {"send buffer overflow", "Sendepuffer übergelaufen"},
     {"message too long", "Nachricht zu lang"},
+    {"The rules work for this run, but could not be saved", "Die Regeln gelten jetzt, konnten aber nicht gespeichert werden"},
+    {"Hold piece", "Teil parken"},
+    {"Rules for games here", "Regeln für Spiele hier"},
+    {"TetriNET 2", "TetriNET 2"},
+    {"Classic TetriNET", "Klassisches TetriNET"},
+    {"Rules: TetriNET 2 (hold piece, 14 specials)", "Regeln: TetriNET 2 (Teil parken, 14 Specials)"},
+    {"HOLD", "PARKEN"},
+    {"IMMUNE %d", "IMMUN %d"},
+    {"MIXUP %d", "WIRR %d"},
+    {"DARK %d", "DUNKEL %d"},
 };
 
 /* Core log lines with one %s each; the most specific template comes first. */
@@ -216,6 +226,7 @@ static const char *const specials_de[TN_SB_COUNT] = {
     "1 Zeile dazu", "2 Zeilen dazu", "4 Zeilen dazu", "Zeile dazu", "Zeile weg",
     "Feld leeren", "Zufällig löschen", "Felder tauschen", "Specials löschen",
     "Schwerkraft", "Blockbeben", "Blockbombe",
+    "Immunität", "Spalte weg", "Teile mutieren", "Dunkelheit", "Verwirrung",
 };
 
 void gtn_lang_set(enum gtn_lang l) { current = l >= 0 && l < GTN_LANG_COUNT ? l : GTN_LANG_EN; }

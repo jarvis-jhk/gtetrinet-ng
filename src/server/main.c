@@ -28,11 +28,12 @@ static void on_signal(int sig) { (void)sig; stop = 1; }
 static void usage(void)
 {
     printf("%s-server %s\n"
-           "usage: gtetrinet-ng-server [--port N] [--slots 6|7|8] [--local] [--quiet]\n"
+           "usage: gtetrinet-ng-server [--port N] [--slots 6|7|8] [--local] [--tn2] [--quiet]\n"
            "       gtetrinet-ng-server --query HOST[:PORT]\n"
            "  --port N    listen on N (default %d)\n"
            "  --slots N   player slots; classic clients only show 6 (default 6)\n"
            "  --local     only accept connections from this machine\n"
+           "  --tn2       TetriNET 2 rules (hold piece, 14 specials); gtetrinet-ng clients only\n"
            "  --query     ask a running server who is there, as the game's server list does\n",
            TN_APP_NAME, TN_VERSION, TN_PORT);
 }
@@ -55,12 +56,13 @@ static int query(const char *addr)
 int main(int argc, char **argv)
 {
     if (argc == 3 && !strcmp(argv[1], "--query")) return query(argv[2]);
-    int port = TN_PORT, slots = TN_CLASSIC_SLOTS, local = 0, quiet = 0;
+    int port = TN_PORT, slots = TN_CLASSIC_SLOTS, local = 0, quiet = 0, tn2 = 0;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--port") && i + 1 < argc) port = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--slots") && i + 1 < argc) slots = atoi(argv[++i]);
         else if (!strcmp(argv[i], "--local")) local = 1;
         else if (!strcmp(argv[i], "--quiet")) quiet = 1;
+        else if (!strcmp(argv[i], "--tn2")) tn2 = 1;
         else { usage(); return strcmp(argv[i], "--help") ? 2 : 0; }
     }
     if (tn_net_init() != 0) { fprintf(stderr, "network init failed\n"); return 1; }
@@ -71,6 +73,7 @@ int main(int argc, char **argv)
         return 1;
     }
     s.log = !quiet;
+    if (tn2) tn_rules_tn2(&s.rules);
     signal(SIGINT, on_signal);
     signal(SIGTERM, on_signal);
     if (!quiet) fprintf(stderr, "[server] %s %s listening on port %d, %d slots\n", TN_APP_NAME, TN_VERSION, s.port, s.max_slots);

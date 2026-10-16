@@ -59,7 +59,7 @@ static void fake_session(gtn_app *a, int players, int ingame)
         tn_client *c = &p->client;
         c->state = TN_CONNECTED;
         c->me = i + 1;
-        c->ingame = c->playing = ingame;
+        c->ingame = c->playing = ingame != 0;
         c->game.block = TN_NO_BLOCK;
         c->game.next = 2;
         c->game.level = 12;
@@ -77,7 +77,19 @@ static void fake_session(gtn_app *a, int players, int ingame)
         tn_log_add(&c->chat, "*** Jürgen2 has joined");
         tn_log_add(&c->chat, "*** The game has started");
         tn_log_add(&c->chat, "<Jürgen1> Grüße");
+        if (ingame == 2) {
+            /* TetriNET 2: a held piece, every timer running, the five new specials queued */
+            c->rules.tn2 = c->rules.hold = 1;
+            c->game.hold = 3;
+            c->immune[c->me] = TN_IMMUNITY_MS;
+            c->confused_ms = TN_CONFUSION_MS;
+            c->dark_ms = TN_DARKNESS_MS;
+            for (int k = 0; k < 30; k++) c->game.specials[k] = (unsigned char)(15 + (i + k) % 5);
+        }
     }
+    tn_rules_default(&a->server.rules);
+    if (ingame == 2) tn_rules_tn2(&a->server.rules);
+    a->settings.rules_tn2 = ingame == 2;
     a->banner_ms = 1000;
 }
 
@@ -88,6 +100,8 @@ static int draw_all(gtn_app *a, SDL_Surface *surface, const char *tag)
         {SCR_TITLE, 0, 0, 0, "title"}, {SCR_TITLE, 3, 0, 0, "title3"}, {SCR_INPUT, 0, 0, 1, "options"},
         {SCR_ONLINE, 1, 0, 0, "online"}, {SCR_CONNECTING, 1, 0, 0, "connecting"}, {SCR_LOBBY, 8, 0, 0, "lobby"},
         {SCR_NEWS, 0, 0, 0, "news"}, {SCR_GAME, 1, 1, 0, "game1"}, {SCR_GAME, 8, 1, 0, "game8"},
+        {SCR_INPUT, 1, 2, 5, "options-tn2"}, {SCR_LOBBY, 8, 2, 0, "lobby-tn2"}, {SCR_CONTROLS, 0, 0, 0, "controls"},
+        {SCR_GAME, 1, 2, 0, "game1-tn2"}, {SCR_GAME, 2, 2, 0, "game2-tn2"}, {SCR_GAME, 8, 2, 0, "game8-tn2"},
     };
     int cut = 0;
     for (size_t i = 0; i < sizeof views / sizeof *views; i++) {
@@ -101,7 +115,7 @@ static int draw_all(gtn_app *a, SDL_Surface *surface, const char *tag)
             a->screen = SCR_TITLE;
             open_news(a, 0);
         }
-        if (views[i].screen == SCR_GAME) a->pl[0].client.paused = 1;
+        if (views[i].screen == SCR_GAME && views[i].ingame != 2) a->pl[0].client.paused = 1;
         gtn_set_status(a, gtn_tr("%s could not connect: %s"), "Jürgen1", gtn_tr("connection closed"));
         gtn_text_abbreviated = 0;
         gtn_draw(a);

@@ -145,6 +145,15 @@ int main(int argc, char **argv)
     CHECK(a.settings.rumble_off == 0);
     gtn_settings_load(&loaded);
     CHECK(loaded.rumble_off == 0);
+    /* the rules row below: TetriNET 2 for games hosted here, saved */
+    press(&a, 42, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
+    CHECK(a.options_row == 5);
+    press(&a, 42, SDL_CONTROLLER_BUTTON_A);
+    gtn_settings_load(&loaded);
+    CHECK(a.settings.rules_tn2 == 1 && loaded.rules_tn2 == 1);
+    press(&a, 42, SDL_CONTROLLER_BUTTON_Y);
+    gtn_settings_load(&loaded);
+    CHECK(a.settings.rules_tn2 == 0 && loaded.rules_tn2 == 0);
     press(&a, 42, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
     CHECK(a.options_row == 0);
     press(&a, 42, SDL_CONTROLLER_BUTTON_B);

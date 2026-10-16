@@ -312,12 +312,13 @@ static void test_solo_game(void)
 }
 
 
-static void test_bot_game(void)
+static void test_bot_game(int tn2)
 {
     /* four computer players over the real server: lines get cleared, specials fly, somebody wins */
     tn_server s;
     char err[160] = "";
     CHECK(tn_server_start(&s, 0, 1, 8, err, sizeof err) == 0);
+    if (tn2) tn_rules_tn2(&s.rules);
     enum { N = 4 };
     tn_client c[N];
     tn_bot b[N];
@@ -345,12 +346,261 @@ static void test_bot_game(void)
     }
     pump(&s, c, N, 100);
     for (int i = 0; i < N; i++) { lines += c[i].lines_total; hits += c[i].hits; }
-    printf("bot game: %d steps (%d s of play), %u lines, %u hits, winner slot %d\n", steps, steps / 50, lines, hits, c[0].last_winner);
+    printf("%sbot game: %d steps (%d s of play), %u lines, %u hits, winner slot %d\n", tn2 ? "TN2 " : "", steps, steps / 50, lines, hits, c[0].last_winner);
     CHECK(lines > 20);
     CHECK(hits > 0);
     CHECK(!c[0].ingame && c[0].last_winner >= 1);
     for (int i = 0; i < N; i++) tn_client_disconnect(&c[i]);
     tn_server_stop(&s);
+}
+
+static int cells_of(const char (*sh)[4])
+{
+    int n = 0;
+    for (int y = 0; y < 4; y++)
+        for (int x = 0; x < 4; x++) n += sh[y][x] != 0;
+    return n;
+}
+
+static void test_tn2_rules(void)
+{
+    /* classic newgame lines are unchanged; the TN2 suffix round-trips and classic parsers stop before it */
+    tn_rules r, p;
+    char s[512];
+    tn_rules_default(&r);
+    tn_rules_format(&r, s, sizeof s);
+    CHECK(strstr(s, "tn2") == NULL);
+    tn_rules_tn2(&r);
+    tn_rules_format(&r, s, sizeof s);
+    CHECK(strstr(s, " tn2 1 ") != NULL);
+    CHECK(tn_rules_parse(&p, s) == 0);
+    CHECK(memcmp(&r, &p, sizeof r) == 0);
+    int sum = 0;
+    for (int i = 0; i < TN_SPECIALS; i++) sum += p.specialfreq[i];
+    CHECK(sum == 100 && p.specialfreq[TN_SB_CONFUSION - TN_SB_ADDLINE] > 0);
+    /* the classic part alone: what a classic client reads, only classic specials */
+    char classic[512];
+    snprintf(classic, sizeof classic, "%.*s", (int)(strstr(s, " tn2") - s), s);
+    CHECK(tn_rules_parse(&p, classic) == 0 && !p.tn2 && !p.hold);
+    for (int i = TN_CLASSIC_SPECIALS; i < TN_SPECIALS; i++) CHECK(p.specialfreq[i] == 0);
+    /* a classic special string never carries the TN2 letters */
+    char sf[128];
+    sscanf(classic, "%*d %*d %*d %*d %*d %*d %*d %*s %127s", sf);
+    CHECK(strspn(sf, "123456789") == strlen(sf));
+
+    /* fields with TN2 specials go whole, and arrive intact */
+    tn_field a = {{0}}, b = {{0}}, c;
+    b[21][3] = 15; b[20][4] = 19; b[19][0] = 7;
+    char data[2048];
+    tn_field_encode(b, a, 0, data, sizeof data);
+    CHECK(strlen(data) == TN_FIELD_W * TN_FIELD_H);
+    memset(c, 0, sizeof c);
+    CHECK(tn_field_apply(c, data) == 0 && memcmp(b, c, sizeof c) == 0);
+    for (int sb = TN_SB_IMMUNITY; sb <= TN_SB_CONFUSION; sb++) {
+        CHECK(tn_sb_from_cell(tn_sb_cell(sb)) == sb);
+        CHECK(tn_cell_from_char(tn_cell_char(tn_sb_cell(sb))) == tn_sb_cell(sb));
+        CHECK(tn_sb_from_id(tn_sb_id(sb)) == sb);
+    }
+}
+
+static void test_tn2_game(void)
+{
+    tn_rules r;
+    tn_rules_default(&r);
+    tn_game g;
+    /* no hold under classic rules */
+    tn_game_start(&g, &r, 5);
+    CHECK(tn_game_spawn(&g) == 0);
+    int b0 = g.block;
+    CHECK(tn_game_hold(&g) == 1 && g.block == b0 && g.hold == TN_NO_BLOCK);
+
+    tn_rules_tn2(&r);
+    tn_game_start(&g, &r, 5);
+    CHECK(tn_game_spawn(&g) == 0);
+    b0 = g.block;
+    int n0 = g.next;
+    tn_game_move(&g, 1);
+    CHECK(tn_game_hold(&g) == 0);
+    CHECK(g.hold == b0 && g.block == n0 && g.bx == TN_FIELD_W / 2 - 2 && g.by == 0);
+    CHECK(tn_game_hold(&g) == 1 && g.block == n0);        /* once per piece */
+    tn_game_drop(&g);
+    CHECK(tn_game_solidify(&g) == 0);
+    CHECK(tn_game_spawn(&g) == 0);
+    int b1 = g.block;
+    CHECK(tn_game_hold(&g) == 0 && g.block == b0 && g.hold == b1);  /* swaps back */
+
+    /* Mutate Pieces: the next three pieces are odd shapes of five or six cells, then normal again */
+    tn_field none = {{0}};
+    tn_game_apply_special(&g, TN_SB_MUTATE, none);
+    CHECK(g.next == TN_MUTANT_NEXT);
+    int k = cells_of(tn_game_shape(&g, g.next, 0));
+    CHECK(k == 5 || k == 6);
+    for (int i = 0; i < TN_MUTATE_PIECES; i++) {
+        tn_game_drop(&g);
+        tn_game_solidify(&g);
+        memset(g.field, 0, sizeof g.field);
+        CHECK(tn_game_spawn(&g) == 0);
+        CHECK(g.block == TN_MUTANT_CUR);
+        int cells = cells_of(tn_game_shape(&g, g.block, 0));
+        CHECK(cells == 5 || cells == 6);
+        for (int o = 1; o < 4; o++) CHECK(cells_of(tn_game_shape(&g, g.block, o)) == cells);
+        int before = g.orient;
+        tn_game_rotate(&g, 1);
+        CHECK(g.orient == (before + 1) % 4);
+        if (i == 0) {
+            /* a held mutant keeps its shape */
+            char shape[4][4];
+            memcpy(shape, tn_game_shape(&g, g.block, 0), sizeof shape);
+            int held = g.hold;
+            CHECK(tn_game_hold(&g) == 0 && g.hold == TN_MUTANT_HOLD && g.block == held);
+            CHECK(memcmp(tn_game_shape(&g, g.hold, 0), shape, sizeof shape) == 0);
+        }
+    }
+    tn_game_drop(&g);
+    tn_game_solidify(&g);
+    memset(g.field, 0, sizeof g.field);
+    CHECK(tn_game_spawn(&g) == 0 && g.block < 7);
+    int landed = 0;
+    tn_game_drop(&g);
+    landed = tn_game_solidify(&g) == 0;
+    CHECK(landed);
+
+    /* Clear Column empties exactly one whole column */
+    for (int y = 4; y < TN_FIELD_H; y++)
+        for (int x = 0; x < TN_FIELD_W; x++) g.field[y][x] = (char)(1 + (x + y) % 5);
+    for (int y = 4; y < TN_FIELD_H; y++) g.field[y][(y * 7) % TN_FIELD_W] = 0; /* no full rows */
+    tn_field before;
+    memcpy(before, g.field, sizeof before);
+    tn_game_apply_special(&g, TN_SB_CLEARCOLUMN, none);
+    int empty_cols = 0;
+    for (int x = 0; x < TN_FIELD_W; x++) {
+        int filled = 0;
+        for (int y = 0; y < TN_FIELD_H; y++) filled += g.field[y][x] != 0;
+        empty_cols += filled == 0;
+    }
+    CHECK(empty_cols == 1);
+
+    /* TN2 specials appear on fields only under TN2 rules */
+    int seen[TN_CELLS] = {0};
+    for (int round = 0; round < 400; round++) {
+        tn_game_start(&g, &r, (uint32_t)round + 1);
+        for (int x = 0; x < TN_FIELD_W - 1; x++) g.field[TN_FIELD_H - 1][x] = 1;
+        g.field[TN_FIELD_H - 2][0] = 2;
+        g.field[TN_FIELD_H - 1][TN_FIELD_W - 1] = 3;
+        int lvl;
+        tn_game_clear_lines(&g, &lvl);
+        for (int y = 0; y < TN_FIELD_H; y++)
+            for (int x = 0; x < TN_FIELD_W; x++) seen[(int)g.field[y][x]]++;
+    }
+    for (int cell = 15; cell < TN_CELLS; cell++) CHECK(seen[cell] > 0);
+}
+
+static void test_tn2_network(void)
+{
+    /* three clients on a TN2 server: immunity, darkness, confusion and switch across the wire */
+    tn_server s;
+    char err[160] = "";
+    CHECK(tn_server_start(&s, 0, 1, 8, err, sizeof err) == 0);
+    tn_rules_tn2(&s.rules);
+    enum { N = 3 };
+    tn_client c[N];
+    const char *nicks[N] = {"Ida", "Vic", "Max"};
+    for (int i = 0; i < N; i++) {
+        tn_client_init(&c[i], nicks[i], "", 300 + (uint32_t)i);
+        tn_client_connect(&c[i], "127.0.0.1", s.port, 0);
+    }
+    for (int t = 0; t < 200 && !all_connected(c, N); t++) pump(&s, c, N, 4);
+    CHECK(all_connected(c, N));
+    pump(&s, c, N, 20);
+    for (int i = 0; i < N; i++) if (tn_client_moderator(&c[i])) tn_client_start_game(&c[i]);
+    pump(&s, c, N, 40);
+    for (int i = 0; i < N; i++) CHECK(c[i].ingame && c[i].rules.tn2 && c[i].rules.hold);
+
+    /* Ida makes herself immune; everybody sees it, Vic's add line does nothing to her */
+    c[0].game.specials[0] = (unsigned char)tn_sb_cell(TN_SB_IMMUNITY);
+    c[0].game.nspecials = 1;
+    tn_client_special(&c[0], c[0].me);
+    pump(&s, c, N, 40);
+    for (int i = 0; i < N; i++) CHECK(c[i].immune[c[0].me] > 0);
+    tn_field before;
+    memcpy(before, c[0].game.field, sizeof before);
+    c[1].game.specials[0] = 6;
+    c[1].game.nspecials = 1;
+    tn_client_special(&c[1], c[0].me);
+    pump(&s, c, N, 40);
+    CHECK(c[0].ev.blocked == 1 && memcmp(before, c[0].game.field, sizeof before) == 0);
+    /* a switch onto her is refused on both ends */
+    for (int x = 0; x < TN_FIELD_W - 1; x++) c[1].game.field[TN_FIELD_H - 1][x] = 2;
+    tn_field vic;
+    memcpy(vic, c[1].game.field, sizeof vic);
+    c[1].game.specials[0] = (unsigned char)tn_sb_cell(TN_SB_SWITCH);
+    c[1].game.nspecials = 1;
+    tn_client_special(&c[1], c[0].me);
+    pump(&s, c, N, 40);
+    CHECK(memcmp(vic, c[1].game.field, sizeof vic) == 0 && memcmp(before, c[0].game.field, sizeof before) == 0);
+    /* it runs out */
+    tn_client_update(&c[0], TN_IMMUNITY_MS);
+    CHECK(c[0].immune[c[0].me] == 0);
+
+    /* Darkness and Confusion reach Max and wear off */
+    c[0].game.specials[0] = (unsigned char)tn_sb_cell(TN_SB_DARKNESS);
+    c[0].game.specials[1] = (unsigned char)tn_sb_cell(TN_SB_CONFUSION);
+    c[0].game.nspecials = 2;
+    tn_client_special(&c[0], c[2].me);
+    tn_client_special(&c[0], c[2].me);
+    pump(&s, c, N, 40);
+    CHECK(c[2].dark_ms > 0 && c[2].confused_ms > 0);
+    CHECK(c[0].dark_ms == 0 && c[0].confused_ms == 0);
+    int same = 1;
+    for (int i = 0; i < 4; i++) same &= c[2].confusion[i] == i;
+    CHECK(!same);
+    /* a confused "left" does what the map says */
+    for (int t = 0; t < 200 && (c[2].game.block == TN_NO_BLOCK || c[2].spawn_wait); t++) tn_client_update(&c[2], 50);
+    int bx = c[2].game.bx, orient = c[2].game.orient;
+    tn_client_action(&c[2], TN_ACT_LEFT);
+    if (c[2].confusion[TN_ACT_LEFT] == TN_ACT_RIGHT) CHECK(c[2].game.bx == bx + 1);
+    else if (c[2].confusion[TN_ACT_LEFT] == TN_ACT_LEFT) CHECK(c[2].game.bx == bx - 1);
+    else CHECK(c[2].game.bx == bx && (c[2].game.orient != orient || tn_block_orients(c[2].game.block) == 1));
+    tn_client_update(&c[2], TN_DARKNESS_MS);
+    CHECK(c[2].dark_ms == 0 && c[2].confused_ms == 0);
+
+    /* Mutate goes over the wire, hold works for a client */
+    c[1].game.specials[0] = (unsigned char)tn_sb_cell(TN_SB_MUTATE);
+    c[1].game.nspecials = 1;
+    tn_client_special(&c[1], c[0].me);
+    pump(&s, c, N, 40);
+    CHECK(c[0].game.next == TN_MUTANT_NEXT);
+    for (int t = 0; t < 200 && (c[0].game.block == TN_NO_BLOCK || c[0].spawn_wait); t++) tn_client_update(&c[0], 50);
+    int was = c[0].game.block;
+    tn_client_action(&c[0], TN_ACT_HOLD);
+    CHECK(c[0].game.hold != TN_NO_BLOCK && (was == TN_MUTANT_CUR ? c[0].game.hold == TN_MUTANT_HOLD : c[0].game.hold == was));
+
+    /* a TN2 field reaches the others whole */
+    c[1].game.field[TN_FIELD_H - 1][0] = (char)tn_sb_cell(TN_SB_CLEARCOLUMN);
+    c[1].game.specials[0] = 6;
+    c[1].game.nspecials = 1;
+    tn_client_special(&c[1], c[1].me); /* any special makes Vic send his field */
+    pump(&s, c, N, 40);
+    CHECK(memcmp(c[2].slot[c[1].me].field, c[1].game.field, sizeof(tn_field)) == 0);
+
+    for (int i = 0; i < N; i++) tn_client_disconnect(&c[i]);
+    tn_server_stop(&s);
+
+    /* a client on a classic server ignores TN2 specials */
+    tn_client cl;
+    tn_client_init(&cl, "Classic", "", 9);
+    tn_client_handle(&cl, "playernum 1");
+    tn_client_handle(&cl, "playerjoin 2 Other");
+    tn_rules d;
+    tn_rules_default(&d);
+    char args[512], msg[600];
+    tn_rules_format(&d, args, sizeof args);
+    snprintf(msg, sizeof msg, "newgame %s", args);
+    tn_client_handle(&cl, msg);
+    CHECK(cl.playing && !cl.rules.tn2);
+    tn_client_handle(&cl, "sb 1 d 2");
+    tn_client_handle(&cl, "sb 1 f 2");
+    CHECK(cl.dark_ms == 0 && cl.confused_ms == 0 && cl.attacks.count == 0);
 }
 
 int main(void)
@@ -362,7 +612,11 @@ int main(void)
     test_game();
     test_network_game();
     test_solo_game();
-    test_bot_game();
+    test_bot_game(0);
+    test_bot_game(1);
+    test_tn2_rules();
+    test_tn2_game();
+    test_tn2_network();
     printf("%d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;
 }

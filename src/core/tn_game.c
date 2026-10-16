@@ -56,13 +56,27 @@ const char (*tn_block_shape(int block, int orient))[4] { return blocks[block][or
 
 int tn_gravity_ms(int level) { return level <= 100 ? 1005 - level * 10 : 5; }
 
+const char (*tn_game_shape(const tn_game *g, int block, int orient))[4]
+{
+    if (block >= TN_MUTANT_CUR && block < TN_BLOCK_KINDS) return g->mutant[block - TN_MUTANT_CUR][orient & 3];
+    if (block < 0 || block >= 7) block = 0;
+    return blocks[block][orient % blockcount[block]];
+}
+
+int tn_game_orients(const tn_game *g, int block)
+{
+    (void)g;
+    return block >= TN_MUTANT_CUR && block < TN_BLOCK_KINDS ? 4 : tn_block_orients(block);
+}
+
 /* 0 free, 1 blocked by cells or floor/ceiling, 2 blocked only by a side wall */
-static int obstructed(const tn_field f, int block, int orient, int bx, int by)
+static int obstructed_g(const tn_game *g, const tn_field f, int block, int orient, int bx, int by)
 {
     int side = 0;
+    const char (*sh)[4] = tn_game_shape(g, block, orient);
     for (int y = 0; y < 4; y++)
         for (int x = 0; x < 4; x++) {
-            if (!blocks[block][orient][y][x]) continue;
+            if (!sh[y][x]) continue;
             int fx = bx + x, fy = by + y;
             if (fx < 0 || fx >= TN_FIELD_W) { side = 2; continue; }
             if (fy < 0 || fy >= TN_FIELD_H) return 1;
@@ -71,15 +85,82 @@ static int obstructed(const tn_field f, int block, int orient, int bx, int by)
     return side;
 }
 
-static void place(tn_field f, int block, int orient, int bx, int by)
+#define obstructed(f, block, orient, bx, by) obstructed_g(g, f, block, orient, bx, by)
+
+static void place_g(const tn_game *g, tn_field f, int block, int orient, int bx, int by)
 {
+    const char (*sh)[4] = tn_game_shape(g, block, orient);
     for (int y = 0; y < 4; y++)
         for (int x = 0; x < 4; x++)
-            if (blocks[block][orient][y][x]) {
+            if (sh[y][x]) {
                 int fx = bx + x, fy = by + y;
                 if (fx >= 0 && fx < TN_FIELD_W && fy >= 0 && fy < TN_FIELD_H)
-                    f[fy][fx] = blocks[block][orient][y][x];
+                    f[fy][fx] = sh[y][x];
             }
+}
+#define place(f, block, orient, bx, by) place_g(g, f, block, orient, bx, by)
+
+/* A random connected shape of five or six cells inside 4x4, in one colour, with its four
+ * rotations; each rotation is moved to the top row and centred like the classic pieces. */
+static void make_mutant(tn_game *g, char out[4][4][4])
+{
+    char m[4][4];
+    memset(m, 0, sizeof m);
+    int cells = 5 + tn_rng_int(&g->rng, 2), n = 1;
+    char colour = (char)(tn_rng_int(&g->rng, 5) + 1);
+    m[1][1] = colour;
+    while (n < cells) {
+        int y = tn_rng_int(&g->rng, 4), x = tn_rng_int(&g->rng, 4);
+        if (m[y][x]) continue;
+        int touch = (y > 0 && m[y - 1][x]) || (y < 3 && m[y + 1][x]) || (x > 0 && m[y][x - 1]) || (x < 3 && m[y][x + 1]);
+        if (!touch) continue;
+        m[y][x] = colour;
+        n++;
+    }
+    for (int o = 0; o < 4; o++) {
+        char r[4][4];
+        int top = 4, left = 4, right = -1;
+        for (int y = 0; y < 4; y++)
+            for (int x = 0; x < 4; x++) {
+                r[y][x] = m[y][x];
+                if (!m[y][x]) continue;
+                if (y < top) top = y;
+                if (x < left) left = x;
+                if (x > right) right = x;
+            }
+        int dx = (4 - (right - left + 1)) / 2 - left;
+        memset(out[o], 0, 16);
+        for (int y = 0; y < 4; y++)
+            for (int x = 0; x < 4; x++)
+                if (r[y][x]) out[o][y - top][x + dx] = r[y][x];
+        /* next orientation: a quarter turn clockwise */
+        char t[4][4];
+        for (int y = 0; y < 4; y++)
+            for (int x = 0; x < 4; x++) t[x][3 - y] = m[y][x];
+        memcpy(m, t, sizeof m);
+    }
+}
+
+/* the next piece: normal, or a mutant while Mutate Pieces lasts */
+static void draw_next(tn_game *g)
+{
+    if (g->mutate_left > 0) {
+        g->mutate_left--;
+        make_mutant(g, g->mutant[TN_MUTANT_NEXT - TN_MUTANT_CUR]);
+        g->next = TN_MUTANT_NEXT;
+        g->next_orient = 0;
+        return;
+    }
+    g->next = tn_game_random_block(g);
+    g->next_orient = tn_rng_int(&g->rng, blockcount[g->next]);
+}
+
+/* moves a piece's block number (and a mutant's shape) to the slot it now occupies */
+static int move_block(tn_game *g, int block, int to)
+{
+    if (block < TN_MUTANT_CUR) return block;
+    if (block != to) memcpy(g->mutant[to - TN_MUTANT_CUR], g->mutant[block - TN_MUTANT_CUR], sizeof g->mutant[0]);
+    return to;
 }
 
 void tn_game_start(tn_game *g, const tn_rules *rules, uint32_t seed)
@@ -89,9 +170,9 @@ void tn_game_start(tn_game *g, const tn_rules *rules, uint32_t seed)
     tn_rng_seed(&g->rng, seed);
     g->alive = 1;
     g->block = TN_NO_BLOCK;
+    g->hold = TN_NO_BLOCK;
     g->level = rules->level;
-    g->next = tn_game_random_block(g);
-    g->next_orient = tn_rng_int(&g->rng, blockcount[g->next]);
+    draw_next(g);
     if (rules->stack > 0) tn_game_add_lines(g, rules->stack, 1);
 }
 
@@ -110,10 +191,10 @@ int tn_game_random_block(tn_game *g)
 
 static int random_special_cell(tn_game *g)
 {
-    int total = 0;
-    for (int i = 0; i < 9; i++) total += g->rules.specialfreq[i];
+    int total = 0, kinds = g->rules.tn2 ? TN_SPECIALS : TN_CLASSIC_SPECIALS;
+    for (int i = 0; i < kinds; i++) total += g->rules.specialfreq[i];
     int n = tn_rng_int(&g->rng, total > 0 ? total : 9);
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < kinds; i++) {
         int w = total > 0 ? g->rules.specialfreq[i] : 1;
         if (n < w) return 6 + i;
         n -= w;
@@ -124,12 +205,12 @@ static int random_special_cell(tn_game *g)
 int tn_game_spawn(tn_game *g)
 {
     if (!g->alive) return -1;
-    g->block = g->next;
+    g->block = move_block(g, g->next, TN_MUTANT_CUR);
     g->orient = g->next_orient;
     g->bx = TN_FIELD_W / 2 - 2;
     g->by = 0;
-    g->next = tn_game_random_block(g);
-    g->next_orient = tn_rng_int(&g->rng, blockcount[g->next]);
+    g->hold_used = 0;
+    draw_next(g);
     if (obstructed(g->field, g->block, g->orient, g->bx, g->by)) {
         g->block = TN_NO_BLOCK;
         g->alive = 0;
@@ -155,7 +236,7 @@ void tn_game_move(tn_game *g, int dir)
 void tn_game_rotate(tn_game *g, int dir)
 {
     if (g->block == TN_NO_BLOCK) return;
-    int n = g->orient + dir, cnt = blockcount[g->block];
+    int n = g->orient + dir, cnt = tn_game_orients(g, g->block);
     if (n >= cnt) n = 0;
     if (n < 0) n = cnt - 1;
     switch (obstructed(g->field, g->block, n, g->bx, g->by)) {
@@ -187,6 +268,38 @@ int tn_game_drop_y(const tn_game *g)
     int y = g->by;
     while (!obstructed(g->field, g->block, g->orient, g->bx, y + 1)) y++;
     return y;
+}
+
+int tn_game_hold(tn_game *g)
+{
+    if (!g->rules.hold || g->block == TN_NO_BLOCK || g->hold_used) return 1;
+    int cur = g->block;
+    if (g->hold == TN_NO_BLOCK) {
+        g->hold = move_block(g, cur, TN_MUTANT_HOLD);
+        g->block = TN_NO_BLOCK;
+        if (tn_game_spawn(g) < 0) return -1;
+    } else {
+        /* the shapes trade places through the spare current-piece slot */
+        char spare[4][4][4];
+        if (cur == TN_MUTANT_CUR) memcpy(spare, g->mutant[0], sizeof spare);
+        g->block = move_block(g, g->hold, TN_MUTANT_CUR);
+        g->orient = 0;
+        if (cur == TN_MUTANT_CUR) {
+            memcpy(g->mutant[TN_MUTANT_HOLD - TN_MUTANT_CUR], spare, sizeof spare);
+            g->hold = TN_MUTANT_HOLD;
+        } else {
+            g->hold = cur;
+        }
+        g->bx = TN_FIELD_W / 2 - 2;
+        g->by = 0;
+        if (obstructed(g->field, g->block, g->orient, g->bx, g->by)) {
+            g->block = TN_NO_BLOCK;
+            g->alive = 0;
+            return -1;
+        }
+    }
+    g->hold_used = 1;
+    return 0;
 }
 
 int tn_game_solidify(tn_game *g)
@@ -414,7 +527,17 @@ int tn_game_apply_special(tn_game *g, int sb, const tn_field other)
             (*f)[tn_rng_int(&g->rng, TN_FIELD_H - 6) + 6][tn_rng_int(&g->rng, TN_FIELD_W)] = debris[i];
         break;
     }
-    default: break;
+    case TN_SB_CLEARCOLUMN: {
+        int x = tn_rng_int(&g->rng, TN_FIELD_W);
+        for (int y = 0; y < TN_FIELD_H; y++) (*f)[y][x] = 0;
+        break;
+    }
+    case TN_SB_MUTATE:
+        /* the piece shown as next is the first of them */
+        g->mutate_left = TN_MUTATE_PIECES;
+        draw_next(g);
+        break;
+    default: break; /* immunity, darkness and confusion are timers of the client */
     }
     /* a special can complete lines; those count as removed but give nothing */
     remove_full_lines(g->field, NULL, NULL);

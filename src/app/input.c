@@ -50,6 +50,7 @@ static int key_button(SDL_Keycode k, int in_game)
     case SDLK_TAB: case SDLK_e: return BTN_RB;
     case SDLK_q: return BTN_LB;
     case SDLK_d: return BTN_BACK;
+    case SDLK_c: case SDLK_LSHIFT: case SDLK_RSHIFT: return BTN_RT;
     case SDLK_n: return in_game ? -1 : BTN_Y; /* in a game the number keys pick specials */
     case SDLK_RETURN: case SDLK_KP_ENTER: return in_game ? BTN_START : BTN_A;
     case SDLK_p: return BTN_START;
@@ -74,6 +75,7 @@ static int pad_button(Uint8 b)
     case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: return BTN_RB;
     case SDL_CONTROLLER_BUTTON_START: return BTN_START;
     case SDL_CONTROLLER_BUTTON_BACK: return BTN_BACK;
+    case SDL_CONTROLLER_BUTTON_RIGHTSTICK: return BTN_RT;
     default: return -1;
     }
 }
@@ -161,7 +163,8 @@ void gtn_input_event(gtn_app *a, const SDL_Event *e)
         if (e->caxis.axis == SDL_CONTROLLER_AXIS_LEFTX || e->caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
             stick(a, e->caxis.which, e->caxis.axis, e->caxis.value);
         else if (e->caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT || e->caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT) {
-            /* triggers double as shoulder buttons, which some pads lack */
+            /* the left trigger doubles as LB, for pads without shoulder buttons; the right one
+             * is a button of its own (hold piece) */
             int who = owner(a, DEV_PAD, e->caxis.which);
             static int held[64][2];
             int t = e->caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT;
@@ -169,7 +172,7 @@ void gtn_input_event(gtn_app *a, const SDL_Event *e)
             int nv = e->caxis.value > 20000 ? 1 : e->caxis.value < 8000 ? 0 : *h;
             if (nv != *h) {
                 *h = nv;
-                if (who >= 0) gtn_button(a, who, DEV_PAD, e->caxis.which, t ? BTN_RB : BTN_LB, nv);
+                if (who >= 0) gtn_button(a, who, DEV_PAD, e->caxis.which, t ? BTN_RT : BTN_LB, nv);
             }
         }
         break;

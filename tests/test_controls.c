@@ -125,6 +125,11 @@ int main(int argc, char **argv)
     CHECK(loaded.repeat_profile == REPEAT_RELAXED && loaded.pad_map[PAD_ROT_CW] == BTN_B);
     CHECK(loaded.pad_map[PAD_DROP] == BTN_Y && loaded.pad_map[PAD_SPECIAL_SELF] == BTN_UP);
     CHECK(loaded.pad_map[PAD_TARGET_PREV] == BTN_RB && gtn_pad_valid(loaded.pad_map));
+    CHECK(loaded.pad_map[PAD_HOLD] == BTN_RT);        /* saved before hold existed */
+    write_file(path, "pad=B,A,Y,X,UP,RB,LB,RT,BACK\n");
+    gtn_settings_load(&loaded);
+    CHECK(loaded.pad_map[PAD_HOLD] == BTN_BACK && loaded.pad_map[PAD_DISCARD] == BTN_RT && gtn_pad_valid(loaded.pad_map));
+    CHECK(gtn_pad_translate(loaded.pad_map, BTN_BACK) == BTN_RT);
     remove(path);
 
     snprintf(a.settings.nick, sizeof a.settings.nick, "PadPlayer");
@@ -134,7 +139,7 @@ int main(int argc, char **argv)
     a.screen = SCR_TITLE;
     tap(&a, SDL_CONTROLLER_BUTTON_X);
     CHECK(a.screen == SCR_INPUT);
-    for (int i = 0; i < 3; i++) tap(&a, SDL_CONTROLLER_BUTTON_DPAD_UP); /* past rumble and sound */
+    for (int i = 0; i < 4; i++) tap(&a, SDL_CONTROLLER_BUTTON_DPAD_UP); /* past rules, rumble and sound */
     CHECK(a.options_row == 2);
     tap(&a, SDL_CONTROLLER_BUTTON_A);
     CHECK(a.screen == SCR_CONTROLS && a.controls_row == 0 && !a.controls_capture && gtn_local_count(&a) == 0);

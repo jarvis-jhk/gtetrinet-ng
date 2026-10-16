@@ -123,8 +123,12 @@ static void do_special(tn_client *c, int from, int to, int sb)
         tn_log_add(&c->attacks, "%s on %s by %s", tn_sb_name(sb), slot_name(c, to), from ? slot_name(c, from) : "server");
     else
         tn_log_add(&c->attacks, "%s to All by %s", tn_sb_name(sb), from ? slot_name(c, from) : "server");
+    /* immunity stops what others send; it starts after this message, so it is not stopped */
+    int immune_to = to >= 1 && to <= TN_MAX_SLOTS && c->immune[to] > 0 && from != to;
+    if (sb == TN_SB_IMMUNITY && to >= 1 && to <= TN_MAX_SLOTS) c->immune[to] = TN_IMMUNITY_MS;
     if (!c->playing) return;
     if (from == c->me && sb == TN_SB_SWITCH) {
+        if (immune_to) return; /* they keep their field, so we keep ours */
         /* we switch too: we get the target's field */
         from = to;
         to = c->me;
@@ -132,6 +136,10 @@ static void do_special(tn_client *c, int from, int to, int sb)
     if (!(to == 0 && from != c->me) && to != c->me) return;
     if (to == 0 && c->team[0] && from >= 1 && from <= TN_MAX_SLOTS && strcmp(c->slot[from].team, c->team) == 0)
         return;
+    if (from != c->me && sb != TN_SB_IMMUNITY && (to == 0 ? c->immune[c->me] > 0 : immune_to)) {
+        c->ev.blocked++;
+        return;
+    }
     const char (*other)[TN_FIELD_W] = (from >= 1 && from <= TN_MAX_SLOTS) ? (const char (*)[TN_FIELD_W])c->slot[from].field : NULL;
     if (from != c->me) {
         c->hits++;
@@ -142,7 +150,29 @@ static void do_special(tn_client *c, int from, int to, int sb)
         player_lost(c);
         return;
     }
+    if (sb == TN_SB_DARKNESS) c->dark_ms = TN_DARKNESS_MS;
+    if (sb == TN_SB_CONFUSION) {
+        /* a random reordering of left, right and both rotations that changes something */
+        unsigned char m[4] = {TN_ACT_LEFT, TN_ACT_RIGHT, TN_ACT_ROT_CW, TN_ACT_ROT_CCW};
+        tn_rng *r = &c->game.rng;
+        do {
+            for (int i = 3; i > 0; i--) {
+                int j = tn_rng_int(r, i + 1);
+                unsigned char t = m[i]; m[i] = m[j]; m[j] = t;
+            }
+        } while (m[0] == TN_ACT_LEFT && m[1] == TN_ACT_RIGHT && m[2] == TN_ACT_ROT_CW);
+        memcpy(c->confusion, m, sizeof m);
+        c->confused_ms = TN_CONFUSION_MS;
+    }
     send_field(c, 0);
+}
+
+static void tick_effects(tn_client *c, int dt_ms)
+{
+    for (int i = 0; i <= TN_MAX_SLOTS; i++)
+        if (c->immune[i] > 0) c->immune[i] = c->immune[i] > dt_ms ? c->immune[i] - dt_ms : 0;
+    if (c->dark_ms > 0) c->dark_ms = c->dark_ms > dt_ms ? c->dark_ms - dt_ms : 0;
+    if (c->confused_ms > 0) c->confused_ms = c->confused_ms > dt_ms ? c->confused_ms - dt_ms : 0;
 }
 
 static void slot_clear(tn_slot *s)
@@ -176,6 +206,8 @@ static void start_game(tn_client *c, const char *args)
     c->playing = c->me > 0;
     c->fall_acc = c->downcount = c->soft_held = c->soft_steps = 0;
     c->spawn_wait = 0;
+    c->dark_ms = c->confused_ms = 0;
+    memset(c->immune, 0, sizeof c->immune);
     if (c->playing) {
         send_field(c, 1);
         if (tn_game_spawn(&c->game) < 0) player_lost(c);
@@ -308,6 +340,7 @@ void tn_client_handle(tn_client *c, const char *msg)
         from = atoi(rest);
         if (from < 0 || from > TN_MAX_SLOTS) return;
         if ((sb = tn_sb_from_id(id)) < 0) return;
+        if (sb >= TN_SB_IMMUNITY && !c->rules.tn2) return; /* not a classic special */
         if (c->ingame) do_special(c, from, to, sb);
         return;
     }
@@ -427,6 +460,7 @@ void tn_client_update(tn_client *c, int dt_ms)
     }
 
     if (!c->playing || c->paused || dt_ms <= 0) goto flush;
+    tick_effects(c, dt_ms);
     if (c->spawn_wait > 0) {
         c->spawn_wait -= dt_ms;
         if (c->spawn_wait > 0) goto flush;
@@ -452,6 +486,7 @@ void tn_client_action(tn_client *c, enum tn_action a)
 {
     if (!c->playing || c->paused) return;
     int piece = c->game.block != TN_NO_BLOCK && c->spawn_wait == 0;
+    if (c->confused_ms > 0 && (int)a <= TN_ACT_ROT_CCW) a = (enum tn_action)c->confusion[a];
     switch (a) {
     case TN_ACT_LEFT: if (piece) tn_game_move(&c->game, -1); break;
     case TN_ACT_RIGHT: if (piece) tn_game_move(&c->game, 1); break;
@@ -478,6 +513,11 @@ void tn_client_action(tn_client *c, enum tn_action a)
         break;
     case TN_ACT_DISCARD:
         tn_game_pop_special(&c->game);
+        break;
+    case TN_ACT_HOLD:
+        if (!piece) break;
+        if (tn_game_hold(&c->game) < 0) { player_lost(c); break; }
+        c->fall_acc = c->downcount = 0;
         break;
     }
 }

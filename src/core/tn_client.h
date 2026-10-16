@@ -13,8 +13,13 @@ enum tn_client_state { TN_OFFLINE, TN_CONNECTING, TN_LOGGING_IN, TN_CONNECTED, T
 
 enum tn_action {
     TN_ACT_LEFT, TN_ACT_RIGHT, TN_ACT_ROT_CW, TN_ACT_ROT_CCW,
-    TN_ACT_SOFT_PRESS, TN_ACT_SOFT_RELEASE, TN_ACT_DROP, TN_ACT_DISCARD
+    TN_ACT_SOFT_PRESS, TN_ACT_SOFT_RELEASE, TN_ACT_DROP, TN_ACT_DISCARD, TN_ACT_HOLD
 };
+
+/* TetriNET 2's defaults */
+#define TN_IMMUNITY_MS 15000
+#define TN_DARKNESS_MS 10000
+#define TN_CONFUSION_MS 10000
 
 #define TN_LOG_LINES 64
 #define TN_LOG_LEN 160
@@ -47,6 +52,7 @@ typedef struct tn_events {
     int last_hit;                   /* TN_SB_* of the newest hit */
     unsigned losses;                /* we lost a game */
     unsigned wins;                  /* we, or our team, won a game */
+    unsigned blocked;               /* specials our immunity stopped */
 } tn_events;
 
 typedef struct tn_client {
@@ -68,6 +74,11 @@ typedef struct tn_client {
 
     /* timers, in ms */
     int fall_acc, spawn_wait, downcount, soft_held, soft_steps;
+    /* TetriNET 2 effects on us, in ms left; confusion swaps our four piece controls */
+    int dark_ms, confused_ms;
+    int immune[TN_MAX_SLOTS + 1];   /* per slot: every client sees every Immunity, so a switch
+                                       onto an immune player is refused on both ends */
+    unsigned char confusion[4];     /* LEFT, RIGHT, ROT_CW, ROT_CCW -> what they do now */
 
     tn_log chat;                    /* partyline: chat and server messages */
     tn_log attacks;                 /* specials used, "Add Line on Anna by Jan" */

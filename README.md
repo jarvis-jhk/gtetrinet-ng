@@ -45,10 +45,20 @@ and board. Controllers: d-pad/stick moves, Down soft-drops, Up hard-drops, A rot
 X uses a special on the selected target, Y uses it on yourself, shoulders select targets,
 Back discards a special, Start pauses, Back+Start ends the game. A disconnected seat can
 be reclaimed by pressing A on an unclaimed controller. Eight fields are a dense layout.
-These face, shoulder, Up and Back buttons can be rearranged under Options → Controller buttons.
+Under TetriNET 2 rules the right trigger (or a right stick click) holds a piece.
+These face, shoulder, Up, Back and right-trigger buttons can be rearranged under Options → Controller buttons.
+
+TetriNET 2 rules: Options → Rules for games here → TetriNET 2 makes games hosted on this
+machine use the hold piece and the five TetriNET 2 specials — Immunity (15 s, nothing from
+others reaches you), Clear Column, Mutate Pieces (three odd five- or six-cell pieces),
+Darkness (10 s, only the piece and its surroundings visible) and Confusion (10 s, moves and
+rotations reshuffled). This is our own extension between gtetrinet-ng players: it is not
+compatible with the TetriNET 2 client or its servers, and online games on classic servers
+stay classic. `gtetrinet-ng-server --tn2` does the same for a LAN server. What TetriNET 2
+had and what is still missing: [docs/TN2-PARITY.md](docs/TN2-PARITY.md).
 
 Keyboard: arrows move/rotate, Space drops, X rotates clockwise / Z counterclockwise, S uses a special, Q/E or Tab
-changes target, 1–8 uses it on a numbered player, D discards, P pauses. `--nick Name`
+changes target, 1–8 uses it on a numbered player, D discards, C or Shift holds (TetriNET 2 rules), P pauses. `--nick Name`
 sets your nickname.
 
 Playing online: "Play online" lists the servers you played on (up to six, newest first)

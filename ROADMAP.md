@@ -68,9 +68,14 @@ not certified hardware compatibility. Release gates and remaining checks are in 
   - [ ] Physical Deck legibility of the German UI (with the M1 hardware session).
 - [x] Color-code specials by effect: beneficial, harmful and situational, with readable
   labels/symbols as well as colors; document how the chosen target changes the effect.
-- [ ] Audit missing TetriNET 2 features and prioritize a documented parity list (rules,
+- [x] Audit missing TetriNET 2 features and prioritize a documented parity list (rules,
   specials, modes, lobby/chat and protocol). Distinguish gameplay additions from TN2 server
   compatibility; do not advertise TN2 support from classic 1.13/TetriFast support.
+  docs/TN2-PARITY.md; TetriNET 2 rules for games hosted here (hold piece, Immunity, Clear
+  Column, Mutate, Darkness, Confusion) as an extension between our clients.
+  - [ ] Host settings from the parity list: specials on/off ("pure"), entry delay, piece
+    frequencies, inventory shuffle.
+  - [ ] TetriNET 2 server/client compatibility only if a protocol description turns up.
 - [x] Two-way rotation exists: controller A clockwise / B counterclockwise, keyboard
   X clockwise / Z counterclockwise. Keep explicit help and verify both on physical Deck
   controls; configurable bindings and rotation behavior remain M1 work.

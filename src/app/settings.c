@@ -46,7 +46,7 @@ int gtn_repeat_interval(int profile)
     return intervals[repeat_index(profile)];
 }
 
-static const int pad_default[PAD_ACTIONS] = {BTN_A, BTN_B, BTN_UP, BTN_X, BTN_Y, BTN_LB, BTN_RB, BTN_BACK};
+static const int pad_default[PAD_ACTIONS] = {BTN_A, BTN_B, BTN_UP, BTN_X, BTN_Y, BTN_LB, BTN_RB, BTN_BACK, BTN_RT};
 
 void gtn_pad_defaults(int map[PAD_ACTIONS])
 {
@@ -97,12 +97,13 @@ const char *gtn_pad_action_name(int act)
     static const char *const names[] = {
         N_("Rotate clockwise"), N_("Rotate counterclockwise"), N_("Hard drop"), N_("Special on target"),
         N_("Special on yourself"), N_("Previous target"), N_("Next target"), N_("Discard special"),
+        N_("Hold piece"),
     };
     return act >= 0 && act < PAD_ACTIONS ? names[act] : "?";
 }
 
 /* Controller names as printed on an Xbox-layout pad, which is what SDL reports for every pad. */
-static const char *const btn_names[BTN_COUNT] = {"UP", "DOWN", "LEFT", "RIGHT", "A", "B", "X", "Y", "LB", "RB", "START", "BACK"};
+static const char *const btn_names[BTN_COUNT] = {"UP", "DOWN", "LEFT", "RIGHT", "A", "B", "X", "Y", "LB", "RB", "START", "BACK", "RT"};
 
 const char *gtn_btn_name(int b)
 {
@@ -128,6 +129,8 @@ static void parse_pad(int map[PAD_ACTIONS], const char *v)
         if (*v != ',') break;
         if (!*++v) return; /* a trailing comma is not a complete layout */
     }
+    /* layouts saved before the hold piece existed: the right trigger was never bindable */
+    if (n == PAD_ACTIONS - 1 && !*v) m[n++] = BTN_RT;
     if (n == PAD_ACTIONS && !*v && gtn_pad_valid(m)) memcpy(map, m, sizeof m);
 }
 
@@ -195,6 +198,7 @@ void gtn_settings_load(gtn_settings *s)
         else if (!strcmp(k, "pad")) parse_pad(s->pad_map, v);
         else if (!strcmp(k, "sound")) s->volume = parse_volume(v);
         else if (!strcmp(k, "rumble")) s->rumble_off = !strcmp(v, "off");
+        else if (!strcmp(k, "rules")) s->rules_tn2 = !strcmp(v, "tn2");
         else if (!strcmp(k, "bots"))
             for (int i = 0; i < TN_BOT_LEVELS; i++) { if (!strcmp(v, bot_codes[i])) s->bot_level = i; }
         else if (!strncmp(k, "server", 6) && k[6] >= '1' && k[6] < '1' + GTN_RECENT && !k[7])
@@ -242,14 +246,15 @@ int gtn_settings_save(const gtn_settings *s)
     int pad[PAD_ACTIONS];
     memcpy(pad, s->pad_map, sizeof pad);
     if (!gtn_pad_valid(pad)) gtn_pad_defaults(pad);
-    char padline[96] = "";
+    char padline[128] = "";
     for (int i = 0; i < PAD_ACTIONS; i++)
         snprintf(padline + strlen(padline), sizeof padline - strlen(padline), "%s%s", i ? "," : "", btn_names[pad[i]]);
     int vol = s->volume >= 0 && s->volume < VOLUME_COUNT ? s->volume : VOLUME_NORMAL;
     int bots = s->bot_level >= 0 && s->bot_level < TN_BOT_LEVELS ? s->bot_level : TN_BOT_NORMAL;
-    int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\nlang=%s\npad=%s\nsound=%s\nrumble=%s\nbots=%s\n",
+    int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\nlang=%s\npad=%s\nsound=%s\nrumble=%s\nbots=%s\nrules=%s\n",
             s->host, s->nick, s->last_version, s->fast, repeat_index(s->repeat_profile), gtn_lang_code(s->lang), padline,
-            volume_codes[vol], s->rumble_off ? "off" : "on", bot_codes[bots]);
+            volume_codes[vol], s->rumble_off ? "off" : "on", bot_codes[bots],
+            s->rules_tn2 ? "tn2" : "classic");
     for (int i = 1; i < GTN_SEATS && written >= 0; i++)
         if (s->seat_nick[i][0]) written = fprintf(f, "nick%d=%s\n", i + 1, s->seat_nick[i]);
     for (int i = 0; i < GTN_RECENT && written >= 0; i++)

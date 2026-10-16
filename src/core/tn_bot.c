@@ -30,9 +30,10 @@ static unsigned bot_rand(tn_bot *b)
     return (b->rng >> 16) & 0x7fff;
 }
 
-static int fits(const tn_field f, int block, int orient, int bx, int by)
+static int fits(const tn_game *g, int block, int orient, int bx, int by)
 {
-    const char (*sh)[4] = tn_block_shape(block, orient);
+    const char (*sh)[4] = tn_game_shape(g, block, orient);
+    const char (*f)[TN_FIELD_W] = g->field;
     for (int y = 0; y < 4; y++)
         for (int x = 0; x < 4; x++) {
             if (!sh[y][x]) continue;
@@ -69,14 +70,14 @@ static void choose(tn_bot *b, const tn_client *c)
     b->have_goal = 0;
     /* a mistake: every fitting place scores at random, so an arbitrary one wins */
     int mistake = b->mistake_pct > 0 && (int)(bot_rand(b) % 100) < b->mistake_pct;
-    for (int o = 0; o < tn_block_orients(g->block); o++)
+    for (int o = 0; o < tn_game_orients(g, g->block); o++)
         for (int x = -3; x < TN_FIELD_W; x++) {
-            if (!fits(g->field, g->block, o, x, 0)) continue;
+            if (!fits(g, g->block, o, x, 0)) continue;
             int y = 0;
-            while (fits(g->field, g->block, o, x, y + 1)) y++;
+            while (fits(g, g->block, o, x, y + 1)) y++;
             tn_field t;
             memcpy(t, g->field, sizeof t);
-            const char (*sh)[4] = tn_block_shape(g->block, o);
+            const char (*sh)[4] = tn_game_shape(g, g->block, o);
             for (int r = 0; r < 4; r++)
                 for (int q = 0; q < 4; q++)
                     if (sh[r][q]) t[y + r][x + q] = sh[r][q];
@@ -96,7 +97,8 @@ static int stack_height(const tn_field f)
 static void use_special(tn_client *c)
 {
     int sb = tn_sb_from_cell(c->game.specials[0]);
-    int good = sb == TN_SB_CLEARLINE || sb == TN_SB_NUKE || sb == TN_SB_GRAVITY || sb == TN_SB_SWITCH;
+    int good = sb == TN_SB_CLEARLINE || sb == TN_SB_NUKE || sb == TN_SB_GRAVITY || sb == TN_SB_SWITCH ||
+               sb == TN_SB_IMMUNITY || sb == TN_SB_CLEARCOLUMN;
     if (good) {
         /* helpful ones on ourselves when the stack is high, switch onto the lowest opponent */
         if (sb == TN_SB_SWITCH) {

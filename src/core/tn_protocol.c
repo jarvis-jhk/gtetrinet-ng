@@ -21,9 +21,14 @@ static const struct { const char *id; int cell; const char *name; } sbinfo[TN_SB
     {"g",   12, "Block Gravity"},
     {"q",   13, "Blockquake"},
     {"o",   14, "Block Bomb"},
+    {"i",   15, "Immunity"},
+    {"v",   16, "Clear Column"},
+    {"m",   17, "Mutate Pieces"},
+    {"d",   18, "Darkness"},
+    {"f",   19, "Confusion"},
 };
 
-static const char cellchars[] = "012345acnrsbgqo";
+static const char cellchars[] = "012345acnrsbgqoivmdf";
 
 const char *tn_sb_id(int sb) { return sb >= 0 && sb < TN_SB_COUNT ? sbinfo[sb].id : "?"; }
 int tn_sb_cell(int sb) { return sb >= 0 && sb < TN_SB_COUNT ? sbinfo[sb].cell : -1; }
@@ -43,7 +48,7 @@ int tn_sb_from_cell(int cell)
     return -1;
 }
 
-char tn_cell_char(int cell) { return cell >= 0 && cell < 15 ? cellchars[cell] : '0'; }
+char tn_cell_char(int cell) { return cell >= 0 && cell < TN_CELLS ? cellchars[cell] : '0'; }
 
 int tn_cell_from_char(char c)
 {
@@ -121,6 +126,13 @@ void tn_field_encode(const tn_field now, const tn_field sent, int full, char *ou
     char buf[TN_FIELD_W * TN_FIELD_H * 3 + 64];
     size_t o = 0;
     if (!full) {
+        /* A diff names its cell as '!' + cell, which only reaches the classic 15 before it
+         * collides with the full-field characters; a TN2 special therefore sends it whole. */
+        for (int y = 0; y < TN_FIELD_H && !full; y++)
+            for (int x = 0; x < TN_FIELD_W; x++)
+                if (now[y][x] != sent[y][x] && now[y][x] >= 15) { full = 1; break; }
+    }
+    if (!full) {
         for (int cell = 0; cell < 15; cell++) {
             int started = 0;
             for (int y = 0; y < TN_FIELD_H; y++)
@@ -183,6 +195,24 @@ void tn_rules_default(tn_rules *r)
     r->classic = 1;
 }
 
+void tn_rules_tn2(tn_rules *r)
+{
+    /* the classic mix scaled to 79 %, the rest for the five new ones */
+    static const int sf[TN_SPECIALS] = {24, 14, 1, 9, 3, 11, 1, 5, 11, 5, 6, 4, 3, 3};
+    memcpy(r->specialfreq, sf, sizeof sf);
+    r->tn2 = 1;
+    r->hold = 1;
+}
+
+/* special frequency characters: '1'..'9' classic, 'A'..'E' TetriNET 2 */
+static char sf_char(int i) { return i < 9 ? (char)('1' + i) : (char)('A' + i - 9); }
+static int sf_index(char c)
+{
+    if (c >= '1' && c <= '9') return c - '1';
+    if (c >= 'A' && c <= 'E') return c - 'A' + 9;
+    return -1;
+}
+
 void tn_rules_format(const tn_rules *r, char *out, size_t outsz)
 {
     char bf[128], sf[128];
@@ -191,26 +221,41 @@ void tn_rules_format(const tn_rules *r, char *out, size_t outsz)
         for (int k = 0; k < r->blockfreq[i] && o < 100; k++) bf[o++] = (char)('1' + i);
     bf[o] = 0;
     o = 0;
-    for (int i = 0; i < 9; i++)
-        for (int k = 0; k < r->specialfreq[i] && o < 100; k++) sf[o++] = (char)('1' + i);
+    /* classic clients get the classic specials only; the TN2 string carries all of them */
+    for (int i = 0; i < TN_CLASSIC_SPECIALS; i++)
+        for (int k = 0; k < r->specialfreq[i] && o < 100; k++) sf[o++] = sf_char(i);
+    if (o == 0) sf[o++] = '1';
     sf[o] = 0;
-    snprintf(out, outsz, "%d %d %d %d %d %d %d %s %s %d %d", r->stack, r->level,
-             r->lines_per_level, r->level_inc, r->lines_per_special, r->specials_added,
-             r->special_capacity, bf, sf, r->average_levels, r->classic);
+    int n = snprintf(out, outsz, "%d %d %d %d %d %d %d %s %s %d %d", r->stack, r->level,
+                     r->lines_per_level, r->level_inc, r->lines_per_special, r->specials_added,
+                     r->special_capacity, bf, sf, r->average_levels, r->classic);
+    if (!r->tn2 || n < 0 || (size_t)n >= outsz) return;
+    o = 0;
+    for (int i = 0; i < TN_SPECIALS; i++)
+        for (int k = 0; k < r->specialfreq[i] && o < 100; k++) sf[o++] = sf_char(i);
+    if (o == 0) sf[o++] = '1';
+    sf[o] = 0;
+    snprintf(out + n, outsz - (size_t)n, " tn2 %d %s", r->hold ? 1 : 0, sf);
 }
 
 static int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
 
 int tn_rules_parse(tn_rules *r, const char *args)
 {
-    char bf[128] = "", sf[128] = "";
+    char bf[128] = "", sf[128] = "", ext[8] = "", xsf[128] = "";
+    int hold = 0;
     tn_rules d;
     tn_rules_default(&d);
     *r = d;
-    int n = sscanf(args, "%d %d %d %d %d %d %d %127s %127s %d %d", &r->stack, &r->level,
+    int n = sscanf(args, "%d %d %d %d %d %d %d %127s %127s %d %d %7s %d %127s", &r->stack, &r->level,
                    &r->lines_per_level, &r->level_inc, &r->lines_per_special, &r->specials_added,
-                   &r->special_capacity, bf, sf, &r->average_levels, &r->classic);
+                   &r->special_capacity, bf, sf, &r->average_levels, &r->classic, ext, &hold, xsf);
     if (n < 9) { *r = d; return -1; }
+    if (n == 14 && strcmp(ext, "tn2") == 0) {
+        r->tn2 = 1;
+        r->hold = hold != 0;
+        snprintf(sf, sizeof sf, "%s", xsf);
+    }
     r->stack = clampi(r->stack, 0, TN_FIELD_H - 1);
     r->level = clampi(r->level, 0, 100);
     if (r->lines_per_level < 1) r->lines_per_level = 1;
@@ -220,10 +265,13 @@ int tn_rules_parse(tn_rules *r, const char *args)
     memset(r->blockfreq, 0, sizeof r->blockfreq);
     memset(r->specialfreq, 0, sizeof r->specialfreq);
     for (int i = 0; bf[i]; i++) if (bf[i] >= '1' && bf[i] <= '7') r->blockfreq[bf[i] - '1']++;
-    for (int i = 0; sf[i]; i++) if (sf[i] >= '1' && sf[i] <= '9') r->specialfreq[sf[i] - '1']++;
+    for (int i = 0; sf[i]; i++) {
+        int k = sf_index(sf[i]);
+        if (k >= 0 && (r->tn2 || k < TN_CLASSIC_SPECIALS)) r->specialfreq[k]++;
+    }
     int bs = 0, ss = 0;
     for (int i = 0; i < 7; i++) bs += r->blockfreq[i];
-    for (int i = 0; i < 9; i++) ss += r->specialfreq[i];
+    for (int i = 0; i < TN_SPECIALS; i++) ss += r->specialfreq[i];
     if (bs == 0) memcpy(r->blockfreq, d.blockfreq, sizeof d.blockfreq);
     if (ss == 0) memcpy(r->specialfreq, d.specialfreq, sizeof d.specialfreq);
     return 0;

@@ -1,6 +1,26 @@
 # Running state — 2026-10-16
 
-## Current: AppImage released as v0.1.10 (item tetrinet-appimage, done)
+## Current: TetriNET 2 rules (item tetrinet-tetrinet-2-parity)
+
+Opus filler t_mvb097po3u2yg7. Goal: docs/TN2-PARITY.md lists TN2 features with status and
+priority, and a released local game can switch on TN2 rules (hold + Immunity, Clear Column,
+Mutate, Darkness, Confusion). Sources for TN2: Hard Drop wiki "Tetrinet2", Wikipedia
+"TetriNET"; no protocol spec exists publicly, so TN2 wire compatibility is out of scope.
+Extension: newgame gets " tn2 <hold> <sf>" after the 11 classic fields (sf chars 1-9 classic,
+A-E new; the classic sf field carries classic specials only). Cells 15..19 = i v m d f; the
+diff format can only name cells 0..14 ('!'+cell collides with full-field chars from '0'), so
+a field with a TN2 cell change is sent whole. Clients drop TN2 sb ids unless rules.tn2.
+Immunity is tracked per slot by every client (all sb messages are broadcast), so a switch
+onto an immune player is refused on both ends. Mutants are block ids 7/8/9 (cur/next/hold)
+with shapes stored in tn_game; tn_game_shape() replaces tn_block_shape() for game pieces.
+Hold = BTN_RT (new; right trigger + right stick click, keyboard C/Shift), PAD_HOLD bindable;
+old 8-entry pad= lines get RT appended. Right trigger no longer doubles as RB.
+Options row 5 "Rules for games here" (rules=tn2|classic), rows compacted to fit 1280x800 with
+a status line. Server: --tn2. Local Debug+ASan/UBSan ctest 11/11, python tests OK; core has
+test_tn2_rules/game/network + a TN2 bot game; negative control (immunity block and confusion
+map disabled) fails 2 checks. Screenshots data/tetrinet/tn2/ (capture-tn2.c).
+
+## Earlier: AppImage released as v0.1.10 (item tetrinet-appimage, done)
 
 Opus filler t_mvazpwug3oehjb. tools/linux/build-appimage.sh wraps the finished portable tree
 (same as the tar.gz) with pinned appimagetool 1.9.1 + static type2 runtime 20251108 (sha256

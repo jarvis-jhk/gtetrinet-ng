@@ -153,7 +153,7 @@ static void option_row(gtn_app *a, int row, int y, const char *label, const char
 {
     int s = ts(a), sel = a->options_row == row;
     char buf[128];
-    if (sel) gtn_fill(a->w / 6, y - 6 * s, a->w * 2 / 3, 44 * s, gtn_rgb(0x2a, 0x30, 0x48));
+    if (sel) gtn_fill(a->w / 6, y - 5 * s, a->w * 2 / 3, 42 * s, gtn_rgb(0x2a, 0x30, 0x48));
     gtn_text_center_fit(a->w / 2, y, 2 * s, a->w - 32, sel ? TEXT : MUTED, label);
     snprintf(buf, sizeof buf, "< %s >", value);
     gtn_text_center_fit(a->w / 2, y + 20 * s, 2 * s, a->w - 32, sel ? ACCENT : TEXT, buf);
@@ -161,10 +161,10 @@ static void option_row(gtn_app *a, int row, int y, const char *label, const char
 
 static void draw_input_options(gtn_app *a)
 {
-    int s = ts(a), y = a->h >= 440 * s ? a->h / 10 : 24 * s;
+    int s = ts(a), y = a->h >= 440 * s ? a->h / 20 : 24 * s;
     char buf[128];
     gtn_text_center_fit(a->w / 2, y, 3 * s, a->w - 32, TEXT, gtn_tr("Options"));
-    y += 40 * s;
+    y += 36 * s;
     option_row(a, 0, y, gtn_tr("Movement repeat"), gtn_tr(gtn_repeat_name(a->settings.repeat_profile)));
     y += 46 * s;
     gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, gtn_tr("Holding Left/Right moves repeatedly after a short delay."));
@@ -172,19 +172,21 @@ static void draw_input_options(gtn_app *a)
     snprintf(buf, sizeof buf, gtn_tr("First repeat: %d ms   Next repeats: every %d ms"),
              gtn_repeat_delay(a->settings.repeat_profile), gtn_repeat_interval(a->settings.repeat_profile));
     gtn_text_center_fit(a->w / 2, y, s, a->w - 32, TEXT, buf);
-    y += 21 * s;
+    y += 18 * s;
     language_value(buf, sizeof buf, a->settings.lang);
     option_row(a, 1, y, gtn_tr("Language"), buf);
-    y += 50 * s;
+    y += 42 * s;
     option_row(a, 2, y, gtn_tr("Controller buttons"),
                gtn_tr(gtn_pad_is_default(a->settings.pad_map) || !gtn_pad_valid(a->settings.pad_map) ? N_("Standard") : N_("Custom")));
-    y += 50 * s;
+    y += 42 * s;
     option_row(a, 3, y, gtn_tr("Sound effects"), gtn_tr(gtn_volume_name(a->settings.volume)));
-    y += 50 * s;
+    y += 42 * s;
     option_row(a, 4, y, gtn_tr("Controller rumble"), gtn_tr(a->settings.rumble_off ? N_("Off") : N_("On")));
+    y += 42 * s;
+    option_row(a, 5, y, gtn_tr("Rules for games here"), gtn_tr(a->settings.rules_tn2 ? N_("TetriNET 2") : N_("Classic TetriNET")));
     y += 46 * s;
     /* the status line (a failed save) takes this place at Deck height */
-    if (!a->status[0])
+    if (!a->status[0] && y + 10 * s <= a->h - 14 * s)
         gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, gtn_tr("Saved for all local players, keyboard and controllers."));
     status_line(a);
     hints(a, gtn_tr("Up/Down: choose   Left/Right/A: change   Y: default   B/Esc/Start: back"));
@@ -388,6 +390,8 @@ static void draw_lobby(gtn_app *a)
         snprintf(buf, sizeof buf, gtn_tr("Online: %s"), a->host);
     gtn_text(16 * s, 12 * s, 2 * s, TEXT, gtn_tr(a->hosting ? "Local game" : "Online game"));
     gtn_text_fit(16 * s, 34 * s, s, a->w - 32 * s, MUTED, buf);
+    if (a->hosting && a->server.rules.tn2)
+        gtn_text_fit(a->w / 2, 16 * s, s, a->w / 2 - 16 * s, ACCENT, gtn_tr("Rules: TetriNET 2 (hold piece, 14 specials)"));
 
     int lx = 16 * s, ly = 56 * s, lw = a->w / 2 - 24 * s, row = 26 * s;
     gtn_fill(lx, ly, lw, row * TN_MAX_SLOTS + 8 * s, PANEL);
@@ -512,12 +516,30 @@ static void panel(gtn_app *a, int li, int x, int y, int w, int h, int cs)
     tn_field f;
     tn_client_view(c, f);
     gtn_field(fx, fy, cs, f, !c->playing);
-    if (c->playing && c->game.block != TN_NO_BLOCK && c->spawn_wait == 0) {
+    int piece = c->playing && c->game.block != TN_NO_BLOCK && c->spawn_wait == 0;
+    if (piece && !c->dark_ms) {
         int gy = tn_game_drop_y(&c->game);
-        if (gy > c->game.by) gtn_piece(fx + c->game.bx * cs, fy + gy * cs, cs, c->game.block, c->game.orient, 60);
+        if (gy > c->game.by) gtn_shape(fx + c->game.bx * cs, fy + gy * cs, cs, tn_game_shape(&c->game, c->game.block, c->game.orient), 60);
     }
-    gtn_frame(fx - 1, fy - 1, TN_FIELD_W * cs + 2, TN_FIELD_H * cs + 2, 1, gtn_rgb(0x40, 0x46, 0x5c));
     int fw = TN_FIELD_W * cs, fh = TN_FIELD_H * cs;
+    if (c->playing && c->dark_ms > 0) {
+        /* Darkness: only the falling piece and two cells around it can be seen */
+        gtn_color black = {0, 0, 0, 250};
+        int x0 = 0, x1 = 0, y0 = 0, y1 = 0;
+        if (piece) {
+            x0 = c->game.bx - 2; x1 = c->game.bx + 6; y0 = c->game.by - 2; y1 = c->game.by + 6;
+            if (x0 < 0) x0 = 0;
+            if (y0 < 0) y0 = 0;
+            if (x1 > TN_FIELD_W) x1 = TN_FIELD_W;
+            if (y1 > TN_FIELD_H) y1 = TN_FIELD_H;
+        }
+        gtn_fill(fx, fy, fw, y0 * cs, black);
+        gtn_fill(fx, fy + y1 * cs, fw, fh - y1 * cs, black);
+        gtn_fill(fx, fy + y0 * cs, x0 * cs, (y1 - y0) * cs, black);
+        gtn_fill(fx + x1 * cs, fy + y0 * cs, fw - x1 * cs, (y1 - y0) * cs, black);
+    }
+    gtn_frame(fx - 1, fy - 1, fw + 2, fh + 2, 1, gtn_rgb(0x40, 0x46, 0x5c));
+    if (c->playing && c->immune[c->me] > 0) gtn_frame(fx - 3, fy - 3, fw + 6, fh + 6, 2, gtn_special_color(TN_SB_IMMUNITY));
     if (!c->playing && c->ingame)
         gtn_text_center(fx + fw / 2, fy + fh / 2 - 8 * s, 2 * s, c->last_winner == c->me ? ACCENT : TEXT,
                         gtn_tr(c->last_winner == c->me ? "WINNER" : "OUT"));
@@ -526,8 +548,15 @@ static void panel(gtn_app *a, int li, int x, int y, int w, int h, int cs)
     int sx = fx + fw + cs / 2, sw = x + w - sx - cs / 3;
     s = sw >= 8 * 2 * 8 ? 2 : 1; /* "TARGET"/"DANACH" must fit */
     gtn_text(sx, fy, s, MUTED, gtn_tr("NEXT"));
-    if (c->playing) gtn_piece(sx, fy + 10 * s, sw / 4 < cs ? sw / 4 : cs, c->game.next, c->game.next_orient, 255);
+    if (c->playing) gtn_shape(sx, fy + 10 * s, sw / 4 < cs ? sw / 4 : cs, tn_game_shape(&c->game, c->game.next, c->game.next_orient), 255);
     int ty = fy + 10 * s + 4 * cs + cs / 2;
+    if (c->ingame && c->rules.hold) {
+        int hs = (sw / 4 < cs ? sw / 4 : cs) * 3 / 4;
+        gtn_text(sx, ty, s, MUTED, gtn_tr("HOLD"));
+        if (c->playing && c->game.hold != TN_NO_BLOCK)
+            gtn_shape(sx, ty + 10 * s, hs, tn_game_shape(&c->game, c->game.hold, 0), c->game.hold_used ? 120 : 255);
+        ty += 10 * s + 4 * hs + cs / 3;
+    }
     snprintf(buf, sizeof buf, gtn_tr("LVL %d"), c->playing ? c->game.level : c->slot[c->me].level);
     gtn_text_fit(sx, ty, s, sw, TEXT, buf);
     snprintf(buf, sizeof buf, gtn_tr("LNS %d"), c->game.lines);
@@ -545,10 +574,26 @@ static void panel(gtn_app *a, int li, int x, int y, int w, int h, int cs)
         int sb = tn_sb_from_cell(c->game.specials[0]);
         gtn_text_fit(sx, ty + 56 * s, s, sw, gtn_special_color(sb), gtn_tr(gtn_special_target_hint(sb, t == c->me)));
     }
+    /* under the target, above the attacks, so nothing else moves when they come and go */
+    int ey = ty + 68 * s;
+    if (c->playing) {
+        /* TetriNET 2 timers, with their seconds, so a player knows why the piece misbehaves */
+        const struct { int ms; const char *label; int sb; } fx2[] = {
+            {c->immune[c->me], N_("IMMUNE %d"), TN_SB_IMMUNITY},
+            {c->confused_ms, N_("MIXUP %d"), TN_SB_CONFUSION},
+            {c->dark_ms, N_("DARK %d"), TN_SB_DARKNESS},
+        };
+        for (int i = 0; i < 3; i++) {
+            if (fx2[i].ms <= 0) continue;
+            snprintf(buf, sizeof buf, gtn_tr(fx2[i].label), (fx2[i].ms + 999) / 1000);
+            gtn_text_fit(sx, ey, s, sw, gtn_special_color(fx2[i].sb), buf);
+            ey += 12 * s;
+        }
+    }
     /* last attacks */
     for (int i = 0; i < 3 && i < c->attacks.count; i++) {
         int ly = fy + fh - (i + 1) * 11 * s;
-        if (ly < ty + 68 * s) break;
+        if (ly < ey) break;
         char line[TN_LOG_LEN + 64];
         gtn_tr_log(tn_log_get(&c->attacks, i), line, sizeof line);
         gtn_text_fit(sx, ly, 1, sw, i == 0 ? TEXT : MUTED, line);
@@ -577,6 +622,8 @@ static void mini(gtn_app *a, const tn_client *c, int slot, int x, int y, int cs)
     gtn_text_fit(x, y, 1, TN_FIELD_W * cs, TEXT, buf);
     gtn_field(x, y + 10, cs, (const char (*)[TN_FIELD_W])sl->field, !sl->playing);
     gtn_frame(x - 1, y + 9, TN_FIELD_W * cs + 2, TN_FIELD_H * cs + 2, 1, gtn_rgb(0x40, 0x46, 0x5c));
+    if (sl->playing && c->immune[slot] > 0)
+        gtn_frame(x - 2, y + 8, TN_FIELD_W * cs + 4, TN_FIELD_H * cs + 4, 1, gtn_special_color(TN_SB_IMMUNITY));
     /* which local players aim at this one */
     int k = 0;
     for (int i = 0; i < GTN_MAX_LOCAL; i++)

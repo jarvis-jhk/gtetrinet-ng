@@ -68,7 +68,7 @@ typedef struct gtn_app {
 
     gtn_local pl[GTN_MAX_LOCAL];
     int menu_sel;
-    int options_row;         /* 0 movement repeat, 1 language, 2 controller buttons, 3 sound, 4 rumble */
+    int options_row;         /* 0 movement repeat, 1 language, 2 controller buttons, 3 sound, 4 rumble, 5 rules */
     int controls_row;        /* action chosen on the controller-buttons screen */
     int controls_capture;    /* waiting for the button to give that action */
 

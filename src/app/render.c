@@ -33,12 +33,16 @@ enum gtn_effect gtn_special_effect(int sb)
     switch (sb) {
     case TN_SB_ADDALL1: case TN_SB_ADDALL2: case TN_SB_ADDALL4: case TN_SB_ADDLINE:
         return GTN_EFFECT_HURT;
-    case TN_SB_CLEARLINE: case TN_SB_NUKE: case TN_SB_GRAVITY:
+    case TN_SB_MUTATE: case TN_SB_DARKNESS: case TN_SB_CONFUSION:
+        return GTN_EFFECT_HURT;
+    case TN_SB_CLEARLINE: case TN_SB_NUKE: case TN_SB_GRAVITY: case TN_SB_IMMUNITY:
         return GTN_EFFECT_HELP;
     /* Removing random cells can make holes; clearing specials removes collectible
      * effects but also bombs. Swaps, row shifts and bomb debris depend on both fields. */
     case TN_SB_CLEARRANDOM: case TN_SB_SWITCH: case TN_SB_CLEARSPECIAL:
     case TN_SB_QUAKE: case TN_SB_BOMB:
+    /* a whole column goes: fewer blocks, but a deep well cut through every row */
+    case TN_SB_CLEARCOLUMN:
         return GTN_EFFECT_MIXED;
     default: return GTN_EFFECT_UNKNOWN;
     }
@@ -291,8 +295,12 @@ void gtn_field(int x, int y, int cs, const tn_field f, int dim)
 
 void gtn_piece(int x, int y, int cs, int block, int orient, int alpha)
 {
-    if (block < 0) return;
-    const char (*sh)[4] = tn_block_shape(block, orient);
+    if (block < 0 || block >= 7) return;
+    gtn_shape(x, y, cs, tn_block_shape(block, orient), alpha);
+}
+
+void gtn_shape(int x, int y, int cs, const char (*sh)[4], int alpha)
+{
     for (int r = 0; r < 4; r++)
         for (int c = 0; c < 4; c++) {
             if (!sh[r][c]) continue;

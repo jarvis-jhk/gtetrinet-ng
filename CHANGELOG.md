@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.11 — 2026-10-16
+
+TetriNET 2 rules. Options → Rules for games here → TetriNET 2 gives games on this machine
+the hold piece (right trigger or right stick click, keyboard C or Shift, once per piece) and
+the five specials TetriNET 2 added: Immunity (I, 15 seconds in which nothing from others
+reaches you), Clear Column (V), Mutate Pieces (M, the next three pieces come out big and
+odd), Darkness (D, 10 seconds in which you only see around your piece) and Confusion (F, 10
+seconds of reshuffled moves and rotations). The timers show next to your board, an immune
+player gets a green frame, and computer players know what to do with the new specials.
+The rules only apply between gtetrinet-ng players on a game hosted here (or on
+`gtetrinet-ng-server --tn2`); online games on classic servers stay classic, and this is not
+compatible with the original TetriNET 2. docs/TN2-PARITY.md lists what TetriNET 2 had and
+what is still missing. German translation included. The right trigger no longer doubles
+as RB; the left trigger still doubles as LB.
+
 ## 0.1.10 — 2026-10-16
 
 An AppImage. Every release now also comes as one file, `gtetrinet-ng-x86_64.AppImage`:

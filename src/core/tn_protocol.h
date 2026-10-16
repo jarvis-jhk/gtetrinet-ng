@@ -26,13 +26,19 @@
 
 typedef char tn_field[TN_FIELD_H][TN_FIELD_W];
 
-/* Cell values: 0 empty, 1..5 colours, 6..14 specials (a c n r s b g q o). */
+/* Cell values: 0 empty, 1..5 colours, 6..14 classic specials (a c n r s b g q o), 15..19 the
+ * TetriNET 2 specials (i v m d f). Those five only exist when our own server announces the TN2
+ * rules (see tn_rules.tn2); a classic server never sends them and we never send them to one. */
 enum {
     TN_SB_ADDALL1, TN_SB_ADDALL2, TN_SB_ADDALL4,
     TN_SB_ADDLINE, TN_SB_CLEARLINE, TN_SB_NUKE, TN_SB_CLEARRANDOM, TN_SB_SWITCH,
     TN_SB_CLEARSPECIAL, TN_SB_GRAVITY, TN_SB_QUAKE, TN_SB_BOMB,
+    TN_SB_IMMUNITY, TN_SB_CLEARCOLUMN, TN_SB_MUTATE, TN_SB_DARKNESS, TN_SB_CONFUSION,
     TN_SB_COUNT
 };
+#define TN_CELLS 20            /* cell values 0..19 */
+#define TN_SPECIALS 14         /* field specials: 9 classic + 5 TetriNET 2 */
+#define TN_CLASSIC_SPECIALS 9
 
 /* protocol id ("cs1", "a", ...), cell value (-1 for the classic-mode line adds), display name */
 const char *tn_sb_id(int sb);
@@ -65,12 +71,18 @@ typedef struct tn_rules {
     int specials_added;
     int special_capacity;
     int blockfreq[7];       /* percentages, sum 100: I O J L Z S T as in the classic client */
-    int specialfreq[9];     /* percentages, sum 100: a c n r s b g q o */
+    int specialfreq[TN_SPECIALS]; /* percentages, sum 100: a c n r s b g q o, then i v m d f */
     int average_levels;
     int classic;            /* 2/3/4-line clears add lines to everybody */
+    /* TetriNET 2 rules, an extension of our own server: "newgame ... tn2 <hold> <freq>" after
+     * the classic fields, which classic clients ignore. tn2 == 0 everywhere else. */
+    int tn2;
+    int hold;               /* the hold piece is allowed */
 } tn_rules;
 
 void tn_rules_default(tn_rules *r);
+/* The TetriNET 2 set: hold on, all fourteen specials. */
+void tn_rules_tn2(tn_rules *r);
 /* "newgame" argument string and its parser (parser returns -1 on garbage). */
 void tn_rules_format(const tn_rules *r, char *out, size_t outsz);
 int tn_rules_parse(tn_rules *r, const char *args);
