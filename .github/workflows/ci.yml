@@ -53,3 +53,6 @@ jobs:
       - run: cmake --build build --parallel 2
       - run: ctest --test-dir build --output-on-failure
       - run: ./build/gtetrinet-ng.exe --window --demo 8 --frames 600 --screenshot demo.bmp
+      - run: printf 'int main(void){return 3;}\n' > build/exit3.c && gcc build/exit3.c -o build/exit3.exe
+      - run: tests/test_play_launcher.ps1 -Fake build/exit3.exe
+        shell: powershell

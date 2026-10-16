@@ -1,5 +1,21 @@
 # Running state — 2026-10-16
 
+## Current: German installer dialogs (item tetrinet-german-installer)
+
+Opus filler t_mvbl5dbw1hmjg1. Goal: on a German system (or with Sprache Deutsch saved) the
+released Linux installer, its launcher errors and the Windows launcher's fault dialog speak
+German, English otherwise. Language rule everywhere: settings.ini lang=de|en in SDL's pref
+dir (Linux ${XDG_DATA_HOME:-~/.local/share}/gtetrinet-ng/gtetrinet-ng/, Windows
+%APPDATA%\gtetrinet-ng\gtetrinet-ng\), else LANGUAGE/LC_ALL/LC_MESSAGES/LANG (Linux) or
+Get-UICulture (Windows). install.sh t() helper, zenity --ok-label/--cancel-label Ja/Nein
+(kdialog keeps its own labels); launcher.py german()/t(); .desktop Name[de]/Comment[de] and a
+bilingual download-failure line. play.ps1 is ASCII-only (PS 5.1 reads BOM-less as ANSI;
+umlauts via [char]) and shows a MessageBox on exit codes other than 0/2; GTN_NO_DIALOG=1
+prints instead. Tests: tests/test_deck_installer.py (en/de/saved/failure),
+tests/test_launcher.py LanguageTests, CI windows step tests/test_play_launcher.ps1 with a
+stub exe exiting 3. Known: a failing install.sh shows its own error and then the .desktop
+wrapper's bilingual one (pre-existing double dialog).
+
 ## Current: original GTetrinet theme released as v0.1.14 (item tetrinet-original-theme, done)
 
 Opus filler t_mvbayspk9sttr. Goal: Options → Block style 'Original' draws every field, piece

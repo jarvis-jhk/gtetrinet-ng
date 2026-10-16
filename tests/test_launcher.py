@@ -72,3 +72,23 @@ class InstallerTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class LanguageTests(unittest.TestCase):
+    def german(self, env, saved=None):
+        with tempfile.TemporaryDirectory() as tmp:
+            if saved:
+                prefs = Path(tmp) / 'gtetrinet-ng/gtetrinet-ng'
+                prefs.mkdir(parents=True)
+                (prefs / 'settings.ini').write_text('host=x\nlang=%s\n' % saved)
+            with patch.dict('os.environ', dict(env, XDG_DATA_HOME=tmp), clear=True):
+                return launcher.german(), launcher.t('Installed ', 'Installiert: ')
+
+    def test_locale_and_saved_choice(self):
+        self.assertEqual(self.german({'LANG': 'de_DE.UTF-8'}), (True, 'Installiert: '))
+        self.assertEqual(self.german({'LANG': 'en_US.UTF-8'}), (False, 'Installed '))
+        self.assertEqual(self.german({'LANG': 'C'}), (False, 'Installed '))
+        self.assertEqual(self.german({'LANGUAGE': 'de:en', 'LANG': 'en_US.UTF-8'})[0], True)
+        self.assertEqual(self.german({'LANG': 'en_US.UTF-8'}, 'de')[0], True)
+        self.assertEqual(self.german({'LANG': 'de_DE.UTF-8'}, 'en')[0], False)
+        self.assertEqual(self.german({'LANG': 'de_AT.UTF-8'}, 'auto')[0], True)

@@ -65,7 +65,8 @@ not certified hardware compatibility. Release gates and remaining checks are in 
   UTF-8/Latin-1 font coverage (including ä/ö/ü/ß), saved language choice, and a rendered
   1280×800 layout test that fails on any cut text. Changelog entries stay English.
   Legacy GTK translations are reference material, not a translated modern frontend.
-  - [ ] German Linux installer and Windows launcher dialogs.
+  - [x] German Linux installer and Windows launcher dialogs (v0.1.15): saved game language,
+    then the locale; Ja/Nein labels; Windows Play.cmd fault message box.
   - [ ] Physical Deck legibility of the German UI (with the M1 hardware session).
 - [x] Color-code specials by effect: beneficial, harmful and situational, with readable
   labels/symbols as well as colors; document how the chosen target changes the effect.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.15 — 2026-10-17
+
+The installer speaks German. On a German desktop, or once the game's language is set to
+Deutsch, the Linux and Steam Deck installer asks, warns and confirms in German (with Ja/Nein
+buttons), and its menu entries carry German names. The Windows Play.cmd now shows a short
+message when the game ends with a fault or cannot start, in German or English.
+
 ## 0.1.14 — 2026-10-16
 
 The original GTetrinet look. Options → Block style → Original GTetrinet draws the blocks,

@@ -19,6 +19,26 @@ TOPIC = 'gtetrinet-ng-faults-5e8b41e03cf04b57'
 ROOT = Path.home() / '.local/share/gtetrinet-ng'
 
 
+def german():
+    """Same choice as install.sh: the game's saved language, then the locale as SDL reads it."""
+    saved = Path(os.environ.get('XDG_DATA_HOME') or Path.home() / '.local/share') / 'gtetrinet-ng/gtetrinet-ng/settings.ini'
+    try:
+        choice = [l[5:].strip() for l in saved.read_text().splitlines() if l.startswith('lang=')][-1:]
+    except OSError:
+        choice = []
+    if choice in (['de'], ['en']):
+        return choice == ['de']
+    for value in (os.environ.get('LANGUAGE', '').split(':')[0], os.environ.get('LC_ALL', ''),
+                  os.environ.get('LC_MESSAGES', ''), os.environ.get('LANG', '')):
+        if value and value != 'POSIX' and value.split('.')[0] != 'C':
+            return value == 'de' or value[:3] in ('de_', 'de.', 'de@')
+    return False
+
+
+def t(english, deutsch):
+    return deutsch if german() else english
+
+
 def report(kind, version):
     if os.environ.get('GTN_NO_REPORT') == '1':
         return
@@ -86,7 +106,7 @@ def update(required=False):
     link.unlink(missing_ok=True)
     link.symlink_to(tag)
     os.replace(link, current)
-    print('Installed ' + tag, flush=True)
+    print(t('Installed ', 'Installiert: ') + tag, flush=True)
 
 
 def warpzone_managed(here):
@@ -106,8 +126,9 @@ def main():
             # Ordinary offline checks are not faults. Mandatory install failure is.
             if install:
                 report('installation failed', 'installer')
-                raise RuntimeError('Installation failed: ' + str(error)) from error
-            print('Update unavailable; keeping installed version.', file=sys.stderr)
+                raise RuntimeError(t('Installation failed: ', 'Installation fehlgeschlagen: ') + str(error)) from error
+            print(t('Update unavailable; keeping installed version.',
+                    'Kein Update erreichbar; die installierte Version bleibt.'), file=sys.stderr)
     if install:
         return 0
     if managed:
