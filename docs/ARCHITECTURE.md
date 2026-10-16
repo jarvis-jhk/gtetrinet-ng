@@ -33,5 +33,14 @@ never raw application logs, nicknames, server addresses or filesystem paths. A s
 GitHub workflow deduplicates reports into issues; its private queue URL is a repo secret.
 ntfy publishing reference: https://docs.ntfy.sh/publish/
 
-This is a preview. External-server compatibility, public-host security hardening and
+Interoperability: tests/interop.sh builds tetrinetx 1.13.16 from its pinned source release,
+starts Debian/Ubuntu's tetrinet-server and our own server, and runs test_interop (two core
+clients: login, chat, teams, specials, a won game twice, a taken nickname, a full server)
+and test_online (the game joining with four seats through its online entry) against each.
+Both third-party servers only decode the classic "tetrisstart" login and hang up on
+TetriFast; tetrinetx seats a seventh player in its next channel instead of refusing; and
+tetrinet-server dies of SIGPIPE when it relays a leave to a client that hung up in the same
+instant, so the game leaves someone else's server one seat at a time.
+
+This is a preview. Public-host security hardening and
 actual Deck/eight-device verification are open acceptance tasks, not proven by self-tests.

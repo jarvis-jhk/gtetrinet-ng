@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.8 — 2026-10-16
+
+Playing on other TetriNET servers. Every build is now tested against two servers we did
+not write, tetrinetx and tetrinet-server: logging in, chat, teams, specials, wins, full
+servers and taken names all work there, and several players from one screen can join the
+same online game. Neither server knows TetriFast, so choosing it there now says so (press
+Y to switch to classic) instead of just "connection closed". If nobody could connect, every
+player keeps their seat for the next try. Leaving a tetrinet-server game with several
+players at once no longer crashes that server. The lobby no longer opens before a player
+who had to take another name is in. German translation included.
+
 ## 0.1.7 — 2026-10-16
 
 Computer opponents. In the lobby of a game on this machine, X (S on the keyboard) adds a

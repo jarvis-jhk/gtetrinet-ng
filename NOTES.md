@@ -1,5 +1,28 @@
 # Running state — 2026-10-16
 
+## Current: online interop against tetrinetx and tetrinet-server (item tetrinet-online-interop)
+
+Opus filler t_mvataavx18bmir. tests/interop.sh CORE [GAME] builds unmodified tetrinetx
+1.13.16+qirc-1.40c (sourceforge tarball, sha256 2b7210a0…d15d4, gcc main.c -ladns; needs
+HOSTNAME with a dot and /etc/protocols — the agent container lacks the latter, CI has it)
+and starts Ubuntu's tetrinet-server 0.11 (HOME=tmp, foreground) and our own server, then
+runs tests/test_interop.c (two core clients: login, chat, teams, fields, specials both ways,
+won game twice, taken nick → "Nickname…", seventh player refused or seated elsewhere,
+leave seen) and tests/test_online.c (the game with keyboard + 3 pads through
+connect_online: online "Jan" forces P1 to Jan_9, online player is moderator and starts,
+all four play, stop_session, server still alive, new login works).
+Findings: (1) neither server accepts TetriFast — both only decode "tetrisstart" and hang
+up; the core now says "the server does not accept TetriFast - pick classic with Y" (de
+translated). (2) tetrinetx puts a 7th player into the next channel instead of refusing.
+(3) tetrinet-server dies of SIGPIPE when several clients hang up at once; stop_session now
+leaves non-hosted servers one seat per 60 ms. Negative control without the stagger: server
+dead, 2 failures. (4) App bug: the frame a seat retried a taken nick did not count as
+pending, so the lobby opened early — fixed. (5) A failed connect no longer drops seats
+while nobody is in (p->failed), so a couch keeps its seats after a typo or TetriFast.
+Local: interop.sh all passed (2 min; own 45/45/35, church 45/2/38, tetrinetx 45/2/38);
+Debug core/i18n/names/bots/sound pass. New CI job `interop` (Ubuntu 22.04, ASan/UBSan).
+Open: legacy GTetrinet client fixture, moderator hand-over, a TetriFast-capable server.
+
 ## Current: computer opponents released as v0.1.7 (item tetrinet-bot-opponents, done)
 
 Opus filler t_mvasr12a117hj1. Core: tn_bot_init_level(level, seed) — Easy 420 ms/25 %
@@ -331,9 +354,9 @@ Linux bundles SDL2 and samplerate when needed; host audio codecs remain with hos
 
 M1: physical eight-controller Deck session,
 suspend/resume, Game Mode, dock/undock and legibility after the text fixes. Simulated button events and bot
-demos are separate evidence. Online interoperability is self-tested only; independent
-legacy/tetrinetx fixtures, malformed input fuzzing, asynchronous DNS, sound, remapping,
-localization, Windows updater and AppImage remain open. Direct EXE launch bypasses
+demos are separate evidence. Third-party servers are covered by tests/interop.sh (see the
+online-interop entry); a legacy-client fixture, malformed input fuzzing, asynchronous DNS,
+Windows updater and AppImage remain open. Direct EXE launch bypasses
 launcher crash forwarding; standalone server is not hardened for public hosting.
 
 ## History

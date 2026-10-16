@@ -172,6 +172,7 @@ static const char *const strings[][GTN_LANG_COUNT] = {
     {"connection closed", "Verbindung geschlossen"},
     {"disconnected", "getrennt"},
     {"the server refused the connection", "der Server hat die Verbindung abgelehnt"},
+    {"the server does not accept TetriFast - pick classic with Y", "der Server kennt kein TetriFast - mit Y klassisch wählen"},
     {"send buffer overflow", "Sendepuffer übergelaufen"},
     {"message too long", "Nachricht zu lang"},
 };

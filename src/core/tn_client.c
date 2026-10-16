@@ -412,9 +412,13 @@ void tn_client_update(tn_client *c, int dt_ms)
         tn_conn_pump(&c->conn);
         while (c->state != TN_FAILED && tn_conn_next(&c->conn, msg, sizeof msg)) tn_client_handle(c, msg);
         if (c->state != TN_FAILED && c->conn.dead) {
-            snprintf(c->err, sizeof c->err, "%s", c->conn.err[0] ? c->conn.err : "disconnected");
-            tn_conn_close(&c->conn);
             int was = c->state;
+            if (was == TN_LOGGING_IN && c->fast)
+                /* tetrinetx and tetrinet-server only decode the classic login and hang up */
+                snprintf(c->err, sizeof c->err, "the server does not accept TetriFast - pick classic with Y");
+            else
+                snprintf(c->err, sizeof c->err, "%s", c->conn.err[0] ? c->conn.err : "disconnected");
+            tn_conn_close(&c->conn);
             reset_lobby(c);
             c->state = was == TN_CONNECTED ? TN_OFFLINE : TN_FAILED;
             if (was == TN_CONNECTED) tn_log_add(&c->chat, "*** Disconnected: %s", c->err);

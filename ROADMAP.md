@@ -37,8 +37,12 @@ not certified hardware compatibility. Release gates and remaining checks are in 
 
 ## M2 — online interoperability
 
-- [ ] Independent tetrinetx/legacy-client fixture: login, fields, specials, teams,
-  classic and TetriFast timing, moderator changes and six-slot matches.
+- [x] Independent server fixture (tests/interop.sh, CI job `interop`): our client and the
+  game itself against unmodified tetrinetx 1.13.16 and tetrinet-server 0.11 — login, chat,
+  teams, fields, specials, wins, taken nicknames, full six-slot servers, four local players
+  joining one online game, TetriFast refusal explained to the player.
+  - [ ] Legacy GTetrinet/TetriNET 1.13 client on our server, moderator hand-over when the
+    moderator leaves, and a public TetriFast-capable server once one is found.
 - [ ] Server browser, partyline/chat UI, profiles and reconnect policy.
 - [ ] Malformed-message fuzzing and limits for public-facing hosting.
 - [ ] IPv6 and asynchronous DNS; avoid blocking the render loop on lookup.

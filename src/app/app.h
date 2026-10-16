@@ -32,6 +32,7 @@ typedef struct gtn_local {
     tn_events seen;          /* client events already turned into sound and rumble */
     unsigned rumbles;        /* rumble requests for this player's controller, for tests */
     int nick_tries;
+    int failed;              /* could not connect; the reason is on the status line */
     tn_bot bot;              /* DEV_BOT only */
 } gtn_local;
 

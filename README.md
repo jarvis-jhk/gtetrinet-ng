@@ -4,9 +4,11 @@ A modern continuation of [GTetrinet](https://gitlab.gnome.org/Archive/gtetrinet)
 TetriNET client. Play falling-block battles locally, on a LAN, or connect to a TetriNET
 server. The main goal is eight controllers sharing one Steam Deck screen.
 
-**0.1.2 is an early preview.** Eight client connections and scripted matches are tested;
-physical eight-controller Deck play and independent online-server interoperability are
-still awaiting verification. Classic servers/clients generally support six players.
+**This is an early preview.** Eight client connections and scripted matches are tested,
+and every build plays against two independent TetriNET servers (tetrinetx 1.13.16 and
+tetrinet-server 0.11) in CI; physical eight-controller Deck play is still awaiting
+verification. Classic servers/clients support six players, and those two servers do not
+support TetriFast — use classic mode there.
 
 ![Eight-player scripted match at 1280×800](docs/eight-player-demo.png)
 

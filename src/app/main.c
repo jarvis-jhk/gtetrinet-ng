@@ -134,6 +134,7 @@ static void connect_player(gtn_app *a, int i)
     tn_client_init(&p->client, p->nick, "", (uint32_t)time(NULL) * 2654435761u + (uint32_t)i * 7919u);
     tn_client_connect(&p->client, a->host, a->port, a->fast);
     p->target = 0;
+    p->failed = 0;
 }
 
 static void join(gtn_app *a, enum gtn_dev dev, SDL_JoystickID pad)
@@ -223,8 +224,13 @@ static void cycle_bot_level(gtn_app *a)
 
 static void stop_session(gtn_app *a)
 {
+    int left = 0;
     for (int i = 0; i < GTN_MAX_LOCAL; i++) {
-        if (a->pl[i].active) tn_client_disconnect(&a->pl[i].client);
+        tn_client *c = &a->pl[i].client;
+        /* tetrinet-server dies of SIGPIPE if it relays one player's leave to another who hung
+         * up in the same instant, so local players leave someone else's server one by one */
+        if (a->pl[i].active && c->state == TN_CONNECTED && !a->hosting && left++) SDL_Delay(60);
+        if (a->pl[i].active) tn_client_disconnect(c);
         if (a->pl[i].dev == DEV_BOT) a->pl[i].active = 0;
     }
     if (a->hosting) tn_server_stop(&a->server);
@@ -746,13 +752,19 @@ static void update_session(gtn_app *a, int dt)
             p->nick_tries++;
             snprintf(p->nick, sizeof p->nick, "%.18s_%d", p->dev == DEV_BOT ? "CPU" : a->settings.nick, i + 1 + p->nick_tries * 8);
             connect_player(a, i);
+            pending++;
             continue;
         }
         if (c->state == TN_FAILED) {
-            char why[sizeof c->err + 64];
-            gtn_tr_log(gtn_tr(c->err), why, sizeof why);
-            gtn_set_status(a, gtn_tr("%s could not connect: %s"), p->nick, why);
-            p->active = 0;
+            if (!p->failed) {
+                char why[sizeof c->err + 64];
+                gtn_tr_log(gtn_tr(c->err), why, sizeof why);
+                gtn_set_status(a, gtn_tr("%s could not connect: %s"), p->nick, why);
+                p->failed = 1;
+            }
+            /* While nobody is in yet the seat stays: if every seat fails (a typo, a server
+             * without TetriFast) the whole couch is back on the title screen still joined. */
+            if (a->screen != SCR_CONNECTING) p->active = 0;
             continue;
         }
         if (c->state == TN_CONNECTED) connected++;
@@ -769,7 +781,11 @@ static void update_session(gtn_app *a, int dt)
         }
         return;
     }
-    if (a->screen == SCR_CONNECTING && pending == 0) a->screen = SCR_LOBBY;
+    if (a->screen == SCR_CONNECTING && pending == 0) {
+        a->screen = SCR_LOBBY;
+        for (int i = 0; i < GTN_MAX_LOCAL; i++)
+            if (a->pl[i].active && a->pl[i].failed) a->pl[i].active = 0;
+    }
     if (a->screen == SCR_LOBBY && any_ingame) {
         a->screen = SCR_GAME;
         for (int i = 0; i < GTN_MAX_LOCAL; i++) a->pl[i].target = 0;
