@@ -9,8 +9,8 @@ set -euo pipefail
 TREE=$(cd "$1" && pwd)
 mkdir -p "$(dirname "$2")"
 OUT=$(cd "$(dirname "$2")" && pwd)/$(basename "$2")
-TOOL=$3
-RUNTIME=$4
+TOOL=$(readlink -f "$3")
+RUNTIME=$(readlink -f "$4")
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 APPDIR="$WORK/GTetrinet_NG.AppDir"
@@ -42,6 +42,8 @@ Categories=Game;BlocksGame;
 Terminal=false
 DESKTOP
 
+# appimagetool writes the .zsync into the working directory; keep it next to the AppImage.
+cd "$(dirname "$OUT")"
 # Update information lets AppImageUpdate and Gear Lever (Steam Deck) fetch new releases.
 ARCH=x86_64 "$TOOL" --appimage-extract-and-run --no-appstream --runtime-file "$RUNTIME" \
     -u "gh-releases-zsync|jarvis-jhk|gtetrinet-ng|latest|gtetrinet-ng-x86_64.AppImage.zsync" \
