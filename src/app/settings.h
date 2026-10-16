@@ -27,10 +27,14 @@ enum gtn_pad_action {
 #define GTN_SEATS 8
 #define GTN_NAME_MAX 16
 
+/* servers remembered for the server list, most recent first */
+#define GTN_RECENT 6
+
 enum gtn_repeat_profile { REPEAT_NORMAL, REPEAT_RELAXED, REPEAT_FAST, REPEAT_COUNT };
 
 typedef struct gtn_settings {
     char host[128];          /* last online server */
+    char recent[GTN_RECENT][128]; /* servers played on, most recent first, "" = none */
     char nick[64];           /* P1's name, and the base other seats append a number to */
     char seat_nick[GTN_SEATS][GTN_NAME_MAX]; /* names chosen for P2..P8; [0] unused, "" = default */
     char last_version[32];   /* version whose changelog was last shown */
@@ -49,6 +53,8 @@ void gtn_settings_load(gtn_settings *s);
 /* Returns zero when persisted, -1 after forwarding a real write failure to the fault relay. */
 int gtn_settings_save(const gtn_settings *s);
 const char *gtn_repeat_name(int profile);
+/* Puts addr first in the recent servers (once, case-insensitively), dropping the oldest. */
+void gtn_settings_remember(gtn_settings *s, const char *addr);
 /* A TetriNET name is one word: copies the printable ASCII of in, without spaces, at most
  * GTN_NAME_MAX - 1 characters. Returns its length; zero means no usable name. */
 int gtn_nick_clean(char *out, size_t n, const char *in);

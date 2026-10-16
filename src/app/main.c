@@ -268,16 +268,17 @@ static void host_local(gtn_app *a)
 static void connect_online(gtn_app *a)
 {
     char host[128];
-    snprintf(host, sizeof host, "%s", a->entry);
-    int port = TN_PORT;
-    char *colon = strrchr(host, ':');
-    if (colon && !strchr(colon + 1, ']')) { port = atoi(colon + 1); *colon = 0; }
-    if (!host[0]) { gtn_set_status(a, "%s", gtn_tr("Enter a server address first")); return; }
+    int port;
+    if (tn_query_split(a->entry, host, sizeof host, &port) != 0) {
+        gtn_set_status(a, "%s", gtn_tr("Enter a server address first"));
+        return;
+    }
     snprintf(a->host, sizeof a->host, "%s", host);
-    a->port = port > 0 ? port : TN_PORT;
+    a->port = port;
     a->fast = a->settings.fast;
     snprintf(a->settings.host, sizeof a->settings.host, "%s", a->entry);
     gtn_settings_save(&a->settings);
+    gtn_browser_close(a);
     start_session(a);
 }
 
@@ -394,10 +395,8 @@ static void title_button(gtn_app *a, int who, enum gtn_btn b)
         switch (a->menu_sel) {
         case MENU_LOCAL: host_local(a); break;
         case MENU_ONLINE:
-            snprintf(a->entry, sizeof a->entry, "%s", a->settings.host);
-            a->osk_row = a->osk_col = 0;
-            a->screen = SCR_ONLINE;
-            SDL_StartTextInput();
+            gtn_browser_open(a);
+            a->screen = SCR_SERVERS;
             break;
         case MENU_NEWS: open_news(a, 0); break;
         case MENU_QUIT: a->quit = 1; break;
@@ -438,6 +437,34 @@ static int osk_button(gtn_app *a, const char *const *rows, int nrows, enum gtn_b
     return 1;
 }
 
+static void open_address(gtn_app *a)
+{
+    snprintf(a->entry, sizeof a->entry, "%s", a->settings.host);
+    a->osk_row = a->osk_col = 0;
+    a->screen = SCR_ONLINE;
+    SDL_StartTextInput();
+}
+
+static void servers_button(gtn_app *a, enum gtn_btn b)
+{
+    gtn_browser *br = &a->browser;
+    int rows = br->n + 1;
+    switch (b) {
+    case BTN_UP: br->sel = (br->sel + rows - 1) % rows; break;
+    case BTN_DOWN: br->sel = (br->sel + 1) % rows; break;
+    case BTN_A:
+    case BTN_START:
+        if (br->sel >= br->n) { open_address(a); break; }
+        snprintf(a->entry, sizeof a->entry, "%s", br->e[br->sel].addr);
+        connect_online(a);
+        break;
+    case BTN_X: gtn_browser_refresh(a); break;
+    case BTN_Y: a->settings.fast = !a->settings.fast; break;
+    case BTN_B: gtn_browser_close(a); a->screen = SCR_TITLE; break;
+    default: break;
+    }
+}
+
 static void online_button(gtn_app *a, enum gtn_btn b)
 {
     char key[8];
@@ -446,7 +473,12 @@ static void online_button(gtn_app *a, enum gtn_btn b)
     case BTN_X: gtn_text_input(a, "\b"); break;
     case BTN_Y: a->settings.fast = !a->settings.fast; break;
     case BTN_START: gtn_text_input(a, "\n"); break;
-    case BTN_B: SDL_StopTextInput(); a->screen = SCR_TITLE; break;
+    case BTN_B:
+        SDL_StopTextInput();
+        if (!a->browser.n) gtn_browser_open(a);
+        a->browser.sel = a->browser.n;
+        a->screen = SCR_SERVERS;
+        break;
     default: break;
     }
 }
@@ -700,6 +732,7 @@ void gtn_button(gtn_app *a, int who, enum gtn_dev dev, SDL_JoystickID pad, enum 
     if (who < 0) {
         if (down && (b == BTN_A || b == BTN_START) && a->screen != SCR_NEWS && a->screen != SCR_ONLINE) join(a, dev, pad);
         else if (down && a->screen == SCR_ONLINE) online_button(a, b);
+        else if (down && a->screen == SCR_SERVERS) servers_button(a, b);
         else if (down && a->screen == SCR_NEWS && (b == BTN_A || b == BTN_B)) a->screen = a->news_back;
         else if (down && a->screen == SCR_TITLE && (b == BTN_UP || b == BTN_DOWN)) title_button(a, -1, b);
         return;
@@ -718,6 +751,7 @@ void gtn_button(gtn_app *a, int who, enum gtn_dev dev, SDL_JoystickID pad, enum 
     if (!down) return;
     switch (a->screen) {
     case SCR_TITLE: title_button(a, who, b); break;
+    case SCR_SERVERS: servers_button(a, b); break;
     case SCR_ONLINE: online_button(a, b); break;
     case SCR_CONNECTING: if (b == BTN_B) stop_session(a); break;
     case SCR_LOBBY: lobby_button(a, who, b); break;
@@ -783,6 +817,11 @@ static void update_session(gtn_app *a, int dt)
     }
     if (a->screen == SCR_CONNECTING && pending == 0) {
         a->screen = SCR_LOBBY;
+        /* only a server somebody got onto goes into the list, not a typo */
+        if (!a->hosting && connected) {
+            gtn_settings_remember(&a->settings, a->settings.host);
+            gtn_settings_save(&a->settings);
+        }
         for (int i = 0; i < GTN_MAX_LOCAL; i++)
             if (a->pl[i].active && a->pl[i].failed) a->pl[i].active = 0;
     }
@@ -989,6 +1028,7 @@ int main(int argc, char **argv)
         if (demo) demo_tick(a, frame * 16, demo);
         gtn_input_update(a, dt);
         update_session(a, dt);
+        gtn_browser_update(a);
         SDL_GetRendererOutputSize(a->ren, &a->w, &a->h);
         gtn_draw(a);
         frame++;
@@ -1002,6 +1042,7 @@ int main(int argc, char **argv)
         (void)t0;
     }
     stop_session(a);
+    gtn_browser_close(a);
     gtn_sound_quit();
     gtn_render_quit();
     SDL_DestroyRenderer(a->ren);

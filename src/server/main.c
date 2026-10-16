@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #include "tn_server.h"
+#include "tn_query.h"
 #include "version.h"
 
 #include <signal.h>
@@ -28,14 +29,32 @@ static void usage(void)
 {
     printf("%s-server %s\n"
            "usage: gtetrinet-ng-server [--port N] [--slots 6|7|8] [--local] [--quiet]\n"
+           "       gtetrinet-ng-server --query HOST[:PORT]\n"
            "  --port N    listen on N (default %d)\n"
            "  --slots N   player slots; classic clients only show 6 (default 6)\n"
-           "  --local     only accept connections from this machine\n",
+           "  --local     only accept connections from this machine\n"
+           "  --query     ask a running server who is there, as the game's server list does\n",
            TN_APP_NAME, TN_VERSION, TN_PORT);
+}
+
+/* Exit status: 0 answered the query protocol, 3 reachable without it, 1 not reachable. */
+static int query(const char *addr)
+{
+    char host[128];
+    int port;
+    if (tn_query_split(addr, host, sizeof host, &port) != 0) { usage(); return 2; }
+    tn_query_result r;
+    if (!tn_query(host, port, 4000, &r)) { printf("%s: not reachable: %s\n", addr, r.err); return 1; }
+    if (!r.answered) { printf("%s: reachable in %d ms, does not answer queries\n", addr, r.ms); return 3; }
+    printf("%s: reachable in %d ms, %s, %d logged in, %d channel(s)\n", addr, r.ms, r.version[0] ? r.version : "no version", r.players, r.nchan);
+    for (int i = 0; i < r.nchan && i < TN_QUERY_CHANNELS; i++)
+        printf("  #%s %d/%d status %d \"%s\"\n", r.chan[i].name, r.chan[i].players, r.chan[i].max, r.chan[i].status, r.chan[i].desc);
+    return 0;
 }
 
 int main(int argc, char **argv)
 {
+    if (argc == 3 && !strcmp(argv[1], "--query")) return query(argv[2]);
     int port = TN_PORT, slots = TN_CLASSIC_SLOTS, local = 0, quiet = 0;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--port") && i + 1 < argc) port = atoi(argv[++i]);

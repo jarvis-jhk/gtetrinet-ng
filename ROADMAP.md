@@ -43,7 +43,15 @@ not certified hardware compatibility. Release gates and remaining checks are in 
   joining one online game, TetriFast refusal explained to the player.
   - [ ] Legacy GTetrinet/TetriNET 1.13 client on our server, moderator hand-over when the
     moderator leaves, and a public TetriFast-capable server once one is found.
-- [ ] Server browser, partyline/chat UI, profiles and reconnect policy.
+- [x] Server browser: recent and public servers asked in the background (TetriNET query
+  protocol: players, channels, version, response time), pick to connect, typed address
+  still possible; our server answers the queries too (`--query` on the command line).
+  Real TCP test (test_browser) and the interop fixture query all three servers.
+- [ ] Partyline/chat UI, channel choice, profiles and reconnect policy.
+- [ ] Warpzone (github.com/jarvis-jhk/warpzone): a hosted local game as a Warpzone room
+  (tier 2), guests over the Warpzone peer channel so nobody forwards ports, the declared
+  ranked FFA queue (up to 6), and the built-in updater silent in `.warpzone-managed`
+  installs. Descriptor games/gtetrinet-ng.toml in that repo; no free-text player content.
 - [ ] Malformed-message fuzzing and limits for public-facing hosting.
 - [ ] IPv6 and asynchronous DNS; avoid blocking the render loop on lookup.
 

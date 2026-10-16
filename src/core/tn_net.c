@@ -166,7 +166,7 @@ void tn_conn_init(tn_conn *c, tn_socket s)
     c->sock = s;
 }
 
-void tn_conn_send(tn_conn *c, const char *msg)
+static void queue(tn_conn *c, const char *msg, char term)
 {
     if (c->dead) return;
     size_t n = strlen(msg);
@@ -180,9 +180,12 @@ void tn_conn_send(tn_conn *c, const char *msg)
         c->outcap = cap;
     }
     memcpy(c->out + c->outlen, msg, n);
-    c->out[c->outlen + n] = (char)0xFF;
+    c->out[c->outlen + n] = term;
     c->outlen += n + 1;
 }
+
+void tn_conn_send(tn_conn *c, const char *msg) { queue(c, msg, (char)0xFF); }
+void tn_conn_send_line(tn_conn *c, const char *msg) { queue(c, msg, '\n'); }
 
 void tn_conn_pump(tn_conn *c)
 {

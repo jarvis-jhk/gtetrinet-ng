@@ -1,5 +1,30 @@
 # Running state — 2026-10-16
 
+## Current: server browser (item tetrinet-server-browser)
+
+Opus filler t_mvavfgk41w1iqm. Public servers answer the classic query protocol on the game
+port (one connection, several commands): "playerquery" -> "Number of players logged in: N",
+"version" -> line + "+OK", "listchan" -> `"name" "desc" players max priority status` lines +
+"+OK", all newline-terminated. Checked live 2026-10-16: tetrinet.de (1.13.28a-Sandrini, 31
+channels, incl. "Only TetriFast 1.14" ones — a TetriFast candidate), tetrinet.fr (1.13.2ice,
+44 channels), tetrinet.us (accepts our login, does not answer queries). tetrinetx 1.13.16
+and tetrinet-server 0.11 do not speak it either (wait for a login; neither minds the probe).
+Core: src/core/tn_query.{h,c} (blocking tn_query, parsers, tn_query_split for host[:port]
+and [v6]:port, now also used by connect_online); tn_conn_send_line; tn_server answers
+playerquery/version/listchan/listuser before login and keeps the connection open.
+`gtetrinet-ng-server --query HOST[:PORT]` (exit 0 answered, 3 reachable only, 1 down).
+App: SCR_SERVERS (src/app/browser.c) opened by "Play online": settings server1..server6
+(recent, newest first, migrated from host=) + public list (GTN_SERVER_LIST overrides, tests
+use it), one detached SDL thread per probe, refcounted so closing never waits. A server is
+remembered only once a local client got on it. "Type an address..." = the old SCR_ONLINE;
+B there returns to the list. tests/test_browser.c (63 checks: parsers, recent list, real
+TCP ours/silent/closed, close-while-asking, keys, connect+remember, en/de 1280x800+800x600
+zero cut text). Negative control with the server's query answers disabled: 4 failures.
+interop.sh queries all three servers (ours 0, tetrinet-server 3, tetrinetx 3). Local Debug
+ctest 11/11, python tests OK, interop (own + tetrinet-server) passed.
+Open: channel choice (/join) belongs to the partyline item; Warpzone rooms are a new
+roadmap item (request t_mvavxtn02aupkt).
+
 ## Current: online interop released as v0.1.8 (item tetrinet-online-interop, done)
 
 Opus filler t_mvataavx18bmir. tests/interop.sh CORE [GAME] builds unmodified tetrinetx

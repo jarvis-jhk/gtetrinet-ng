@@ -45,6 +45,8 @@ typedef struct tn_conn {
 void tn_conn_init(tn_conn *c, tn_socket s);
 /* Queues a message (the terminator is added). */
 void tn_conn_send(tn_conn *c, const char *msg);
+/* Same, ended with a newline: the query protocol's answers are plain text lines. */
+void tn_conn_send_line(tn_conn *c, const char *msg);
 /* Reads what is available, writes what can be written. Call once per frame. */
 void tn_conn_pump(tn_conn *c);
 /* Next complete message, or 0 if none. */

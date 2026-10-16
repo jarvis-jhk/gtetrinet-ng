@@ -47,6 +47,15 @@ run() {
     sleep 1
 }
 
+# the server list's query: EXPECT is gtetrinet-ng-server --query's exit status, 0 when the
+# server answers the query protocol, 3 when it only waits for a login (and must not mind)
+query() {
+    echo "== query 127.0.0.1:$1 (expect $2)"
+    local rc=0
+    "$core/gtetrinet-ng-server" --query "127.0.0.1:$1" || rc=$?
+    if [ "$rc" != "$2" ]; then echo "FAILED: query exit $rc, expected $2"; failed=1; fi
+}
+
 # what a classic server gets: TetriFast must be refused with a reason, classic must work
 classic_suite() {
     run "$core/test_interop" 127.0.0.1 "$1"
@@ -59,6 +68,7 @@ echo "### gtetrinet-ng-server (reference)"
 "$core/gtetrinet-ng-server" --port 31470 --local --quiet &
 pids+=($!)
 wait_port 31470
+query 31470 0
 run "$core/test_interop" 127.0.0.1 31470
 run "$core/test_interop" 127.0.0.1 31470 fast
 [ -n "$game" ] && run "$game/test_online" 127.0.0.1 31470
@@ -70,6 +80,7 @@ if [[ $skip != *" tetrinet-server "* ]]; then
     HOME="$work/church" /usr/games/tetrinet-server &
     pids+=($!)
     wait_port 31457
+    query 31457 3
     classic_suite 31457
     kill -0 "${pids[-1]}" || { echo "FAILED: tetrinet-server is no longer running"; failed=1; }
     kill "${pids[-1]}" 2>/dev/null || true
@@ -88,6 +99,7 @@ if [[ $skip != *" tetrinetx "* ]]; then
     # it forks into the background and wants a fully qualified host name
     (cd "$work/tetrinetx/bin" && HOSTNAME=interop.test ./tetrix.linux >/dev/null)
     wait_port 31457
+    query 31457 3
     classic_suite 31457
     kill -0 "$(cat "$work/tetrinetx/bin/game.pid")" || { echo "FAILED: tetrinetx is no longer running"; failed=1; }
 fi

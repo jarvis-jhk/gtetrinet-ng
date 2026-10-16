@@ -185,6 +185,38 @@ static void start_game(tn_server *s)
     slog(s, "game started with %d player(s)", tn_server_count(s));
 }
 
+/* The query protocol of tetrinetx-derived servers, so server lists can show who is here.
+ * Returns 1 if msg was a query; the connection stays open for the next one. */
+static int query(tn_server *s, tn_server_pending *pd, const char *msg)
+{
+    char line[512];
+    int n = tn_server_count(s);
+    if (!strcmp(msg, "playerquery")) {
+        snprintf(line, sizeof line, "Number of players logged in: %d", n);
+        tn_conn_send_line(&pd->conn, line);
+    } else if (!strcmp(msg, "version")) {
+        snprintf(line, sizeof line, "%s %s", TN_APP_NAME, TN_VERSION);
+        tn_conn_send_line(&pd->conn, line);
+        tn_conn_send_line(&pd->conn, "+OK");
+    } else if (!strcmp(msg, "listchan")) {
+        snprintf(line, sizeof line, "\"%s\" \"%s\" %d %d 0 %d", TN_APP_NAME, s->max_slots > TN_CLASSIC_SLOTS ? "up to 8 players" : "TetriNET",
+                 n, s->max_slots, s->ingame ? (s->paused ? 3 : 2) : 1);
+        tn_conn_send_line(&pd->conn, line);
+        tn_conn_send_line(&pd->conn, "+OK");
+    } else if (!strcmp(msg, "listuser")) {
+        for (int i = 1; i <= TN_MAX_SLOTS; i++) {
+            if (!s->p[i].used) continue;
+            snprintf(line, sizeof line, "\"%s\" \"%s\" \"1.13\" %d %d 1 \"%s\"", s->p[i].nick, s->p[i].team, i,
+                     s->p[i].playing ? 1 : 0, TN_APP_NAME);
+            tn_conn_send_line(&pd->conn, line);
+        }
+        tn_conn_send_line(&pd->conn, "+OK");
+    } else {
+        return 0;
+    }
+    return 1;
+}
+
 static void login(tn_server *s, tn_server_pending *pd, const char *msg)
 {
     char plain[256], word[32], nick[TN_NICK_MAX], ver[32];
@@ -328,12 +360,15 @@ void tn_server_update(tn_server *s, int dt_ms)
         if (!pd->used) continue;
         tn_conn_pump(&pd->conn);
         pd->age_ms += dt_ms;
-        if (!pd->conn.dead && tn_conn_next(&pd->conn, msg, sizeof msg)) {
+        while (!pd->conn.dead && tn_conn_next(&pd->conn, msg, sizeof msg)) {
+            if (query(s, pd, msg)) { tn_conn_pump(&pd->conn); continue; }
             login(s, pd, msg);
-            if (!pd->used) continue;          /* became a player */
+            if (!pd->used) break;             /* became a player */
             tn_conn_pump(&pd->conn);          /* flush the refusal */
             pd->age_ms = LOGIN_TIMEOUT_MS - 500;
+            break;
         }
+        if (!pd->used) continue;
         if (pd->conn.dead || pd->age_ms > LOGIN_TIMEOUT_MS) {
             tn_conn_close(&pd->conn);
             pd->used = 0;

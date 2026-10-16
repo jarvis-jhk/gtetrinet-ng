@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.9 — 2026-10-16
+
+A server list. "Play online" now opens a list of the servers you played on and three
+public TetriNET servers (tetrinet.de, tetrinet.fr, tetrinet.us). Each one is asked in the
+background who is there: how many are playing, how many channels it has and how quickly
+it answers, and for the chosen server its version and busiest channels. Servers that do
+not tell (and those that cannot be reached) say so. Pick one with A or Enter; X (S) asks
+again, Y (N) switches between classic and TetriFast, and "Type an address..." at the end
+still lets you enter any server. A server goes into the list only once somebody got on
+it. gtetrinet-ng's own server now answers these questions too, so other server lists can
+show it, and `gtetrinet-ng-server --query HOST` asks a server from the command line.
+German translation included.
+
 ## 0.1.8 — 2026-10-16
 
 Playing on other TetriNET servers. Every build is now tested against two servers we did

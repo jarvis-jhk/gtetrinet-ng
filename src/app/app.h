@@ -10,6 +10,7 @@
 #include "tn_client.h"
 #include "tn_server.h"
 #include "tn_bot.h"
+#include "tn_query.h"
 #include "settings.h"
 
 #define GTN_MAX_LOCAL 8
@@ -36,7 +37,26 @@ typedef struct gtn_local {
     tn_bot bot;              /* DEV_BOT only */
 } gtn_local;
 
-enum gtn_screen { SCR_TITLE, SCR_ONLINE, SCR_CONNECTING, SCR_LOBBY, SCR_GAME, SCR_NEWS, SCR_INPUT, SCR_CONTROLS, SCR_NAME };
+/* the server list (browser.c) */
+#define GTN_BROWSER_MAX 12
+enum { GTN_PROBE_NONE, GTN_PROBE_ASKING, GTN_PROBE_DONE };
+
+typedef struct gtn_server_entry {
+    char addr[128];          /* as typed: host or host:port */
+    int known;               /* a public server we ship, not one played on */
+    int state;               /* GTN_PROBE_* */
+    tn_query_result res;
+    struct gtn_probe *probe; /* while asking */
+} gtn_server_entry;
+
+typedef struct gtn_browser {
+    gtn_server_entry e[GTN_BROWSER_MAX];
+    int n;
+    int sel;                 /* 0..n-1 a server, n: type an address */
+} gtn_browser;
+
+/* SCR_SERVERS lists servers; SCR_ONLINE is typing an address */
+enum gtn_screen { SCR_TITLE, SCR_SERVERS, SCR_ONLINE, SCR_CONNECTING, SCR_LOBBY, SCR_GAME, SCR_NEWS, SCR_INPUT, SCR_CONTROLS, SCR_NAME };
 
 typedef struct gtn_app {
     SDL_Window *win;
@@ -57,6 +77,8 @@ typedef struct gtn_app {
     char host[128];
     int port;
     int fast;
+
+    gtn_browser browser;
 
     /* online screen: text entry with an on-screen keyboard for controllers */
     char entry[128];
@@ -86,6 +108,13 @@ void gtn_button(gtn_app *a, int who, enum gtn_dev dev, SDL_JoystickID pad, enum 
 void gtn_text_input(gtn_app *a, const char *text);
 void gtn_set_status(gtn_app *a, const char *fmt, ...);
 const char *gtn_bot_level_name(int level);   /* translated: Easy, Normal, Hard */
+
+/* browser.c: opening asks every server again; probes run on threads */
+void gtn_browser_open(gtn_app *a);
+void gtn_browser_refresh(gtn_app *a);
+void gtn_browser_update(gtn_app *a);
+int gtn_browser_pending(const gtn_app *a);
+void gtn_browser_close(gtn_app *a);
 
 /* ui.c */
 void gtn_draw(gtn_app *a);

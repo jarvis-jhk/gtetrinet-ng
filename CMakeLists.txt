@@ -26,7 +26,7 @@ configure_file(cmake/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/generated/version.
 
 add_library(tncore STATIC
   src/core/tn_protocol.c src/core/tn_game.c src/core/tn_net.c
-  src/core/tn_client.c src/core/tn_server.c src/core/tn_bot.c)
+  src/core/tn_client.c src/core/tn_server.c src/core/tn_bot.c src/core/tn_query.c)
 target_include_directories(tncore PUBLIC src/core ${CMAKE_CURRENT_BINARY_DIR}/generated)
 if(WIN32)
   target_link_libraries(tncore PUBLIC ws2_32)
@@ -38,7 +38,7 @@ target_link_libraries(gtetrinet-ng-server tncore)
 if(GTN_BUILD_GAME)
   find_package(SDL2 2.0.14 REQUIRED)
   add_executable(gtetrinet-ng WIN32
-    src/app/main.c src/app/render.c src/app/input.c src/app/ui.c src/app/fault.c src/app/settings.c
+    src/app/main.c src/app/render.c src/app/input.c src/app/ui.c src/app/fault.c src/app/settings.c src/app/browser.c
     src/app/i18n.c src/app/sound.c)
   target_include_directories(gtetrinet-ng PRIVATE src/app third_party)
   if(TARGET SDL2::SDL2main)
@@ -55,10 +55,10 @@ if(GTN_BUILD_GAME)
     target_link_libraries(gtetrinet-ng m)
   endif()
   if(BUILD_TESTING)
-    foreach(input_test test_input test_input_virtual test_effects test_repeat test_i18n test_controls test_names test_sound test_bots test_online)
-      add_executable(${input_test} tests/${input_test}.c src/app/render.c src/app/input.c src/app/ui.c src/app/fault.c
+    foreach(input_test test_input test_input_virtual test_effects test_repeat test_i18n test_controls test_names test_sound test_bots test_online test_browser)
+      add_executable(${input_test} tests/${input_test}.c src/app/render.c src/app/input.c src/app/ui.c src/app/fault.c src/app/browser.c
         src/app/i18n.c src/app/sound.c)
-      if(NOT input_test MATCHES "^test_(repeat|i18n|controls|names|sound|bots|online)$")
+      if(NOT input_test MATCHES "^test_(repeat|i18n|controls|names|sound|bots|online|browser)$")
         target_sources(${input_test} PRIVATE src/app/settings.c)
       endif()
       target_include_directories(${input_test} PRIVATE src/app third_party ${SDL2_INCLUDE_DIRS})
@@ -102,7 +102,9 @@ if(BUILD_TESTING)
     add_test(NAME sound COMMAND test_sound "${CMAKE_CURRENT_BINARY_DIR}/sound-prefs/")
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bots-prefs)
     add_test(NAME bots COMMAND test_bots "${CMAKE_CURRENT_BINARY_DIR}/bots-prefs/")
-    set_tests_properties(input input_virtual effects repeat i18n controls names sound bots PROPERTIES TIMEOUT 60 ENVIRONMENT "GTN_NO_REPORT=1")
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser-prefs)
+    add_test(NAME browser COMMAND test_browser "${CMAKE_CURRENT_BINARY_DIR}/browser-prefs/")
+    set_tests_properties(input input_virtual effects repeat i18n controls names sound bots browser PROPERTIES TIMEOUT 60 ENVIRONMENT "GTN_NO_REPORT=1")
   endif()
 endif()
 

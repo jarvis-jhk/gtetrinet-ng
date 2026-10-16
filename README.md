@@ -43,8 +43,18 @@ be reclaimed by pressing A on an unclaimed controller. Eight fields are a dense 
 These face, shoulder, Up and Back buttons can be rearranged under Options → Controller buttons.
 
 Keyboard: arrows move/rotate, Space drops, X rotates clockwise / Z counterclockwise, S uses a special, Q/E or Tab
-changes target, 1–8 uses it on a numbered player, D discards, P pauses. Online entry has
-a controller keyboard. Choose TetriFast with Y. `--nick Name` sets your nickname.
+changes target, 1–8 uses it on a numbered player, D discards, P pauses. `--nick Name`
+sets your nickname.
+
+Playing online: "Play online" lists the servers you played on (up to six, newest first)
+and the public servers tetrinet.de, tetrinet.fr and tetrinet.us. Each is asked in the
+background, with the TetriNET query protocol that tetrinetx-derived servers speak, how
+many are playing and which channels it has; servers without that protocol show as
+"online" with their response time. A/Enter connects, X/S asks again, Y/N switches
+classic/TetriFast, B goes back. "Type an address..." opens an address entry with a
+controller keyboard (`host` or `host:port`). Everybody who joined plays on that server,
+each as their own player, in the server's first channel. Our own server answers the
+same queries; `gtetrinet-ng-server --query HOST[:PORT]` shows what a server says.
 
 Names: after joining, press Y on your controller (N on the keyboard) on the title screen
 to type your name with the on-screen keyboard (Y switches capitals, X deletes, Start

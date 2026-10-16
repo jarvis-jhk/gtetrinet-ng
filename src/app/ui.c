@@ -290,6 +290,82 @@ static void draw_online(gtn_app *a)
     hints(a, gtn_tr("D-pad/A: type   X: delete   Start/GO/Enter: connect   B/Esc: back"));
 }
 
+/* one line about a server: what the background query found out */
+static void server_status(const gtn_server_entry *e, char *out, size_t n, gtn_color *col)
+{
+    *col = MUTED;
+    if (e->state == GTN_PROBE_ASKING) { snprintf(out, n, "%s", gtn_tr("asking...")); return; }
+    if (e->state != GTN_PROBE_DONE) { out[0] = 0; return; }
+    if (!e->res.reachable) { *col = BAD; snprintf(out, n, "%s", gtn_tr("not reachable")); return; }
+    *col = TEXT;
+    if (!e->res.answered) { snprintf(out, n, gtn_tr("online, %d ms"), e->res.ms); return; }
+    if (e->res.players > 0) *col = ACCENT;
+    if (e->res.nchan == 1) snprintf(out, n, gtn_tr("%d playing, one channel, %d ms"), e->res.players, e->res.ms);
+    else snprintf(out, n, gtn_tr("%d playing, %d channels, %d ms"), e->res.players, e->res.nchan, e->res.ms);
+}
+
+static void draw_servers(gtn_app *a)
+{
+    int s = ts(a);
+    const gtn_browser *br = &a->browser;
+    gtn_text_center_fit(a->w / 2, a->h / 14, 3 * s, a->w - 32, TEXT, gtn_tr("Play online"));
+    gtn_text_center_fit(a->w / 2, a->h / 14 + 32 * s, s, a->w - 32, MUTED,
+                        gtn_tr("Servers you played on and public TetriNET servers, asked who is there right now"));
+    int bw = a->w * 5 / 6, bx = (a->w - bw) / 2, by = a->h / 14 + 50 * s, row = 20 * s;
+    int rows = br->n + 1;
+    gtn_fill(bx, by, bw, row * rows + 8 * s, PANEL);
+    char buf[320];
+    for (int i = 0; i < rows; i++) {
+        int y = by + 4 * s + i * row, sel = br->sel == i;
+        if (sel) gtn_fill(bx + 2 * s, y, bw - 4 * s, row, gtn_rgb(0x2a, 0x30, 0x48));
+        if (i == br->n) {
+            gtn_text_fit(bx + 10 * s, y + 3 * s, 2 * s, bw - 20 * s, sel ? ACCENT : TEXT, gtn_tr("Type an address..."));
+            continue;
+        }
+        const gtn_server_entry *e = &br->e[i];
+        int nw = bw * 2 / 5, tw = 11 * 8 * s;
+        gtn_text_fit(bx + 10 * s, y + 3 * s, 2 * s, nw - 10 * s, sel ? ACCENT : TEXT, e->addr);
+        gtn_text_fit(bx + nw + 4 * s, y + 7 * s, s, tw, MUTED, gtn_tr(e->known ? "public" : "recent"));
+        gtn_color col;
+        server_status(e, buf, sizeof buf, &col);
+        int sx = bx + nw + tw + 8 * s;
+        gtn_text_fit(sx, y + 7 * s, s, bx + bw - sx - 8 * s, col, buf);
+    }
+
+    /* the chosen server in more detail: its version and the busiest channels */
+    int y = by + row * rows + 20 * s;
+    if (br->sel < br->n) {
+        const gtn_server_entry *e = &br->e[br->sel];
+        if (e->state == GTN_PROBE_DONE && !e->res.reachable) {
+            char why[160];
+            gtn_tr_log(gtn_tr(e->res.err), why, sizeof why);
+            snprintf(buf, sizeof buf, "%s: %s", e->addr, why);
+            gtn_text_fit(bx, y, s, bw, BAD, buf);
+        } else if (e->state == GTN_PROBE_DONE && !e->res.answered) {
+            gtn_text_fit(bx, y, s, bw, MUTED, gtn_tr("This server does not tell who is playing; connect to see."));
+        } else if (e->state == GTN_PROBE_DONE) {
+            snprintf(buf, sizeof buf, gtn_tr("Server: %s"), e->res.version[0] ? e->res.version : "?");
+            gtn_text_fit(bx, y, s, bw, MUTED, buf);
+            int shown[TN_QUERY_CHANNELS] = {0};
+            int nch = e->res.nchan < TN_QUERY_CHANNELS ? e->res.nchan : TN_QUERY_CHANNELS, k;
+            for (k = 0; k < 4 && k < nch; k++) {
+                int best = -1;
+                for (int c = 0; c < nch; c++)
+                    if (!shown[c] && (best < 0 || e->res.chan[c].players > e->res.chan[best].players)) best = c;
+                shown[best] = 1;
+                const tn_query_channel *ch = &e->res.chan[best];
+                snprintf(buf, sizeof buf, "#%s  %d/%d  %s", ch->name, ch->players, ch->max, ch->desc);
+                gtn_text_fit(bx + 8 * s, y + (14 + k * 12) * s, s, bw - 8 * s, ch->players ? TEXT : MUTED, buf);
+            }
+            if (nch) gtn_text_fit(bx, y + (18 + k * 12) * s, s, bw, MUTED, gtn_tr("Local players join the server's first channel."));
+        }
+    }
+    snprintf(buf, sizeof buf, gtn_tr("Mode: %s (Y to change)"), a->settings.fast ? "TetriFast" : gtn_tr("classic TetriNET"));
+    gtn_text_center_fit(a->w / 2, a->h - 34 * s, s, a->w - 32, MUTED, buf);
+    status_line(a);
+    hints(a, gtn_tr("Up/Down: choose   A/Enter: connect   X/S: ask again   Y/N: mode   B/Esc: back"));
+}
+
 static void draw_connecting(gtn_app *a)
 {
     int s = ts(a);
@@ -574,6 +650,7 @@ void gtn_draw(gtn_app *a)
     SDL_RenderClear(a->ren);
     switch (a->screen) {
     case SCR_TITLE: draw_title(a); status_line(a); break;
+    case SCR_SERVERS: draw_servers(a); break;
     case SCR_ONLINE: draw_online(a); break;
     case SCR_CONNECTING: draw_connecting(a); break;
     case SCR_LOBBY: draw_lobby(a); break;

@@ -9,6 +9,7 @@
 #include "tn_bot.h"
 
 #include <SDL.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -196,10 +197,39 @@ void gtn_settings_load(gtn_settings *s)
         else if (!strcmp(k, "rumble")) s->rumble_off = !strcmp(v, "off");
         else if (!strcmp(k, "bots"))
             for (int i = 0; i < TN_BOT_LEVELS; i++) { if (!strcmp(v, bot_codes[i])) s->bot_level = i; }
+        else if (!strncmp(k, "server", 6) && k[6] >= '1' && k[6] < '1' + GTN_RECENT && !k[7])
+            snprintf(s->recent[k[6] - '1'], sizeof s->recent[0], "%s", v);
         else if (!strncmp(k, "nick", 4) && k[4] >= '2' && k[4] <= '0' + GTN_SEATS && !k[5])
             gtn_nick_clean(s->seat_nick[k[4] - '1'], sizeof s->seat_nick[0], v);
     }
     fclose(f);
+    /* close the gaps a hand-edited file may have; settings from before the list had host= */
+    int n = 0;
+    for (int i = 0; i < GTN_RECENT; i++)
+        if (s->recent[i][0]) {
+            if (n != i) { memcpy(s->recent[n], s->recent[i], sizeof s->recent[0]); s->recent[i][0] = 0; }
+            n++;
+        }
+    if (!n && s->host[0]) gtn_settings_remember(s, s->host);
+}
+
+static int same_text(const char *a, const char *b)
+{
+    for (; *a && *b; a++, b++)
+        if (tolower((unsigned char)*a) != tolower((unsigned char)*b)) return 0;
+    return *a == *b;
+}
+
+void gtn_settings_remember(gtn_settings *s, const char *addr)
+{
+    if (!addr[0]) return;
+    char keep[128];
+    snprintf(keep, sizeof keep, "%s", addr);
+    int at = GTN_RECENT - 1;
+    for (int i = 0; i < GTN_RECENT; i++)
+        if (same_text(s->recent[i], keep)) { at = i; break; }
+    memmove(s->recent[1], s->recent[0], (size_t)at * sizeof s->recent[0]);
+    snprintf(s->recent[0], sizeof s->recent[0], "%s", keep);
 }
 
 int gtn_settings_save(const gtn_settings *s)
@@ -222,6 +252,8 @@ int gtn_settings_save(const gtn_settings *s)
             volume_codes[vol], s->rumble_off ? "off" : "on", bot_codes[bots]);
     for (int i = 1; i < GTN_SEATS && written >= 0; i++)
         if (s->seat_nick[i][0]) written = fprintf(f, "nick%d=%s\n", i + 1, s->seat_nick[i]);
+    for (int i = 0; i < GTN_RECENT && written >= 0; i++)
+        if (s->recent[i][0]) written = fprintf(f, "server%d=%s\n", i + 1, s->recent[i]);
     int closed = fclose(f);
     if (written < 0 || closed != 0) {
         remove(tmp);
