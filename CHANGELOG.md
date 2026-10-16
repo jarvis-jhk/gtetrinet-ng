@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.6 — 2026-10-16
 
 Sound and rumble. The game now plays short sound effects — a piece landing, one to four
 cleared lines, using a special, being hit by one (harmful, helpful and mixed effects each
