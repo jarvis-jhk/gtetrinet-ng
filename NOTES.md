@@ -1,6 +1,6 @@
 # Running state — 2026-10-16
 
-## Current: nickname editing per seat (e9f7df2), release v0.1.5 pending CI
+## Current: nickname editing per seat released as v0.1.5
 
 Work session t_mvaqgvr2dvbaa, combined-roadmap item tetrinet-nickname-editing.
 Title screen: a joined player presses Y (keyboard N, mapped to BTN_Y outside games only)
@@ -17,7 +17,12 @@ renders en/de at 800x600 and 1280x800 with zero cut text, real local TCP session
 all three clients see Jan/Mo/Jan3). Locally only test_names (Debug) and the Python
 string test were run (VPS rule since 2026-10-16: heavy builds go to CI or the re lane);
 the sanitizer matrix and Windows run in GitHub CI.
-Open: physical controllers/Deck typing feel unverified.
+Source e9f7df2 passed Linux ASan/UBSan + native Windows CI 38877632541 (8/8 tests incl.
+names on both). Release workflow 38878031791 succeeded; all six assets downloaded HTTP 200
+with matching SHA256SUMS (Linux 808999 B, Windows ZIP 7165372 B); Linux package smoke
+(8-player demo) passed; Wine smoke skipped under the VPS rule.
+https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.5
+Open: physical controllers/Deck typing feel unverified. Next release must exceed v0.1.5.
 
 ## Previous: rearrangeable controller buttons released as v0.1.4
 
