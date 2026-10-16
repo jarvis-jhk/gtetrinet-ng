@@ -1,6 +1,6 @@
 # Running state — 2026-10-16
 
-## Current: IPv6 and asynchronous DNS (item tetrinet-ipv6-async-dns)
+## Current: IPv6 and asynchronous DNS released as v0.1.12 (item tetrinet-ipv6-async-dns, done)
 
 Opus filler t_mvb2e9jz4tzqwa. Goal: a released build connects by IPv6 address/hostname
 ([v6]:port), the LAN server accepts IPv6 clients, a slow lookup no longer freezes the screen.
@@ -18,6 +18,10 @@ test_ipv6_and_lookup (split forms, ::1 + 127.0.0.1 in one lobby, ::1-refused -> 
 controls: synchronous lookup fails 3 checks, no fallback fails 1. Debug+ASan/UBSan ctest
 11/11, python tests OK, MinGW test_core.exe builds. tetrinet.fr has AAAA 2001:41d0:8:6717::3 (de/us IPv4 only); the container has no IPv6 egress,
 so a real internet IPv6 game is untested here - open for Jan on an IPv6 network.
+871fe3f passed linux/windows/interop CI 38917487601; tag v0.1.12 release 38920030973 passed.
+All assets downloaded, SHA256SUMS OK (AppImage too); packaged server answers --query on
+[::1], 127.0.0.1 and localhost. https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.12
+Next release > v0.1.12.
 
 ## Earlier: TetriNET 2 rules released as v0.1.11 (item tetrinet-tetrinet-2-parity, done)
 
