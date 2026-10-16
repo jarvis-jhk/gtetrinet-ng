@@ -1,6 +1,6 @@
 # Running state — 2026-10-16
 
-## Current: online interop against tetrinetx and tetrinet-server (item tetrinet-online-interop)
+## Current: online interop released as v0.1.8 (item tetrinet-online-interop, done)
 
 Opus filler t_mvataavx18bmir. tests/interop.sh CORE [GAME] builds unmodified tetrinetx
 1.13.16+qirc-1.40c (sourceforge tarball, sha256 2b7210a0…d15d4, gcc main.c -ladns; needs
@@ -21,7 +21,15 @@ pending, so the lobby opened early — fixed. (5) A failed connect no longer dro
 while nobody is in (p->failed), so a couch keeps its seats after a typo or TetriFast.
 Local: interop.sh all passed (2 min; own 45/45/35, church 45/2/38, tetrinetx 45/2/38);
 Debug core/i18n/names/bots/sound pass. New CI job `interop` (Ubuntu 22.04, ASan/UBSan).
-Open: legacy GTetrinet client fixture, moderator hand-over, a TetriFast-capable server.
+CI 38888375879 (fc33904) failed only in the interop fixture: the TetriFast run on our own
+server started before the server dropped the previous run's Anna (nick taken); d79b462
+sleeps 1 s between runs. d79b462 passed linux/windows/interop CI 38888888108 (interop log:
+all three servers, every run 0 failures, tetrinetx tarball sha256 OK). Tag v0.1.8 release
+38891195293 succeeded; six assets HTTP 200, SHA256SUMS match (Linux 821308 B, Windows ZIP
+7174736 B); Linux package reports 0.1.8, contains the new message, 8-player demo smoke ok.
+https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.8
+Open: legacy GTetrinet client fixture, moderator hand-over, a TetriFast-capable server;
+playing on a real public server is for Jan to try. Next release > v0.1.8.
 
 ## Current: computer opponents released as v0.1.7 (item tetrinet-bot-opponents, done)
 
