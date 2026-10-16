@@ -1,6 +1,25 @@
-# Running state — 2026-10-15
+# Running state — 2026-10-16
 
-## Current: rearrangeable controller buttons released as v0.1.4
+## Current: nickname editing per seat (e9f7df2), release v0.1.5 pending CI
+
+Work session t_mvaqgvr2dvbaa, combined-roadmap item tetrinet-nickname-editing.
+Title screen: a joined player presses Y (keyboard N, mapped to BTN_Y outside games only)
+and gets SCR_NAME: on-screen keyboard gtn_name_rows (digits, letters, _ . - !, Aa/DEL/OK;
+Y toggles capitals, X deletes, Start saves, B cancels); typed text goes to the entry too.
+Only the named player's device or the keyboard acts there; anyone's B closes it when the
+named player's controller is gone. gtn_nick_clean: one word of printable ASCII, max 15.
+Empty and names already used by another local player are refused with a status line.
+Saved as nick= (P1, also the base) and nick2..nick8 (settings.seat_nick[i]); seats
+without their own name keep following P1's name + number, and are recomputed when P1
+renames. Online/local OSK navigation is now one helper (osk_button / draw_osk).
+Checks: tests/test_names.c (61: cleaning, malformed seat keys, full pad/keyboard flow,
+renders en/de at 800x600 and 1280x800 with zero cut text, real local TCP session where
+all three clients see Jan/Mo/Jan3). Locally only test_names (Debug) and the Python
+string test were run (VPS rule since 2026-10-16: heavy builds go to CI or the re lane);
+the sanitizer matrix and Windows run in GitHub CI.
+Open: physical controllers/Deck typing feel unverified.
+
+## Previous: rearrangeable controller buttons released as v0.1.4
 
 Work session t_mv8w5tlh0kirs, combined-roadmap item tetrinet-controller-remapping (done).
 Options gains a third row, Controller buttons (Standard/Custom; Y resets), opening
