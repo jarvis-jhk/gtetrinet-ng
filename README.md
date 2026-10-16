@@ -50,6 +50,12 @@ saves, B cancels); a keyboard can type directly. A name is one word of up to 15
 characters and is saved for that seat (P1–P8), so it comes back the next time someone
 joins there. Seats without their own name use P1's name with a number.
 
+Computer opponents: in the lobby of a game on this machine ("Play here"), X (keyboard S)
+adds a computer player, LB (Q) removes the last one and RB (E/Tab) cycles their strength
+— Easy (slow, misplaces a piece now and then), Normal or Hard — which is saved. They take
+free seats up to eight, move and clear lines, use specials and keep their seats between
+games until the session ends. They are never added to someone else's online server.
+
 On the title screen, controller X or keyboard S opens Options, even before joining.
 Up/Down picks a row; Left/Right or A changes it, Y restores its default and
 B/Esc/Start returns. All choices are saved; a failed save shows a warning and keeps

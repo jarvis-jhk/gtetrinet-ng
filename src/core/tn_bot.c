@@ -13,6 +13,23 @@ void tn_bot_init(tn_bot *b, int think_ms)
     b->last_block = TN_NO_BLOCK;
 }
 
+void tn_bot_init_level(tn_bot *b, int level, unsigned seed)
+{
+    /* Easy is slow and drops one piece in four somewhere poor, which a beginner can beat;
+     * Hard moves about as fast as a good human and never misplaces. */
+    static const int think[TN_BOT_LEVELS] = {420, 210, 95}, mistakes[TN_BOT_LEVELS] = {25, 6, 0};
+    if (level < 0 || level >= TN_BOT_LEVELS) level = TN_BOT_NORMAL;
+    tn_bot_init(b, think[level]);
+    b->mistake_pct = mistakes[level];
+    b->rng = seed * 2654435761u + 12345u;
+}
+
+static unsigned bot_rand(tn_bot *b)
+{
+    b->rng = b->rng * 1103515245u + 12345u;
+    return (b->rng >> 16) & 0x7fff;
+}
+
 static int fits(const tn_field f, int block, int orient, int bx, int by)
 {
     const char (*sh)[4] = tn_block_shape(block, orient);
@@ -50,6 +67,8 @@ static void choose(tn_bot *b, const tn_client *c)
     const tn_game *g = &c->game;
     long best = -0x7fffffffL;
     b->have_goal = 0;
+    /* a mistake: every fitting place scores at random, so an arbitrary one wins */
+    int mistake = b->mistake_pct > 0 && (int)(bot_rand(b) % 100) < b->mistake_pct;
     for (int o = 0; o < tn_block_orients(g->block); o++)
         for (int x = -3; x < TN_FIELD_W; x++) {
             if (!fits(g->field, g->block, o, x, 0)) continue;
@@ -61,7 +80,7 @@ static void choose(tn_bot *b, const tn_client *c)
             for (int r = 0; r < 4; r++)
                 for (int q = 0; q < 4; q++)
                     if (sh[r][q]) t[y + r][x + q] = sh[r][q];
-            long s = score_field(t);
+            long s = mistake ? (long)bot_rand(b) : score_field(t);
             if (s > best) { best = s; b->goal_x = x; b->goal_orient = o; b->have_goal = 1; }
         }
 }

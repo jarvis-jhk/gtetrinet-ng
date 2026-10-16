@@ -169,10 +169,64 @@ static void leave_local(gtn_app *a, int i)
     a->pl[i].active = 0;
 }
 
+/* ---------------------------------------------------------------- computer players */
+
+const char *gtn_bot_level_name(int level)
+{
+    static const char *const names[TN_BOT_LEVELS] = {N_("Easy"), N_("Normal"), N_("Hard")};
+    return gtn_tr(names[level >= 0 && level < TN_BOT_LEVELS ? level : TN_BOT_NORMAL]);
+}
+
+/* Computer players take a free seat in a game on this machine only: on someone else's server
+ * they would be uninvited guests. They leave again when the session ends. */
+static void add_bot(gtn_app *a)
+{
+    if (!a->hosting) { gtn_set_status(a, "%s", gtn_tr("Computer players can only join a game on this machine")); return; }
+    for (int i = 0; i < GTN_MAX_LOCAL; i++) {
+        if (a->pl[i].active) continue;
+        gtn_local *p = &a->pl[i];
+        memset(p, 0, sizeof *p);
+        back_held[i] = 0;
+        for (int n = 1; n <= GTN_MAX_LOCAL && !p->nick[0]; n++) {
+            char nick[TN_NICK_MAX];
+            snprintf(nick, sizeof nick, "CPU%d", n);
+            int taken = 0;
+            for (int k = 0; k < GTN_MAX_LOCAL; k++) taken |= a->pl[k].active && !strcmp(a->pl[k].nick, nick);
+            if (!taken) snprintf(p->nick, sizeof p->nick, "%s", nick);
+        }
+        p->active = 1;
+        p->dev = DEV_BOT;
+        p->pad = -1;
+        tn_bot_init_level(&p->bot, a->settings.bot_level, (unsigned)time(NULL) + 977u * (unsigned)i);
+        connect_player(a, i);
+        return;
+    }
+    gtn_set_status(a, "%s", gtn_tr("Eight players is the most that fit"));
+}
+
+static void remove_bot(gtn_app *a)
+{
+    for (int i = GTN_MAX_LOCAL - 1; i >= 0; i--)
+        if (a->pl[i].active && a->pl[i].dev == DEV_BOT) { leave_local(a, i); return; }
+    gtn_set_status(a, "%s", gtn_tr("No computer players to remove"));
+}
+
+static void cycle_bot_level(gtn_app *a)
+{
+    a->settings.bot_level = (a->settings.bot_level + 1) % TN_BOT_LEVELS;
+    for (int i = 0; i < GTN_MAX_LOCAL; i++)
+        if (a->pl[i].active && a->pl[i].dev == DEV_BOT)
+            tn_bot_init_level(&a->pl[i].bot, a->settings.bot_level, (unsigned)time(NULL) + 977u * (unsigned)i);
+    if (gtn_settings_save(&a->settings) != 0)
+        gtn_set_status(a, "%s", gtn_tr("The strength works for this run, but could not be saved"));
+}
+
 static void stop_session(gtn_app *a)
 {
-    for (int i = 0; i < GTN_MAX_LOCAL; i++)
+    for (int i = 0; i < GTN_MAX_LOCAL; i++) {
         if (a->pl[i].active) tn_client_disconnect(&a->pl[i].client);
+        if (a->pl[i].dev == DEV_BOT) a->pl[i].active = 0;
+    }
     if (a->hosting) tn_server_stop(&a->server);
     a->hosting = 0;
     a->screen = SCR_TITLE;
@@ -440,6 +494,9 @@ static void lobby_button(gtn_app *a, int who, enum gtn_btn b)
         break;
     }
     case BTN_BACK: open_news(a, 0); break;
+    case BTN_X: add_bot(a); break;
+    case BTN_LB: remove_bot(a); break;
+    case BTN_RB: cycle_bot_level(a); break;
     default: break;
     }
 }
@@ -683,10 +740,11 @@ static void update_session(gtn_app *a, int dt)
         active++;
         tn_client_update(&p->client, dt);
         tn_client *c = &p->client;
+        if (p->dev == DEV_BOT && c->ingame) tn_bot_update(&p->bot, c, dt);
         if (c->state == TN_FAILED && strstr(c->err, "Nickname") && p->nick_tries < 5) {
             /* somebody online already has this name: try the next number */
             p->nick_tries++;
-            snprintf(p->nick, sizeof p->nick, "%.18s_%d", a->settings.nick, i + 1 + p->nick_tries * 8);
+            snprintf(p->nick, sizeof p->nick, "%.18s_%d", p->dev == DEV_BOT ? "CPU" : a->settings.nick, i + 1 + p->nick_tries * 8);
             connect_player(a, i);
             continue;
         }

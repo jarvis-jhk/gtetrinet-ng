@@ -107,7 +107,7 @@ static void player_card(gtn_app *a, int i, int x, int y, int w, int h)
     gtn_text(x + 6 * s, y + 6 * s, 2 * s, pc, n);
     gtn_text_fit(x + 6 * s, y + h / 2, s, w - 12 * s, TEXT, p->nick);
     gtn_text_fit(x + 6 * s, y + h - 14 * s, s, w - 12 * s, MUTED,
-                 gtn_tr(p->dev == DEV_KEYBOARD ? "Keyboard" : p->pad < 0 ? "No pad!" : "Gamepad"));
+                 gtn_tr(p->dev == DEV_BOT ? "Computer" : p->dev == DEV_KEYBOARD ? "Keyboard" : p->pad < 0 ? "No pad!" : "Gamepad"));
 }
 
 static void draw_title(gtn_app *a)
@@ -342,6 +342,12 @@ static void draw_lobby(gtn_app *a)
     }
 
     int by = ly + row * TN_MAX_SLOTS + 24 * s;
+    if (a->hosting) {
+        gtn_text_fit(lx, by - 10 * s, s, lw, MUTED, gtn_tr("X/S: add computer player   LB/Q: remove one"));
+        snprintf(buf, sizeof buf, gtn_tr("RB/E: computer strength: %s"), gtn_bot_level_name(a->settings.bot_level));
+        gtn_text_fit(lx, by + 2 * s, s, lw, MUTED, buf);
+        by += 24 * s;
+    }
     if (c->last_winner && a->banner_ms > 0) {
         const tn_slot *w = &c->slot[c->last_winner];
         snprintf(buf, sizeof buf, gtn_tr("%s wins!"), w->team[0] ? w->team : w->nick);

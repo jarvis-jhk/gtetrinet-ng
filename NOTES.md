@@ -1,5 +1,20 @@
 # Running state — 2026-10-16
 
+## Current: computer opponents in the lobby (item tetrinet-bot-opponents)
+
+Opus filler t_mvasr12a117hj1. Core: tn_bot_init_level(level, seed) — Easy 420 ms/25 %
+mistakes, Normal 210 ms/6 %, Hard 95 ms/0 %; a mistake scores every fitting place at
+random (own LCG per bot). App: DEV_BOT seats (gtn_local.bot), named CPU1..CPU8 (first
+free), added only when a->hosting and in the lobby: X/S adds, LB/Q removes the last bot,
+RB/E cycles strength for seated bots too, saved as bots=easy|normal|hard. update_session
+drives each bot while its client is ingame; stop_session deactivates bots; nick retry
+uses CPU as base. Lobby shows two hint lines under the slot list when hosting; player
+card label "Computer". tests/test_bots.c (42: levels, settings, add/remove/reuse names,
+online refusal, keyboard-not-joined, render en/de 800x600+1280x800 zero cut text, real
+TCP game where an idle human tops out while two Hard bots lock/clear/use specials and
+stay seated back in the lobby, B ends session and bots leave). Negative control without
+the bot update: fails (17 locks, 0 clears). Debug ctest 10/10 local.
+
 ## Current: sound effects and rumble released as v0.1.6 (item tetrinet-sound-haptics, done)
 
 Opus filler t_mvarohlmr1h6j. Core: tn_client.ev (tn_events) counts locks, clears

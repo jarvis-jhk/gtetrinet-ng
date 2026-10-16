@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.7 — 2026-10-16
+
+Computer opponents. In the lobby of a game on this machine, X (S on the keyboard) adds a
+computer player to the next free seat and LB (Q) removes one again; RB (E) switches their
+strength between Easy, Normal and Hard, and the choice is saved. Computer players move,
+clear lines and use specials like everyone else, so one person can now play a full game
+alone, and they stay seated from game to game until you leave. They only join games on
+this machine, never an online server. German translation included.
+
 ## 0.1.6 — 2026-10-16
 
 Sound and rumble. The game now plays short sound effects — a piece landing, one to four

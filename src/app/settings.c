@@ -6,6 +6,7 @@
 #include "fault.h"
 #include "i18n.h"
 #include "sound.h"
+#include "tn_bot.h"
 
 #include <SDL.h>
 #include <stdio.h>
@@ -156,6 +157,7 @@ static void default_nick(char *out, size_t n)
 }
 
 static const char *volume_codes[VOLUME_COUNT] = {"off", "quiet", "normal", "loud"};
+static const char *bot_codes[TN_BOT_LEVELS] = {"easy", "normal", "hard"};
 
 static int parse_volume(const char *v)
 {
@@ -170,6 +172,7 @@ void gtn_settings_load(gtn_settings *s)
     default_nick(s->nick, sizeof s->nick);
     gtn_pad_defaults(s->pad_map);
     s->volume = VOLUME_NORMAL;
+    s->bot_level = TN_BOT_NORMAL;
     char path[1200];
     snprintf(path, sizeof path, "%ssettings.ini", gtn_pref_dir());
     FILE *f = fopen(path, "r");
@@ -191,6 +194,8 @@ void gtn_settings_load(gtn_settings *s)
         else if (!strcmp(k, "pad")) parse_pad(s->pad_map, v);
         else if (!strcmp(k, "sound")) s->volume = parse_volume(v);
         else if (!strcmp(k, "rumble")) s->rumble_off = !strcmp(v, "off");
+        else if (!strcmp(k, "bots"))
+            for (int i = 0; i < TN_BOT_LEVELS; i++) { if (!strcmp(v, bot_codes[i])) s->bot_level = i; }
         else if (!strncmp(k, "nick", 4) && k[4] >= '2' && k[4] <= '0' + GTN_SEATS && !k[5])
             gtn_nick_clean(s->seat_nick[k[4] - '1'], sizeof s->seat_nick[0], v);
     }
@@ -211,9 +216,10 @@ int gtn_settings_save(const gtn_settings *s)
     for (int i = 0; i < PAD_ACTIONS; i++)
         snprintf(padline + strlen(padline), sizeof padline - strlen(padline), "%s%s", i ? "," : "", btn_names[pad[i]]);
     int vol = s->volume >= 0 && s->volume < VOLUME_COUNT ? s->volume : VOLUME_NORMAL;
-    int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\nlang=%s\npad=%s\nsound=%s\nrumble=%s\n",
+    int bots = s->bot_level >= 0 && s->bot_level < TN_BOT_LEVELS ? s->bot_level : TN_BOT_NORMAL;
+    int written = fprintf(f, "host=%s\nnick=%s\nlast_version=%s\nfast=%d\nrepeat=%d\nlang=%s\npad=%s\nsound=%s\nrumble=%s\nbots=%s\n",
             s->host, s->nick, s->last_version, s->fast, repeat_index(s->repeat_profile), gtn_lang_code(s->lang), padline,
-            volume_codes[vol], s->rumble_off ? "off" : "on");
+            volume_codes[vol], s->rumble_off ? "off" : "on", bot_codes[bots]);
     for (int i = 1; i < GTN_SEATS && written >= 0; i++)
         if (s->seat_nick[i][0]) written = fprintf(f, "nick%d=%s\n", i + 1, s->seat_nick[i]);
     int closed = fclose(f);

@@ -9,11 +9,13 @@
 #include <SDL.h>
 #include "tn_client.h"
 #include "tn_server.h"
+#include "tn_bot.h"
 #include "settings.h"
 
 #define GTN_MAX_LOCAL 8
 
-enum gtn_dev { DEV_NONE, DEV_KEYBOARD, DEV_PAD };
+/* DEV_BOT: a computer player added in the lobby; no device, it plays by itself. */
+enum gtn_dev { DEV_NONE, DEV_KEYBOARD, DEV_PAD, DEV_BOT };
 
 typedef struct gtn_local {
     int active;
@@ -30,6 +32,7 @@ typedef struct gtn_local {
     tn_events seen;          /* client events already turned into sound and rumble */
     unsigned rumbles;        /* rumble requests for this player's controller, for tests */
     int nick_tries;
+    tn_bot bot;              /* DEV_BOT only */
 } gtn_local;
 
 enum gtn_screen { SCR_TITLE, SCR_ONLINE, SCR_CONNECTING, SCR_LOBBY, SCR_GAME, SCR_NEWS, SCR_INPUT, SCR_CONTROLS, SCR_NAME };
@@ -81,6 +84,7 @@ int gtn_local_count(const gtn_app *a);
 void gtn_button(gtn_app *a, int who, enum gtn_dev dev, SDL_JoystickID pad, enum gtn_btn b, int down);
 void gtn_text_input(gtn_app *a, const char *text);
 void gtn_set_status(gtn_app *a, const char *fmt, ...);
+const char *gtn_bot_level_name(int level);   /* translated: Easy, Normal, Hard */
 
 /* ui.c */
 void gtn_draw(gtn_app *a);

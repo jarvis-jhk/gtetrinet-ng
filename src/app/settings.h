@@ -40,6 +40,7 @@ typedef struct gtn_settings {
     int pad_map[PAD_ACTIONS]; /* enum gtn_btn per action, shared by all controllers */
     int volume;              /* enum gtn_volume, sound effects */
     int rumble_off;          /* controllers do not rumble on hits, losses and wins */
+    int bot_level;           /* enum tn_bot_level for computer players added in the lobby */
 } gtn_settings;
 
 /* Folder for settings and logs, ending in a separator. Never NULL. */
