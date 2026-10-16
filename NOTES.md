@@ -1,6 +1,6 @@
 # Running state — 2026-10-16
 
-## Current: computer opponents in the lobby (item tetrinet-bot-opponents)
+## Current: computer opponents released as v0.1.7 (item tetrinet-bot-opponents, done)
 
 Opus filler t_mvasr12a117hj1. Core: tn_bot_init_level(level, seed) — Easy 420 ms/25 %
 mistakes, Normal 210 ms/6 %, Hard 95 ms/0 %; a mistake scores every fitting place at
@@ -14,6 +14,12 @@ online refusal, keyboard-not-joined, render en/de 800x600+1280x800 zero cut text
 TCP game where an idle human tops out while two Hard bots lock/clear/use specials and
 stay seated back in the lobby, B ends session and bots leave). Negative control without
 the bot update: fails (17 locks, 0 clears). Debug ctest 10/10 local.
+Source 3bb75ab passed Linux + native Windows CI 38885036861 (10/10 incl. bots on both).
+Tag v0.1.7 release workflow 38885394792 succeeded; all six assets downloaded HTTP 200,
+SHA256SUMS match (Linux 819934 B, Windows ZIP 7174612 B); Linux package 8-player demo
+smoke passed, new lobby strings present in the binary; Wine skipped (VPS rule).
+https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.7
+Open: bot play feel/strength balance on the Deck (Jan tests releases). Next release > v0.1.7.
 
 ## Current: sound effects and rumble released as v0.1.6 (item tetrinet-sound-haptics, done)
 
