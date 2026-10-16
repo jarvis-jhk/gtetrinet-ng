@@ -1,6 +1,20 @@
 # Running state — 2026-10-16
 
-## Current: server browser released as v0.1.9 (item tetrinet-server-browser, done)
+## Current: AppImage released as v0.1.10 (item tetrinet-appimage, done)
+
+Opus filler t_mvazpwug3oehjb. tools/linux/build-appimage.sh wraps the finished portable tree
+(same as the tar.gz) with pinned appimagetool 1.9.1 + static type2 runtime 20251108 (sha256
+checked in release.yml; no libfuse2 needed). AppRun: `python3 -I launcher.py` when python3
+exists (fault reports; never updates, the image is not under ~/.local/share), else the binary
+with LD_LIBRARY_PATH. Embedded gh-releases-zsync update info + published .zsync (needs zsync
+apt package; appimagetool writes the .zsync into the CWD, the script cds to the output dir).
+Release CI smokes --version and an 8-player demo via --appimage-extract-and-run.
+CI 38906781470 on f40c966, release 38907188291; all eight assets downloaded, SHA256SUMS OK,
+published AppImage reports 0.1.10 and renders the demo. Open for Jan: double-click via FUSE
+on the Deck and Gear Lever updating (not testable in the container). Windows installer
+parity and signing remain on the parent roadmap line. Next release > v0.1.10.
+
+## Earlier: server browser released as v0.1.9 (item tetrinet-server-browser, done)
 
 Opus filler t_mvavfgk41w1iqm. Public servers answer the classic query protocol on the game
 port (one connection, several commands): "playerquery" -> "Number of players logged in: N",
