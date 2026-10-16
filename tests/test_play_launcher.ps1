@@ -26,3 +26,4 @@ Check 'de' 'GTetrinet NG wurde unerwartet beendet (Code 3).' 3
 Check 'en' 'GTetrinet NG closed unexpectedly (code 3).' 3
 Remove-Item -Recurse -Force $work
 if ($failed) { exit 1 }
+exit 0  # the runner would otherwise re-raise the stand-in game's exit code
