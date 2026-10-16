@@ -1,6 +1,6 @@
 # Running state — 2026-10-16
 
-## Current: sound effects and rumble (combined-roadmap item tetrinet-sound-haptics)
+## Current: sound effects and rumble released as v0.1.6 (item tetrinet-sound-haptics, done)
 
 Opus filler t_mvarohlmr1h6j. Core: tn_client.ev (tn_events) counts locks, clears
 (+last_clear), specials used, hits (+last_hit sb), losses and wins (playerwon for our slot
@@ -21,8 +21,13 @@ dedupe, four-line clear + classic add-to-all hit, harmful/helpful/mixed specials
 rumble on the receiving pad only, rumble off, top-out + win, no burst on a new session,
 dummy audio driver mixing). Negative control without feedback(): 16 failures.
 test_controls adapted (Up from row 0 now wraps to rumble). Debug 9/9 CTests local.
-Open: actual sound/rumble feel on the Deck and real pads; bot opponents remain the other
-half of the M1 line.
+Source 470d5c0 passed Linux ASan/UBSan + native Windows CI 38881750817 (9/9 incl. sound on
+both). Tag v0.1.6 on b1b1bdf (changelog only); release workflow 38882086606 succeeded; all
+six assets downloaded HTTP 200, SHA256SUMS match (Linux 815630 B, Windows ZIP 7171914 B);
+Linux package 8-player demo smoke passed with the dummy audio driver; Wine smoke skipped
+(VPS rule). https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.6
+Open: actual sound/rumble feel on the Deck and real pads (Jan tests releases); bot
+opponents remain the other half of the M1 line. Next release must exceed v0.1.6.
 
 ## Current: nickname editing per seat released as v0.1.5
 
