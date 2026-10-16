@@ -1,6 +1,6 @@
 # Running state — 2026-10-16
 
-## Current: TetriNET 2 rules (item tetrinet-tetrinet-2-parity)
+## Current: TetriNET 2 rules released as v0.1.11 (item tetrinet-tetrinet-2-parity, done)
 
 Opus filler t_mvb097po3u2yg7. Goal: docs/TN2-PARITY.md lists TN2 features with status and
 priority, and a released local game can switch on TN2 rules (hold + Immunity, Clear Column,
@@ -19,6 +19,12 @@ Options row 5 "Rules for games here" (rules=tn2|classic), rows compacted to fit 
 a status line. Server: --tn2. Local Debug+ASan/UBSan ctest 11/11, python tests OK; core has
 test_tn2_rules/game/network + a TN2 bot game; negative control (immunity block and confusion
 map disabled) fails 2 checks. Screenshots data/tetrinet/tn2/ (capture-tn2.c).
+d84611d passed linux/windows/interop CI 38910716381; tag v0.1.11 release 38912229301 passed.
+All eight assets downloaded, SHA256SUMS OK; packaged Linux reports 0.1.11, its server shows
+--tn2 and answers --query, 8-player demo smoke ok; AppImage --version 0.1.11.
+https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.11
+Open for Jan: TN2 play feel (Darkness window, Confusion, mutant shapes) and RT/R3 hold on the
+Deck. Follow-ups on ROADMAP: pure mode, ARE, piece frequencies, shuffle. Next release > v0.1.11.
 
 ## Earlier: AppImage released as v0.1.10 (item tetrinet-appimage, done)
 
