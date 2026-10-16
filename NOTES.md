@@ -1,6 +1,6 @@
 # Running state — 2026-10-16
 
-## Current: server browser (item tetrinet-server-browser)
+## Current: server browser released as v0.1.9 (item tetrinet-server-browser, done)
 
 Opus filler t_mvavfgk41w1iqm. Public servers answer the classic query protocol on the game
 port (one connection, several commands): "playerquery" -> "Number of players logged in: N",
@@ -25,7 +25,13 @@ interop.sh queries all three servers (ours 0, tetrinet-server 3, tetrinetx 0). F
 38894329876 on 43ac37c: tetrinetx answered (expectation was wrong) and Windows needs ~2 s
 to refuse a connect, so the failed-connect check now waits up to 6 s. Local Debug
 ctest 11/11, python tests OK, interop (own + tetrinet-server) passed.
-Open: channel choice (/join) belongs to the partyline item.
+252889b passed linux/windows/interop CI 38895013346 (11/11 both OS incl. browser; interop
+queried ours/tetrinet-server/tetrinetx as expected). Tag v0.1.9 release 38895395159
+succeeded; six assets HTTP 200, SHA256SUMS match (Linux 831686 B, Windows ZIP 7185357 B);
+packaged Linux reports 0.1.9, its --query answers for tetrinet.fr, 8-player demo smoke ok.
+https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.9
+Open: channel choice (/join) belongs to the partyline item; browsing on the Deck is for Jan
+to try. Next release > v0.1.9.
 
 Warpzone handoff (request t_mvavxtn02aupkt, from the laptop's warpzone work, not Jan):
 descriptor games/gtetrinet-ng.toml in jarvis-jhk/warpzone checked against the v0.1.8
