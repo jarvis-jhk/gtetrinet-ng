@@ -23,8 +23,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-TETRINETX_URL="https://downloads.sourceforge.net/project/tetrinetx/tetrinetx/1.13.16%2Bqirc-1.40c/tetrinetx-1.13.16%2Bqirc-1.40c.tar.gz"
-TETRINETX_FALLBACK="http://prdownloads.sourceforge.net/tetrinetx/tetrinetx-1.13.16+qirc-1.40c.tar.gz?download"
+TETRINETX_URL="http://prdownloads.sourceforge.net/tetrinetx/tetrinetx-1.13.16+qirc-1.40c.tar.gz?download"
+TETRINETX_FALLBACK="https://cfhcable.dl.sourceforge.net/project/tetrinetx/tetrinetx/1.13.16%2Bqirc-1.40c/tetrinetx-1.13.16%2Bqirc-1.40c.tar.gz"
 TETRINETX_SHA256=2b7210a0c8950c13e648d8abc36b7bca8ce58035999526301a715aacd40d15d4
 
 wait_port() {
@@ -43,6 +43,8 @@ run() {
         echo "FAILED: $*"
         failed=1
     fi
+    # the runs reuse nicknames: let the server notice the last run's players are gone
+    sleep 1
 }
 
 # what a classic server gets: TetriFast must be refused with a reason, classic must work
