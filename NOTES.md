@@ -1,6 +1,6 @@
 # Running state — 2026-10-16
 
-## Current: German installer dialogs (item tetrinet-german-installer)
+## Current: German installer dialogs released as v0.1.15 (item tetrinet-german-installer, done)
 
 Opus filler t_mvbl5dbw1hmjg1. Goal: on a German system (or with Sprache Deutsch saved) the
 released Linux installer, its launcher errors and the Windows launcher's fault dialog speak
@@ -15,6 +15,14 @@ prints instead. Tests: tests/test_deck_installer.py (en/de/saved/failure),
 tests/test_launcher.py LanguageTests, CI windows step tests/test_play_launcher.ps1 with a
 stub exe exiting 3. Known: a failing install.sh shows its own error and then the .desktop
 wrapper's bilingual one (pre-existing double dialog).
+2a4ca76: windows job failed only because the Actions PowerShell wrapper re-raised the stub's
+exit code after all checks passed; 419552e ends the test with exit 0. 419552e passed
+linux/windows/interop CI 38982226824 (the Windows step printed correct German incl. umlauts);
+tag v0.1.15 release 38982708681 passed. All assets downloaded, SHA256SUMS OK; the published
+install.sh run with LANG=de_DE in an empty home installed v0.1.15 ("Installiert: v0.1.15")
+with German Ja/Nein question and German Steam-shortcut error (no Steam there).
+Open: kdialog-only desktops keep kdialog's own button labels. Next release > v0.1.15.
+https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.15
 
 ## Current: original GTetrinet theme released as v0.1.14 (item tetrinet-original-theme, done)
 
