@@ -1,6 +1,6 @@
 # Running state — 2026-10-17
 
-## Current: host settings (work session t_mvbr1hfo39m4rn, item tetrinet-host-settings)
+## Current: host settings released as v0.1.16 (work session t_mvbr1hfo39m4rn, item tetrinet-host-settings, done)
 
 Goal: games hosted here can be set up as pure (no specials), with lines per special,
 starting garbage and a piece mix; shown in the lobby; shipped in a release.
@@ -22,6 +22,12 @@ newgame round trip, 4000-draw piece counts (no S/Z; I ~600 classic vs ~1140 bars
 all get the rules, start with the garbage, and whose bot clears lines with no special and no
 S/Z ever. Negative control (specials_off ignored in gtn_host_rules) fails 5 checks.
 test_sound used A on row 5 for TN2; now Right. Local Debug+ASan/UBSan: all 14 ctests pass.
+2830253 passed linux/windows/interop CI 39001804286 (rules ctest ran on both); tag v0.1.16
+release 39002111767 passed. All assets downloaded, SHA256SUMS OK; packaged server 0.1.16
+accepted --pure --special-lines 3 --garbage 6 --pieces nosz and answered a query; packaged
+game ran headless with those settings.ini keys. Open (parity list): entry delay, free piece
+percentages, inventory shuffle. Next release > v0.1.16.
+https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.16
 
 ## Current: German installer dialogs released as v0.1.15 (item tetrinet-german-installer, done)
 
