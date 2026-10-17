@@ -259,7 +259,7 @@ static void host_local(gtn_app *a)
         gtn_set_status(a, gtn_tr("Could not start a game here: %s"), err);
         return;
     }
-    if (a->settings.rules_tn2) tn_rules_tn2(&a->server.rules);
+    gtn_host_rules(&a->settings, &a->server.rules);
     a->hosting = 1;
     snprintf(a->host, sizeof a->host, "127.0.0.1");
     a->port = a->server.port;
@@ -574,6 +574,7 @@ static void game_button(gtn_app *a, int who, enum gtn_btn b, int down)
 }
 
 #define OPTION_ROWS 7
+#define RULES_ROWS 5
 
 static void save_controls(gtn_app *a)
 {
@@ -603,6 +604,41 @@ static void controls_button(gtn_app *a, enum gtn_dev dev, enum gtn_btn b)
     case BTN_B: case BTN_START: a->screen = SCR_INPUT; break;
     default: break;
     }
+}
+
+static void save_rules(gtn_app *a)
+{
+    if (gtn_settings_save(&a->settings) != 0)
+        gtn_set_status(a, "%s", gtn_tr("The rules work for this run, but could not be saved"));
+}
+
+/* Rules for games hosted here: the rule set and the host settings. A game already running
+ * keeps the rules it started with; the next local game uses the new ones. */
+static void rules_button(gtn_app *a, enum gtn_btn b)
+{
+    int dir = 0;
+    switch (b) {
+    case BTN_UP: a->rules_row = (a->rules_row + RULES_ROWS - 1) % RULES_ROWS; return;
+    case BTN_DOWN: a->rules_row = (a->rules_row + 1) % RULES_ROWS; return;
+    case BTN_LEFT: dir = -1; break;
+    case BTN_RIGHT: case BTN_A: dir = 1; break;
+    case BTN_Y: break;
+    case BTN_B: case BTN_START: a->screen = SCR_INPUT; a->options_row = 5; return;
+    default: return;
+    }
+    gtn_settings *s = &a->settings;
+    switch (a->rules_row) {
+    case 0: s->rules_tn2 = dir ? !s->rules_tn2 : 0; break;
+    case 1: s->specials_off = dir ? !s->specials_off : 0; break;
+    case 2: s->special_lines = dir ? (s->special_lines - 1 + GTN_SPECIAL_LINES_MAX + dir) % GTN_SPECIAL_LINES_MAX + 1 : 1; break;
+    case 3: {
+        int steps = GTN_GARBAGE_MAX / 2 + 1;
+        s->garbage = dir ? (s->garbage / 2 + steps + dir) % steps * 2 : 0;
+        break;
+    }
+    default: s->pieces = dir ? (s->pieces + TN_PIECE_MIXES + dir) % TN_PIECE_MIXES : TN_PIECES_CLASSIC; break;
+    }
+    save_rules(a);
 }
 
 /* A short rumble on one controller; nothing for the keyboard or a controller that is gone. */
@@ -685,9 +721,17 @@ static void input_options_button(gtn_app *a, enum gtn_btn b, enum gtn_dev dev, S
         return;
     }
     if (a->options_row == 5) {
-        a->settings.rules_tn2 = dir ? !a->settings.rules_tn2 : 0;
-        if (gtn_settings_save(&a->settings) != 0)
-            gtn_set_status(a, "%s", gtn_tr("The rules work for this run, but could not be saved"));
+        if (b == BTN_A) {
+            a->screen = SCR_RULES;
+            a->rules_row = 0;
+            return;
+        }
+        if (dir) a->settings.rules_tn2 = !a->settings.rules_tn2;
+        else {
+            a->settings.rules_tn2 = 0;
+            gtn_host_defaults(&a->settings);
+        }
+        save_rules(a);
         return;
     }
     if (a->options_row == 4) {
@@ -730,6 +774,10 @@ void gtn_button(gtn_app *a, int who, enum gtn_dev dev, SDL_JoystickID pad, enum 
     }
     if (a->screen == SCR_CONTROLS) {
         if (down) controls_button(a, dev, b);
+        return;
+    }
+    if (a->screen == SCR_RULES) {
+        if (down) rules_button(a, b);
         return;
     }
     /* Only the player being named types; the keyboard can always help, and anyone may

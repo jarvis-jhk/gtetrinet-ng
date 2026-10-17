@@ -40,8 +40,8 @@ Status: **done**, **partial**, **open**. Priority is for open items, highest fir
 | Hold piece | host option | TN2 rules | done |
 | Specials collected per line cleared, used in inventory order | yes | yes | done (classic) |
 | Entry delay (ARE) set by the host | yes | 1 s classic, 0 TetriFast | open, 2 |
-| Specials on/off ("pure"), lines per special | host option | server rules exist, no UI | open, 1 |
-| Piece frequencies set by the host | yes | server rules exist, no UI | open, 3 |
+| Specials on/off ("pure"), lines per special | host option | Rules for games here (A), `--pure`, `--special-lines` | done |
+| Piece frequencies set by the host | yes | three mixes: classic, no S/Z, more long bars (`--pieces`); free percentages not offered | partial, 3 |
 | Shuffle the inventory (costs one special) | yes | no | open, 4 |
 | 180° rotation | no | no | not in TN2 |
 
@@ -65,7 +65,7 @@ row). Timers show on the player's board with their seconds left.
 | Feature | TN2 | Here | Status / priority |
 |---|---|---|---|
 | Teams, win list | yes | yes | done (classic) |
-| Pure / 7-Tetris style modes | server-dependent | no | open, with "specials on/off" |
+| Pure / 7-Tetris style modes | server-dependent | pure: specials off; starting garbage 0–10 rows | partial (pure done) |
 | Partyline chat with typing | yes | log only | open — roadmap M2 partyline item |
 | Rooms on a central master server | yes | server browser for classic servers | partial; the TN2 master server is not a goal |
 

@@ -7,6 +7,7 @@
 #include "i18n.h"
 #include "sound.h"
 #include "tn_bot.h"
+#include "tn_protocol.h"
 
 #include <SDL.h>
 #include <ctype.h>
@@ -170,6 +171,29 @@ static int parse_volume(const char *v)
     return VOLUME_NORMAL;
 }
 
+void gtn_host_defaults(gtn_settings *s)
+{
+    s->specials_off = 0;
+    s->special_lines = 1;
+    s->garbage = 0;
+    s->pieces = TN_PIECES_CLASSIC;
+}
+
+int gtn_host_custom(const gtn_settings *s)
+{
+    return s->specials_off || s->special_lines != 1 || s->garbage != 0 || s->pieces != TN_PIECES_CLASSIC;
+}
+
+void gtn_host_rules(const gtn_settings *s, tn_rules *r)
+{
+    tn_rules_default(r);
+    if (s->rules_tn2) tn_rules_tn2(r);
+    if (s->specials_off) r->specials_added = 0;
+    r->lines_per_special = s->special_lines >= 1 && s->special_lines <= GTN_SPECIAL_LINES_MAX ? s->special_lines : 1;
+    r->stack = s->garbage >= 0 && s->garbage <= GTN_GARBAGE_MAX ? s->garbage : 0;
+    if (tn_rules_pieces(r, s->pieces) != 0) tn_rules_pieces(r, TN_PIECES_CLASSIC);
+}
+
 void gtn_settings_load(gtn_settings *s)
 {
     memset(s, 0, sizeof *s);
@@ -177,6 +201,7 @@ void gtn_settings_load(gtn_settings *s)
     gtn_pad_defaults(s->pad_map);
     s->volume = VOLUME_NORMAL;
     s->bot_level = TN_BOT_NORMAL;
+    gtn_host_defaults(s);
     char path[1200];
     snprintf(path, sizeof path, "%ssettings.ini", gtn_pref_dir());
     FILE *f = fopen(path, "r");
@@ -199,6 +224,17 @@ void gtn_settings_load(gtn_settings *s)
         else if (!strcmp(k, "sound")) s->volume = parse_volume(v);
         else if (!strcmp(k, "rumble")) s->rumble_off = !strcmp(v, "off");
         else if (!strcmp(k, "rules")) s->rules_tn2 = !strcmp(v, "tn2");
+        else if (!strcmp(k, "specials")) s->specials_off = !strcmp(v, "off");
+        else if (!strcmp(k, "special_lines")) {
+            int n = atoi(v);
+            if (n >= 1 && n <= GTN_SPECIAL_LINES_MAX) s->special_lines = n;
+        } else if (!strcmp(k, "garbage")) {
+            int n = atoi(v);
+            if (n >= 0 && n <= GTN_GARBAGE_MAX && n % 2 == 0) s->garbage = n;
+        } else if (!strcmp(k, "pieces")) {
+            int m = tn_piece_mix_parse(v);
+            if (m >= 0) s->pieces = m;
+        }
         else if (!strcmp(k, "blocks")) s->blocks = !strcmp(v, "original");
         else if (!strcmp(k, "bots"))
             for (int i = 0; i < TN_BOT_LEVELS; i++) { if (!strcmp(v, bot_codes[i])) s->bot_level = i; }
@@ -256,6 +292,10 @@ int gtn_settings_save(const gtn_settings *s)
             s->host, s->nick, s->last_version, s->fast, repeat_index(s->repeat_profile), gtn_lang_code(s->lang), padline,
             volume_codes[vol], s->rumble_off ? "off" : "on", bot_codes[bots],
             s->rules_tn2 ? "tn2" : "classic", s->blocks == 1 ? "original" : "modern");
+    if (written >= 0)
+        written = fprintf(f, "specials=%s\nspecial_lines=%d\ngarbage=%d\npieces=%s\n", s->specials_off ? "off" : "on",
+                          s->special_lines >= 1 && s->special_lines <= GTN_SPECIAL_LINES_MAX ? s->special_lines : 1,
+                          s->garbage >= 0 && s->garbage <= GTN_GARBAGE_MAX ? s->garbage : 0, tn_piece_mix_code(s->pieces));
     for (int i = 1; i < GTN_SEATS && written >= 0; i++)
         if (s->seat_nick[i][0]) written = fprintf(f, "nick%d=%s\n", i + 1, s->seat_nick[i]);
     for (int i = 0; i < GTN_RECENT && written >= 0; i++)

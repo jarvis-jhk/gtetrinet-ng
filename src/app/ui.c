@@ -149,14 +149,60 @@ static void language_value(char *out, size_t n, int choice)
     else snprintf(out, n, gtn_tr("Automatic (%s)"), gtn_lang_endonym(gtn_lang_detect()));
 }
 
-static void option_row(gtn_app *a, int row, int y, const char *label, const char *value)
+static void choice_row(gtn_app *a, int sel, int y, const char *label, const char *value)
 {
-    int s = ts(a), sel = a->options_row == row;
+    int s = ts(a);
     char buf[128];
     if (sel) gtn_fill(a->w / 6, y - 4 * s, a->w * 2 / 3, 40 * s, gtn_rgb(0x2a, 0x30, 0x48));
     gtn_text_center_fit(a->w / 2, y, 2 * s, a->w - 32, sel ? TEXT : MUTED, label);
     snprintf(buf, sizeof buf, "< %s >", value);
     gtn_text_center_fit(a->w / 2, y + 20 * s, 2 * s, a->w - 32, sel ? ACCENT : TEXT, buf);
+}
+
+static void option_row(gtn_app *a, int row, int y, const char *label, const char *value)
+{
+    choice_row(a, a->options_row == row, y, label, value);
+}
+
+static const char *rule_set_name(const gtn_app *a)
+{
+    return gtn_tr(a->settings.rules_tn2 ? N_("TetriNET 2") : N_("Classic TetriNET"));
+}
+
+static const char *piece_mix_name(int mix)
+{
+    switch (mix) {
+    case TN_PIECES_NO_SZ: return gtn_tr("No S/Z pieces");
+    case TN_PIECES_LONG_BARS: return gtn_tr("More long bars");
+    default: return gtn_tr("Classic mix");
+    }
+}
+
+static void draw_rules(gtn_app *a)
+{
+    int s = ts(a), y = a->h >= 440 * s ? a->h / 16 : 20 * s, gap = 44 * s;
+    char buf[128];
+    gtn_text_center_fit(a->w / 2, y, 3 * s, a->w - 32, TEXT, gtn_tr("Rules for games here"));
+    y += 30 * s;
+    gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, gtn_tr("For games on this machine; online servers set their own."));
+    y += 22 * s;
+    const gtn_settings *st = &a->settings;
+    choice_row(a, a->rules_row == 0, y, gtn_tr("Rule set"), rule_set_name(a));
+    y += gap;
+    choice_row(a, a->rules_row == 1, y, gtn_tr("Specials"), gtn_tr(st->specials_off ? N_("Off (pure)") : N_("On")));
+    y += gap;
+    snprintf(buf, sizeof buf, "%d", st->special_lines);
+    choice_row(a, a->rules_row == 2, y, gtn_tr("Lines cleared per special"), st->specials_off ? "-" : buf);
+    y += gap;
+    if (st->garbage) snprintf(buf, sizeof buf, gtn_tr("%d rows"), st->garbage);
+    choice_row(a, a->rules_row == 3, y, gtn_tr("Starting garbage"), st->garbage ? buf : gtn_tr("None"));
+    y += gap;
+    choice_row(a, a->rules_row == 4, y, gtn_tr("Pieces"), piece_mix_name(st->pieces));
+    y += gap + 4 * s;
+    if (!a->status[0] && y + 10 * s <= a->h - 14 * s)
+        gtn_text_center_fit(a->w / 2, y, s, a->w - 32, MUTED, gtn_tr("The next game started here uses them."));
+    status_line(a);
+    hints(a, gtn_tr("Up/Down: choose   Left/Right/A: change   Y: default   B/Esc/Start: back"));
 }
 
 static void draw_input_options(gtn_app *a)
@@ -190,7 +236,9 @@ static void draw_input_options(gtn_app *a)
     y += gap;
     option_row(a, 4, y, gtn_tr("Controller rumble"), gtn_tr(a->settings.rumble_off ? N_("Off") : N_("On")));
     y += gap;
-    option_row(a, 5, y, gtn_tr("Rules for games here"), gtn_tr(a->settings.rules_tn2 ? N_("TetriNET 2") : N_("Classic TetriNET")));
+    if (gtn_host_custom(&a->settings)) snprintf(buf, sizeof buf, gtn_tr("%s, custom"), rule_set_name(a));
+    else snprintf(buf, sizeof buf, "%s", rule_set_name(a));
+    option_row(a, 5, y, gtn_tr("Rules for games here"), buf);
     y += gap;
     option_row(a, 6, y, gtn_tr("Block style"), gtn_tr(a->settings.blocks ? N_("Original GTetrinet") : N_("Modern")));
     y += gap + 4 * s;
@@ -393,6 +441,33 @@ static void draw_connecting(gtn_app *a)
     hints(a, gtn_tr("B: cancel"));
 }
 
+/* What a hosted game will be played with, when it is anything but the classic defaults. */
+/* Drawn at the top of the chat panel; returns the lines it took. */
+static int draw_lobby_rules(gtn_app *a, const tn_rules *r, int x, int y, int w)
+{
+    int s = ts(a), n = 1;
+    int mix = tn_rules_piece_mix(r);
+    int specials = r->specials_added == 0 ? 0 : r->lines_per_special != 1 ? 2 : 1;
+    if (!r->tn2 && specials == 1 && !r->stack && mix == TN_PIECES_CLASSIC) return 0;
+    gtn_text_fit(x, y, s, w, ACCENT, r->tn2 ? gtn_tr("Rules: TetriNET 2 (hold piece, 14 specials)") : gtn_tr("Rules: Classic TetriNET"));
+    char buf[160];
+    if (specials != 1) {
+        y += 12 * s, n++;
+        if (specials) snprintf(buf, sizeof buf, gtn_tr("A special for every %d lines cleared"), r->lines_per_special);
+        gtn_text_fit(x, y, s, w, ACCENT, specials ? buf : gtn_tr("No specials (pure)"));
+    }
+    if (r->stack || mix != TN_PIECES_CLASSIC) {
+        y += 12 * s, n++;
+        buf[0] = 0;
+        if (r->stack) snprintf(buf, sizeof buf, gtn_tr("%d rows of garbage"), r->stack);
+        if (mix != TN_PIECES_CLASSIC)
+            snprintf(buf + strlen(buf), sizeof buf - strlen(buf), "%s%s", buf[0] ? ", " : "",
+                     mix > 0 ? piece_mix_name(mix) : gtn_tr("Own piece mix"));
+        gtn_text_fit(x, y, s, w, ACCENT, buf);
+    }
+    return n;
+}
+
 static void draw_lobby(gtn_app *a)
 {
     int s = ts(a);
@@ -405,8 +480,6 @@ static void draw_lobby(gtn_app *a)
         snprintf(buf, sizeof buf, gtn_tr("Online: %s"), a->host);
     gtn_text(16 * s, 12 * s, 2 * s, TEXT, gtn_tr(a->hosting ? "Local game" : "Online game"));
     gtn_text_fit(16 * s, 34 * s, s, a->w - 32 * s, MUTED, buf);
-    if (a->hosting && a->server.rules.tn2)
-        gtn_text_fit(a->w / 2, 16 * s, s, a->w / 2 - 16 * s, ACCENT, gtn_tr("Rules: TetriNET 2 (hold piece, 14 specials)"));
 
     int lx = 16 * s, ly = 56 * s, lw = a->w / 2 - 24 * s, row = 26 * s;
     gtn_fill(lx, ly, lw, row * TN_MAX_SLOTS + 8 * s, PANEL);
@@ -430,6 +503,10 @@ static void draw_lobby(gtn_app *a)
     int cx = a->w / 2 + 8 * s, cy = 56 * s, cw = a->w / 2 - 24 * s, chh = a->h - cy - 70 * s;
     gtn_fill(cx, cy, cw, chh, PANEL);
     int lines = (chh - 8 * s) / (12 * s);
+    if (a->hosting) {
+        int taken = draw_lobby_rules(a, &a->server.rules, cx + 6 * s, cy + 6 * s, cw - 12 * s);
+        if (taken) lines -= taken + 1;
+    }
     for (int i = 0; i < lines && i < c->chat.count; i++) {
         char line[TN_LOG_LEN + 64];
         gtn_tr_log(tn_log_get(&c->chat, i), line, sizeof line);
@@ -720,6 +797,7 @@ void gtn_draw(gtn_app *a)
     case SCR_NEWS: draw_news(a); break;
     case SCR_INPUT: draw_input_options(a); break;
     case SCR_CONTROLS: draw_controls(a); break;
+    case SCR_RULES: draw_rules(a); break;
     case SCR_NAME: draw_name(a); break;
     }
 }

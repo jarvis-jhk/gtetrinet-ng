@@ -83,6 +83,14 @@ typedef struct tn_rules {
 void tn_rules_default(tn_rules *r);
 /* The TetriNET 2 set: hold on, all fourteen specials. */
 void tn_rules_tn2(tn_rules *r);
+/* Host settings beyond the rule set. Piece mixes: classic (tetrinetx), no S/Z pieces,
+ * more long bars. Returns -1 for an unknown mix and leaves r alone. */
+enum tn_piece_mix { TN_PIECES_CLASSIC, TN_PIECES_NO_SZ, TN_PIECES_LONG_BARS, TN_PIECE_MIXES };
+int tn_rules_pieces(tn_rules *r, int mix);
+/* Which mix r->blockfreq is, or -1 for any other. */
+int tn_rules_piece_mix(const tn_rules *r);
+const char *tn_piece_mix_code(int mix);
+int tn_piece_mix_parse(const char *code);
 /* "newgame" argument string and its parser (parser returns -1 on garbage). */
 void tn_rules_format(const tn_rules *r, char *out, size_t outsz);
 int tn_rules_parse(tn_rules *r, const char *args);

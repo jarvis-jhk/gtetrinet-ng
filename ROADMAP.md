@@ -75,8 +75,9 @@ not certified hardware compatibility. Release gates and remaining checks are in 
   compatibility; do not advertise TN2 support from classic 1.13/TetriFast support.
   docs/TN2-PARITY.md; TetriNET 2 rules for games hosted here (hold piece, Immunity, Clear
   Column, Mutate, Darkness, Confusion) as an extension between our clients.
-  - [ ] Host settings from the parity list: specials on/off ("pure"), entry delay, piece
-    frequencies, inventory shuffle.
+  - [x] Host settings for games hosted here (Options → Rules for games here → A, and server
+    flags): specials on/off ("pure"), lines per special, starting garbage, piece mix.
+  - [ ] Remaining parity host settings: entry delay, free piece percentages, inventory shuffle.
   - [ ] TetriNET 2 server/client compatibility only if a protocol description turns up.
 - [x] Two-way rotation exists: controller A clockwise / B counterclockwise, keyboard
   X clockwise / Z counterclockwise. Keep explicit help and verify both on physical Deck

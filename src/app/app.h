@@ -56,7 +56,7 @@ typedef struct gtn_browser {
 } gtn_browser;
 
 /* SCR_SERVERS lists servers; SCR_ONLINE is typing an address */
-enum gtn_screen { SCR_TITLE, SCR_SERVERS, SCR_ONLINE, SCR_CONNECTING, SCR_LOBBY, SCR_GAME, SCR_NEWS, SCR_INPUT, SCR_CONTROLS, SCR_NAME };
+enum gtn_screen { SCR_TITLE, SCR_SERVERS, SCR_ONLINE, SCR_CONNECTING, SCR_LOBBY, SCR_GAME, SCR_NEWS, SCR_INPUT, SCR_CONTROLS, SCR_NAME, SCR_RULES };
 
 typedef struct gtn_app {
     SDL_Window *win;
@@ -71,6 +71,7 @@ typedef struct gtn_app {
     int options_row;         /* 0 movement repeat, 1 language, 2 controller buttons, 3 sound, 4 rumble, 5 rules, 6 blocks */
     int controls_row;        /* action chosen on the controller-buttons screen */
     int controls_capture;    /* waiting for the button to give that action */
+    int rules_row;           /* 0 rule set, 1 specials, 2 lines per special, 3 garbage, 4 pieces */
 
     tn_server server;
     int hosting;

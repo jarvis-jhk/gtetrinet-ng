@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.16 — 2026-10-17
+
+Host settings. Press A on Options → Rules for games here to set up games hosted on this
+machine: specials on or off (a "pure" game), how many cleared lines bring a special, rows
+of garbage everyone starts with, and the piece mix — classic, no S and Z pieces, or more
+long bars. The lobby shows what the next game will be played with. The LAN server has the
+same choices as `--pure`, `--special-lines`, `--garbage` and `--pieces`.
+
 ## 0.1.15 — 2026-10-17
 
 The installer speaks German. On a German desktop, or once the game's language is set to

@@ -179,7 +179,6 @@ int tn_field_apply(tn_field f, const char *s)
 void tn_rules_default(tn_rules *r)
 {
     /* tetrinetx's defaults */
-    static const int bf[7] = {15, 14, 14, 14, 14, 14, 15};
     static const int sf[9] = {32, 18, 1, 11, 3, 14, 1, 6, 14};
     memset(r, 0, sizeof *r);
     r->stack = 0;
@@ -189,7 +188,7 @@ void tn_rules_default(tn_rules *r)
     r->lines_per_special = 1;
     r->specials_added = 1;
     r->special_capacity = 18;
-    memcpy(r->blockfreq, bf, sizeof bf);
+    tn_rules_pieces(r, TN_PIECES_CLASSIC);
     memcpy(r->specialfreq, sf, sizeof sf);
     r->average_levels = 0;
     r->classic = 1;
@@ -202,6 +201,37 @@ void tn_rules_tn2(tn_rules *r)
     memcpy(r->specialfreq, sf, sizeof sf);
     r->tn2 = 1;
     r->hold = 1;
+}
+
+/* I O J L Z S T, each summing to 100 */
+static const int piece_mixes[TN_PIECE_MIXES][7] = {
+    {15, 14, 14, 14, 14, 14, 15},
+    {20, 20, 20, 20, 0, 0, 20},
+    {28, 12, 12, 12, 12, 12, 12},
+};
+static const char *const piece_codes[TN_PIECE_MIXES] = {"classic", "nosz", "bars"};
+
+int tn_rules_pieces(tn_rules *r, int mix)
+{
+    if (mix < 0 || mix >= TN_PIECE_MIXES) return -1;
+    memcpy(r->blockfreq, piece_mixes[mix], sizeof r->blockfreq);
+    return 0;
+}
+
+int tn_rules_piece_mix(const tn_rules *r)
+{
+    for (int m = 0; m < TN_PIECE_MIXES; m++)
+        if (!memcmp(r->blockfreq, piece_mixes[m], sizeof r->blockfreq)) return m;
+    return -1;
+}
+
+const char *tn_piece_mix_code(int mix) { return mix >= 0 && mix < TN_PIECE_MIXES ? piece_codes[mix] : piece_codes[0]; }
+
+int tn_piece_mix_parse(const char *code)
+{
+    for (int m = 0; m < TN_PIECE_MIXES; m++)
+        if (!strcmp(code, piece_codes[m])) return m;
+    return -1;
 }
 
 /* special frequency characters: '1'..'9' classic, 'A'..'E' TetriNET 2 */

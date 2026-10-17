@@ -1,4 +1,27 @@
-# Running state — 2026-10-16
+# Running state — 2026-10-17
+
+## Current: host settings (work session t_mvbr1hfo39m4rn, item tetrinet-host-settings)
+
+Goal: games hosted here can be set up as pure (no specials), with lines per special,
+starting garbage and a piece mix; shown in the lobby; shipped in a release.
+core: tn_rules_pieces/tn_rules_piece_mix + enum tn_piece_mix (classic tetrinetx 15/14..,
+nosz I O J L T 20 each, bars I 28 rest 12), codes classic|nosz|bars. All via the classic
+newgame fields (stack, lines per special, specials added, blockfreq), so classic clients get
+them as well; no protocol change. settings.ini specials=on|off, special_lines=1..4,
+garbage=0..10 even, pieces=<code>; gtn_host_rules() builds the hosted rules (replaces the
+bare tn_rules_tn2 call in host_local). UI: Options row 5 Left/Right still switches the rule
+set, Y resets rule set AND host settings, A opens SCR_RULES (rows rule set, specials, lines
+per special, garbage, pieces; Y per row; B back to Options row 5). Options row value says
+"<set>, custom" when any host setting differs. Lobby: the rules summary (rule set line, then
+specials and garbage/pieces lines) is drawn at the top of the chat panel, which loses those
+lines; the old right-header spot collided with the German port line. Server: --pure,
+--special-lines N, --garbage N, --pieces MIX. tests/test_rules.c (ctest "rules"): mixes,
+newgame round trip, 4000-draw piece counts (no S/Z; I ~600 classic vs ~1140 bars), pure and
+3-lines-per-special clears, settings load/save/malformed, controller navigation, render at
+800x600/1280x800 en/de with no cut text, and a real TCP game (two pads + a bot) whose clients
+all get the rules, start with the garbage, and whose bot clears lines with no special and no
+S/Z ever. Negative control (specials_off ignored in gtn_host_rules) fails 5 checks.
+test_sound used A on row 5 for TN2; now Right. Local Debug+ASan/UBSan: all 14 ctests pass.
 
 ## Current: German installer dialogs released as v0.1.15 (item tetrinet-german-installer, done)
 

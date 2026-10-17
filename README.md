@@ -60,6 +60,13 @@ compatible with the TetriNET 2 client or its servers, and online games on classi
 stay classic. `gtetrinet-ng-server --tn2` does the same for a LAN server. What TetriNET 2
 had and what is still missing: [docs/TN2-PARITY.md](docs/TN2-PARITY.md).
 
+Host settings: press A on Options → Rules for games here to choose, for games hosted on this
+machine, specials on or off ("pure"), how many cleared lines bring a special (1–4), rows of
+garbage everyone starts with (none to 10) and the piece mix (classic, no S/Z pieces, more
+long bars). The lobby shows anything that differs from the classic defaults. These are
+ordinary TetriNET 1.13 game settings, so classic clients get them too. The LAN server takes
+`--pure`, `--special-lines N`, `--garbage N` and `--pieces classic|nosz|bars`.
+
 Keyboard: arrows move/rotate, Space drops, X rotates clockwise / Z counterclockwise, S uses a special, Q/E or Tab
 changes target, 1–8 uses it on a numbered player, D discards, C or Shift holds (TetriNET 2 rules), P pauses. `--nick Name`
 sets your nickname.

@@ -48,7 +48,23 @@ typedef struct gtn_settings {
     int bot_level;           /* enum tn_bot_level for computer players added in the lobby */
     int blocks;              /* enum gtn_block_style: modern or the original GTetrinet blocks */
     int rules_tn2;           /* games hosted here use the TetriNET 2 rules (hold, 14 specials) */
+    /* host settings for games hosted here, on top of the rule set */
+    int specials_off;        /* "pure": no specials appear */
+    int special_lines;       /* lines to clear per special, 1..GTN_SPECIAL_LINES_MAX */
+    int garbage;             /* rows of garbage at the start, 0..GTN_GARBAGE_MAX, even */
+    int pieces;              /* enum tn_piece_mix */
 } gtn_settings;
+
+#define GTN_SPECIAL_LINES_MAX 4
+#define GTN_GARBAGE_MAX 10
+
+struct tn_rules;
+/* The rules a game hosted here starts with: the default set, TetriNET 2 when chosen, and
+ * the host settings. */
+void gtn_host_rules(const gtn_settings *s, struct tn_rules *r);
+/* Whether any host setting differs from the classic default (the rule set aside). */
+int gtn_host_custom(const gtn_settings *s);
+void gtn_host_defaults(gtn_settings *s);
 
 /* Folder for settings and logs, ending in a separator. Never NULL. */
 const char *gtn_pref_dir(void);
