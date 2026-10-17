@@ -52,6 +52,12 @@ not certified hardware compatibility. Release gates and remaining checks are in 
   (tier 2), guests over the Warpzone peer channel so nobody forwards ports, the declared
   ranked FFA queue (up to 6), and the built-in updater silent in `.warpzone-managed`
   installs. Descriptor games/gtetrinet-ng.toml in that repo; no free-text player content.
+  - [ ] Fault reports through Warpzone (request t_mvc434n79bz3f, warpzone lane, 2026-10-17):
+    BLOCKED until libwarpzone 0.1.3 is released and /api/v1/feedback is deployed (404 on
+    2026-10-17; latest release v0.1.2). Then: caught faults wz_report("bug", stable title,
+    detail); crash handler writes title+backtrace to a file, sent next start via
+    wz_report_problem(NULL,"gtetrinet-ng",version,"crash",…) and deleted. Replaces the ntfy
+    relay in src/app/fault.c (keep GTN_FAULT_REPORTS opt-in, release builds only).
 - [x] Malformed-message fuzzing and limits for public-facing hosting (v0.1.13): per-address
   waiting cap, query cap, message rate limit, flood/slow-reader drop, tests/test_fuzz.c.
 - [x] IPv6 and asynchronous DNS; avoid blocking the render loop on lookup (v0.1.12).

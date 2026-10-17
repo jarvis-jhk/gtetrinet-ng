@@ -207,6 +207,13 @@ generates it). No PR needed today. launcher.py now skips its update check when t
 install dir or its parent has .warpzone-managed (test_launcher). Integration itself
 (tier 2 rooms via the C API, peer channel, FFA ladder) is a new M2 roadmap item.
 
+Warpzone fault reports (request t_mvc434n79bz3f, warpzone lane, 2026-10-17, not Jan): asked
+to route crashes/bugs through Warpzone's feedback API (game id gtetrinet-ng → lane tetrinet).
+Not done yet on purpose: the request itself says to wait for libwarpzone 0.1.3, which is not
+released (latest v0.1.2) and https://warpzone.virtualtabletop.io/api/v1/feedback answers 404.
+Launcher-started crashes are already reported by Warpzone itself. Sub-item under the M2
+Warpzone roadmap entry; a work session picks it up once 0.1.3 is out.
+
 ## Current: online interop released as v0.1.8 (item tetrinet-online-interop, done)
 
 Opus filler t_mvataavx18bmir. tests/interop.sh CORE [GAME] builds unmodified tetrinetx
