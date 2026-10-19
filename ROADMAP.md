@@ -117,3 +117,18 @@ single-player hardware observation; eight-controller and suspend/dock checks rem
   the `.warpzone-managed` check and the built-in updater are Linux/Windows-only and need a
   macOS path; the Warpzone client (libwarpzone) must build for macOS as well; the fault relay
   must stay opt-in. No macOS hardware here: CI runner proof is not a played-on-a-Mac claim.
+
+## M5 — twelve local players (roadmap item tetrinet-twelve-local-players, Jan 2026-10-19)
+
+- [ ] Raise the local/server seat limit from 8 to 12 (`GTN_MAX_LOCAL`, `TN_MAX_SLOTS` and every
+  fixed per-seat array, nick2..nick12 in settings.ini, bot slots, team/winner lists) on the
+  embedded and standalone servers; player numbers 9–12 stay an extension between our own clients.
+  Classic servers and clients keep six slots; never claim they see seats 7–12.
+- [ ] A 12-field game screen that is still readable on the Deck's 1280x800 (e.g. 4x3 or 6x2 grid,
+  smaller cells for opponents' fields), plus lobby, pause, results and nickname views for 12 seats;
+  extend test_i18n's clipping check to the 12-player layouts.
+- [ ] Input: 12 seats from controllers plus keyboard; check SDL's joystick limits and Steam Input
+  with many pads; seat reuse/hotplug tests with 12 virtual SDL devices under ASan/UBSan.
+- [ ] Wire protocol audit for two-digit player numbers (playernum, f/sb/team/playerlost/
+  winlist lines and partial-field updates) and CI interop proving classic servers still work.
+- Physical twelve-controller play is a separate acceptance check, as with eight in M1.
