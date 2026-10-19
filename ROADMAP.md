@@ -101,3 +101,19 @@ single-player hardware observation; eight-controller and suspend/dock checks rem
   original falling-block Steam capsule/hero/logo/icon, preserving existing shortcut appids.
 - [x] Fix clipped menus, help, nicknames and news headings at Deck resolutions; verify
   title, online entry, lobby, news, pause and one/eight-player views separately (local rendering; physical recheck remains M1).
+
+## M4 — macOS support (roadmap item tetrinet-macos-support, Jan 2026-10-19)
+
+- [ ] macOS build: universal (arm64 + x86_64) or one archive per architecture, SDL2 bundled
+  as a framework/dylib with a relative rpath, packaged as a `.app` in a zip or `.dmg`.
+- [ ] CI on a GitHub `macos` runner: build, run the CTest suites, and a short headless SDL
+  smoke start (dummy video driver) before any tag; the release workflow attaches the asset.
+- [ ] Player docs: install/start notes for macOS, including the Gatekeeper workaround for
+  an unsigned build (right-click → Open, or `xattr -dr com.apple.quarantine`). Unsigned is fine.
+- Known risks: SDL_Renderer picks Metal on macOS, so check the software fallback and
+  HiDPI/Retina scaling of the 8x8 font and layout; controllers go through the SDL/GameController
+  framework (MFi/Xbox/PlayStation), hotplug and seat mapping need a real check; settings use
+  SDL_GetPrefPath (`~/Library/Application Support/`), but the launcher/installer scripts,
+  the `.warpzone-managed` check and the built-in updater are Linux/Windows-only and need a
+  macOS path; the Warpzone client (libwarpzone) must build for macOS as well; the fault relay
+  must stay opt-in. No macOS hardware here: CI runner proof is not a played-on-a-Mac claim.
