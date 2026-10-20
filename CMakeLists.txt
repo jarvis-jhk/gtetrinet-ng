@@ -126,6 +126,9 @@ if(BUILD_TESTING)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/rules-prefs)
     add_test(NAME rules COMMAND test_rules "${CMAKE_CURRENT_BINARY_DIR}/rules-prefs/")
     set_tests_properties(input input_virtual effects repeat i18n controls names sound bots browser blocks rules PROPERTIES TIMEOUT 60 ENVIRONMENT "GTN_NO_REPORT=1")
+    # A whole bot match paced by SDL_Delay(1): about 10 s on Linux, 55 s on a macOS runner,
+    # whose sleeps are several times longer.
+    set_tests_properties(bots PROPERTIES TIMEOUT 180)
   endif()
 endif()
 
