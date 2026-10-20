@@ -13,7 +13,7 @@ build-file cleanup 2026-07-09), nothing to adopt. libwarpzone: v0.1.3..v0.1.10 r
 /api/v1/feedback answers 422 to an empty POST, so the Warpzone fault-report sub-item is
 unblocked (Linux/Windows assets only, no macOS build of libwarpzone).
 
-## Current: macOS build released as v0.1.17 (item tetrinet-macos-support)
+## Current: macOS build released as v0.1.17 (item tetrinet-macos-support, done)
 
 tools/macos/build-sdl2.sh builds pinned SDL2 2.30.12 (sha256 ac356ea5…48ea) universal;
 bundle-macos.sh makes "GTetrinet NG.app" (game+server in MacOS/, SDL in Frameworks via
@@ -33,7 +33,11 @@ sleeps) — connect_one is now clock-bounded (10 s). macOS runner sleeps are slo
 55 s there (timeout 180), slow-lookup frame threshold 50 → 20. otool -l/-L repeat entries
 per slice of a universal binary (delete rpath once; skip "(architecture x):" headers).
 29ba851 passed linux/windows/interop/macos CI 39359638573; artifact screenshots (arm64,
-x86_64, Cocoa) show eight-player demo games. RELEASE_PLACEHOLDER
+x86_64, Cocoa) show eight-player demo games. Tag v0.1.17 (048c29c): Release 39360410009 and
+CI 39360407038 green; the release macos job reported 0.1.17 from the bundle under the bundled
+SDL. All public assets downloaded, SHA256SUMS OK, zip has the 0.1.17 Info.plist and no private
+endpoint (only the public ntfy relay). Item done. Next release > v0.1.17.
+https://github.com/jarvis-jhk/gtetrinet-ng/releases/tag/v0.1.17
 Open: real-Mac/controller play, crisp HiDPI, macOS Warpzone, update check on macOS.
 
 ## Current: host settings released as v0.1.16 (work session t_mvbr1hfo39m4rn, item tetrinet-host-settings, done)
