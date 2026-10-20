@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(__GLIBC__)
+#if defined(__GLIBC__) || defined(__APPLE__)
 #include <execinfo.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -41,7 +41,7 @@ void gtn_fault_install(void)
 #ifdef __SANITIZE_ADDRESS__
     return; /* Preserve the sanitizer's own signal handler in diagnostic builds. */
 #endif
-#if defined(__GLIBC__)
+#if defined(__GLIBC__) || defined(__APPLE__)
     signal(SIGSEGV, on_crash);
     signal(SIGBUS, on_crash);
     signal(SIGFPE, on_crash);
@@ -68,13 +68,18 @@ static void report_fault(void)
         CloseHandle(process.hThread);
         CloseHandle(process.hProcess);
     }
-#elif defined(__GLIBC__)
+#elif defined(__GLIBC__) || defined(__APPLE__)
+#ifdef __APPLE__
+    const char *what = "gtetrinet-ng " TN_VERSION " macOS application fault";
+#else
+    const char *what = "gtetrinet-ng " TN_VERSION " Linux application fault";
+#endif
     /* Double fork avoids accumulating zombies while the game stays open. */
     pid_t child = fork();
     if (child == 0) {
         if (fork() == 0) {
             execlp("curl", "curl", "-fsS", "--max-time", "8", "-o", "/dev/null", "-d",
-                   "gtetrinet-ng " TN_VERSION " Linux application fault",
+                   what,
                    "https://ntfy.sh/gtetrinet-ng-faults-5e8b41e03cf04b57", (char *)NULL);
         }
         _exit(0);

@@ -37,6 +37,28 @@ jobs:
         env:
           ASAN_OPTIONS: detect_leaks=0
           UBSAN_OPTIONS: halt_on_error=1
+  macos:
+    # Apple Silicon runner; the universal build's x86_64 half is started under Rosetta.
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/sdl2-universal
+          key: sdl2-universal-${{ hashFiles('tools/macos/build-sdl2.sh') }}
+      - run: test -f ~/sdl2-universal/lib/libSDL2-2.0.0.dylib || bash tools/macos/build-sdl2.sh ~/sdl2-universal
+      - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=$HOME/sdl2-universal -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
+      - run: cmake --build build --parallel 3
+      - run: ctest --test-dir build --output-on-failure
+        env:
+          UBSAN_OPTIONS: halt_on_error=1
+      - run: bash tools/macos/package-macos.sh ~/sdl2-universal 0.0.0-dev OFF dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-ci
+          path: |
+            dist/*.zip
+            dist/*.bmp
   windows:
     runs-on: windows-latest
     defaults:

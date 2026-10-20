@@ -1050,7 +1050,12 @@ int main(int argc, char **argv)
     /* SteamOS sets SteamDeck=1; Steam sets SteamGameId when it launched us (Game Mode) */
     a->steamdeck = getenv("SteamDeck") && !strcmp(getenv("SteamDeck"), "1");
     if (fullscreen < 0) fullscreen = a->steamdeck || getenv("SteamGameId") != NULL;
-    Uint32 wflags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | (fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+    Uint32 wflags = SDL_WINDOW_RESIZABLE | (fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+#ifndef __APPLE__
+    /* On a Retina Mac this doubles the drawable while the layout and the 8x8 font keep their
+     * pixel sizes, so everything would be drawn at half size; there macOS scales the window. */
+    wflags |= SDL_WINDOW_ALLOW_HIGHDPI;
+#endif
     a->win = SDL_CreateWindow("gtetrinet-ng", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 800, wflags);
     if (!a->win) { gtn_fault("no window", SDL_GetError()); return 1; }
     a->ren = SDL_CreateRenderer(a->win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
