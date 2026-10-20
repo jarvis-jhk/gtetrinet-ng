@@ -9,6 +9,7 @@
 #define SDL_MAIN_HANDLED
 #define main gtn_app_entry
 #include "../src/app/main.c"
+#include "await_game.h"
 #undef main
 
 static const char *pref_path = "./";
@@ -135,7 +136,7 @@ int main(int argc, char **argv)
     CHECK(local_moderator(&a) < 0);
 
     tn_client_start_game(&online);
-    for (int t = 0; t < 1000 && a.screen != SCR_GAME; t++) step(&a, 1);
+    for (int t = 0; t < 1000 && (a.screen != SCR_GAME || !all_playing(&a)); t++) step(&a, 1);
     CHECK(a.screen == SCR_GAME);
     step(&a, 200);
     for (int i = 0; i < 4; i++) CHECK(a.pl[i].client.playing);

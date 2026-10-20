@@ -20,6 +20,18 @@ supplies graphics/audio libraries (SteamOS, Mint or Ubuntu 22.04+). Python 3 and
 required by the installer/launcher. Windows x86_64: extract the ZIP, run `Play.cmd`;
 `gtetrinet-ng.exe` also works directly, without launcher fault reporting.
 
+macOS 11 or newer (Apple Silicon and Intel, one universal app): download
+`gtetrinet-ng-macos-universal.zip`, open it and drag **GTetrinet NG** to Applications. The app
+is not notarized by Apple, so the first start is blocked ("cannot be opened" / "could not
+verify"). Either open System Settings → Privacy & Security and click **Open Anyway** below the
+message (on macOS 14 and older right-click the app → Open → Open also works), or run once in
+Terminal: `xattr -dr com.apple.quarantine "/Applications/GTetrinet NG.app"`. SDL2 is inside the
+app. Settings live in `~/Library/Application Support/gtetrinet-ng/`. There is no update check
+on macOS: download the new zip and replace the app. The LAN server is
+`"/Applications/GTetrinet NG.app/Contents/MacOS/gtetrinet-ng-server"`. Controllers that macOS
+knows (Xbox, PlayStation, MFi) work; the Mac build is checked on GitHub's macOS machines, not
+yet on a Mac with real controllers.
+
 AppImage (any Linux x86_64, no installation): download `gtetrinet-ng-x86_64.AppImage`, mark
 it executable (`chmod +x`, or Properties → Executable) and open it. It needs no libfuse2.
 It does not update itself; AppImageUpdate or Gear Lever (Steam Deck) can, using the embedded
@@ -156,7 +168,10 @@ while two players keep playing. That is hardening, not a security audit.
 ## Build
 
 CMake 3.16+, a C11 compiler and SDL2 2.0.14+ development headers. On Debian/Ubuntu install
-`cmake build-essential libsdl2-dev`; on Windows use MSYS2 UCRT64 + GCC/CMake/SDL2.
+`cmake build-essential libsdl2-dev`; on Windows use MSYS2 UCRT64 + GCC/CMake/SDL2. On macOS
+(Xcode command line tools and CMake) `tools/macos/build-sdl2.sh ~/sdl2` builds a universal
+SDL2 and `tools/macos/package-macos.sh ~/sdl2 0.0.0-dev OFF dist` builds, tests and packages
+the app; for a quick build pass `-DCMAKE_PREFIX_PATH=~/sdl2` (or use Homebrew's sdl2).
 
 ```
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug

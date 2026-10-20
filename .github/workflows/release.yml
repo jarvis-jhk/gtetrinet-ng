@@ -93,8 +93,22 @@ jobs:
         with:
           name: windows-release
           path: dist/*.zip
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          tag='${{ github.ref_name }}'
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          # No cache here: a release builds SDL from the pinned, checksummed source every time.
+          bash tools/macos/build-sdl2.sh "$HOME/sdl2-universal"
+          bash tools/macos/package-macos.sh "$HOME/sdl2-universal" "${tag#v}" ON dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-release
+          path: dist/*.zip
   publish:
-    needs: [linux, windows]
+    needs: [linux, windows, macos]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4

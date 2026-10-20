@@ -630,7 +630,10 @@ static int connect_one(tn_server *s, tn_client *c, const char *nick, const char 
 {
     tn_client_init(c, nick, "", 5);
     tn_client_connect(c, host, port, 0);
-    for (int t = 0; t < 400 && c->state != TN_CONNECTED && c->state != TN_FAILED; t++) pump(s, c, 1, 4);
+    /* By time, not by rounds: a refused ::1 costs Windows about two seconds of SYN retries, and
+     * a 1 ms sleep can take 15 ms there, so a fixed round count was flaky (CI 39356936200). */
+    long t0 = clock_ms();
+    while (c->state != TN_CONNECTED && c->state != TN_FAILED && clock_ms() - t0 < 10000) pump(s, c, 1, 4);
     if (c->state != TN_CONNECTED) fprintf(stderr, "%s -> %s: %s\n", nick, host, c->err);
     return c->state == TN_CONNECTED;
 }
@@ -695,7 +698,10 @@ static void test_ipv6_and_lookup(void)
     }
     for (int t = 0; t < 200 && c.state != TN_CONNECTED; t++) pump(&s, &c, 1, 4);
     CHECK(c.state == TN_CONNECTED);
-    CHECK(clock_ms() - t0 >= 1200 && frames > 50);
+    /* Frames kept coming while the lookup slept. Not 50: a 5 ms sleep takes 20+ ms on a busy
+     * macOS runner, which is still a frame loop that never blocked. */
+    fprintf(stderr, "slow lookup: connected after %ld ms, %d frames meanwhile\n", clock_ms() - t0, frames);
+    CHECK(clock_ms() - t0 >= 1200 && frames > 20);
     tn_client_disconnect(&c);
 
     /* backing out mid-lookup: the lookup finishes on its own and frees itself */

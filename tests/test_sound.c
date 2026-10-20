@@ -4,6 +4,7 @@
 #define SDL_MAIN_HANDLED
 #define main gtn_app_entry
 #include "../src/app/main.c"
+#include "await_game.h"
 #undef main
 
 static const char *pref_path;
@@ -192,7 +193,7 @@ int main(int argc, char **argv)
     for (int t = 0; t < 3000 && local_moderator(&a) != 0; t++) { update_session(&a, 2); SDL_Delay(1); }
     CHECK(a.screen == SCR_LOBBY && local_moderator(&a) == 0);
     tn_client_start_game(&a.pl[0].client);
-    for (int t = 0; t < 3000 && a.screen != SCR_GAME; t++) { update_session(&a, 2); SDL_Delay(1); }
+    for (int t = 0; t < 3000 && (a.screen != SCR_GAME || !all_playing(&a)); t++) { update_session(&a, 2); SDL_Delay(1); }
     CHECK(a.screen == SCR_GAME);
     settle(&a, 100);
     gtn_local *p0 = &a.pl[0], *p1 = &a.pl[1];

@@ -3,6 +3,7 @@
 #define SDL_MAIN_HANDLED
 #define main gtn_app_entry
 #include "../src/app/main.c"
+#include "await_game.h"
 #undef main
 
 /* Only the platform preference directory is replaced; load/save use actual files. */
@@ -38,7 +39,7 @@ static void tap(gtn_app *a, Uint8 button) { pad(a, button, 1); pad(a, button, 0)
 
 static void await_screen(gtn_app *a, enum gtn_screen screen)
 {
-    for (int t = 0; t < 2000 && a->screen != screen; t++) { update_session(a, 2); SDL_Delay(1); }
+    for (int t = 0; t < 2000 && (a->screen != screen || (screen == SCR_GAME && !all_playing(a))); t++) { update_session(a, 2); SDL_Delay(1); }
     CHECK(a->screen == screen);
 }
 

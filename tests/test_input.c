@@ -4,6 +4,7 @@
 #define SDL_MAIN_HANDLED
 #define main gtn_app_entry
 #include "../src/app/main.c"
+#include "await_game.h"
 #undef main
 
 static int failures, checks;
@@ -40,7 +41,7 @@ int main(void)
     for (int t = 0; t < 2000 && a.screen != SCR_LOBBY; t++) { update_session(&a, 2); SDL_Delay(1); }
     CHECK(a.screen == SCR_LOBBY);
     pad(&a, 100, SDL_CONTROLLER_BUTTON_START, 1);
-    for (int t = 0; t < 2000 && a.screen != SCR_GAME; t++) { update_session(&a, 2); SDL_Delay(1); }
+    for (int t = 0; t < 2000 && (a.screen != SCR_GAME || !all_playing(&a)); t++) { update_session(&a, 2); SDL_Delay(1); }
     CHECK(a.screen == SCR_GAME);
     for (int i = 0; i < 8; i++) {
         tn_game_spawn(&a.pl[i].client.game);

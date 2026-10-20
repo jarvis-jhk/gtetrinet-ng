@@ -4,6 +4,7 @@
 #define SDL_MAIN_HANDLED
 #define main gtn_app_entry
 #include "../src/app/main.c"
+#include "await_game.h"
 #undef main
 
 /* Only the platform preference directory is replaced; load/save use actual files. */
@@ -178,7 +179,7 @@ int main(int argc, char **argv)
 
     /* The human starts and then does nothing; the computer players play on their own. */
     tap(&a, 42, SDL_CONTROLLER_BUTTON_A);
-    for (int t = 0; t < 3000 && a.screen != SCR_GAME; t++) { update_session(&a, 2); SDL_Delay(1); }
+    for (int t = 0; t < 3000 && (a.screen != SCR_GAME || !all_playing(&a)); t++) { update_session(&a, 2); SDL_Delay(1); }
     CHECK(a.screen == SCR_GAME);
     tap(&a, 42, SDL_CONTROLLER_BUTTON_X);   /* in a game X is a special, not another bot */
     CHECK(bots(&a) == 2);

@@ -4,6 +4,7 @@
 #define SDL_MAIN_HANDLED
 #define main gtn_app_entry
 #include "../src/app/main.c"
+#include "await_game.h"
 #undef main
 
 static int checks;
@@ -97,7 +98,7 @@ static void detach(gtn_app *a, virtual_pad *p)
 
 static void await_screen(gtn_app *a, enum gtn_screen screen)
 {
-    for (int t = 0; t < 2000 && a->screen != screen; t++) {
+    for (int t = 0; t < 2000 && (a->screen != screen || (screen == SCR_GAME && !all_playing(a))); t++) {
         update_session(a, 2);
         pump(a);
         SDL_Delay(1);
