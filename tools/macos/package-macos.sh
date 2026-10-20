@@ -21,7 +21,11 @@ ctest --test-dir "$BUILD" --output-on-failure
 mkdir -p "$OUT"
 art=$(mktemp -d)
 SDL_VIDEODRIVER=dummy "$BUILD/gtetrinet-ng" --window --demo 8 --frames 120 --art "$art"
-sips -s format png "$art/steam_icon.bmp" --out "$art/icon.png" >/dev/null
+# sips cannot read SDL's 32-bit BMP; the Linux release converts with Pillow as well.
+python3 -m venv "$art/venv"
+"$art/venv/bin/pip" install --quiet 'pillow==11.3.0'
+"$art/venv/bin/python" "$ROOT/tools/linux/convert-artwork.py" "$art"
+cp "$art/steam_icon.png" "$art/icon.png"
 bash "$ROOT/tools/macos/bundle-macos.sh" "$BUILD" "$SDL" "$APP" "$VERSION" "$art/icon.png"
 
 # Started from inside the bundle, so only @rpath and the bundled SDL can satisfy the loader.
