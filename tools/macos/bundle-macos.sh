@@ -20,10 +20,11 @@ install_name_tool -id "@rpath/$SDL_LIB" "$APP/Contents/Frameworks/$SDL_LIB"
 
 game="$APP/Contents/MacOS/gtetrinet-ng"
 # Point the game at the bundled copy and forget the build machine's library paths.
-otool -L "$game" | awk 'NR > 1 && /libSDL2/ {print $1}' | while read -r old; do
+otool -L "$game" | awk 'NR > 1 && /libSDL2/ {print $1}' | sort -u | while read -r old; do
   install_name_tool -change "$old" "@rpath/$SDL_LIB" "$game"
 done
-otool -l "$game" | awk '/cmd LC_RPATH/ {getline; getline; print $2}' | while read -r rp; do
+# otool lists every slice of a universal binary; one delete covers both, so each path once.
+otool -l "$game" | awk '/cmd LC_RPATH/ {getline; getline; print $2}' | sort -u | while read -r rp; do
   install_name_tool -delete_rpath "$rp" "$game"
 done
 install_name_tool -add_rpath "@executable_path/../Frameworks" "$game"
