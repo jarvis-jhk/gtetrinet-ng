@@ -75,7 +75,8 @@ codesign --verify --deep --strict "$APP"
 # Nothing may still point into the build machine (Homebrew, the SDL prefix, the build tree).
 for bin in "$game" "$APP/Contents/MacOS/gtetrinet-ng-server" "$APP/Contents/Frameworks/$SDL_LIB"; do
   lipo "$bin" -verify_arch arm64 x86_64
-  if otool -L "$bin" | awk 'NR > 1 {print $1}' | grep -Ev '^(/usr/lib/|/System/Library/|@rpath/libSDL2)'; then
+  # Skip otool's per-slice "file (architecture x):" headers, keep the load commands.
+  if otool -L "$bin" | awk '!/:$/ {print $1}' | grep -Ev '^(/usr/lib/|/System/Library/|@rpath/libSDL2)'; then
     echo "bundle-macos: $bin links outside the bundle and the system" >&2
     exit 1
   fi
