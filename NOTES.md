@@ -1,4 +1,40 @@
-# Running state — 2026-10-17
+# Running state — 2026-10-20
+
+## Upstream check (last: 2026-10-20, work session t_mvg1cwjuoj4sv)
+
+GitHub: no open issues/PRs, master CI green before this session. tetrinetx: SourceForge
+files unchanged since 2006 (1.13.16 pinned in tests/interop.sh). tetrinet-server: Debian
+sid/forky now ship 0.11+git20080905.a98fcc1-1 (newer snapshot than Ubuntu 22.04's
+0.11+CVS20070911 our interop job installs); not adopted — the runner package is what CI
+gets, a source build of the 2008 snapshot would be a separate interop fixture. GTetrinet
+forks: only distro packaging (rpmfusion Fedora 45 mass rebuild 2026-08-02, OpenMandriva
+build-file cleanup 2026-07-09), nothing to adopt. libwarpzone: v0.1.3..v0.1.10 released
+2026-10-19 (launcher work); v0.1.10 header has wz_report/wz_report_problem and
+/api/v1/feedback answers 422 to an empty POST, so the Warpzone fault-report sub-item is
+unblocked (Linux/Windows assets only, no macOS build of libwarpzone).
+
+## Current: macOS build released as v0.1.17 (item tetrinet-macos-support)
+
+tools/macos/build-sdl2.sh builds pinned SDL2 2.30.12 (sha256 ac356ea5…48ea) universal;
+bundle-macos.sh makes "GTetrinet NG.app" (game+server in MacOS/, SDL in Frameworks via
+@rpath, build rpaths deleted, CHANGELOG etc. in Resources where SDL_GetBasePath points,
+icon from --art via Pillow because sips cannot read SDL's 32-bit BMP, ad-hoc codesign,
+lipo -verify_arch both slices, otool check that nothing links outside bundle/system).
+package-macos.sh (CI + release): universal Release build, CTest, bundle, then from inside the
+bundle: --version, dummy-video demo arm64 with DYLD_PRINT_LIBRARIES proving the bundled SDL,
+x86_64 under Rosetta, a real Cocoa window, server start + --query, ditto zip, unzip +
+codesign verify. CI job macos (macos-14) also runs arm64 ASan/UBSan Debug CTest.
+Code: fault.c crash backtraces and opt-in ntfy report cover __APPLE__ ("macOS application
+fault"); no SDL_WINDOW_ALLOW_HIGHDPI on Apple (layout/font are pixel-sized; macOS scales).
+Findings: macOS and Windows deliver loopback data asynchronously, so SCR_GAME opens before
+every local client is playing — tests now wait via tests/await_game.h all_playing() (a test
+race, players never saw it). Windows ::1 refused fallback flaked (SYN retries + 15 ms
+sleeps) — connect_one is now clock-bounded (10 s). macOS runner sleeps are slow: bot test
+55 s there (timeout 180), slow-lookup frame threshold 50 → 20. otool -l/-L repeat entries
+per slice of a universal binary (delete rpath once; skip "(architecture x):" headers).
+29ba851 passed linux/windows/interop/macos CI 39359638573; artifact screenshots (arm64,
+x86_64, Cocoa) show eight-player demo games. RELEASE_PLACEHOLDER
+Open: real-Mac/controller play, crisp HiDPI, macOS Warpzone, update check on macOS.
 
 ## Current: host settings released as v0.1.16 (work session t_mvbr1hfo39m4rn, item tetrinet-host-settings, done)
 

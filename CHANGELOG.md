@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.17 — 2026-10-20
+
+macOS. A new download, gtetrinet-ng-macos-universal.zip, holds GTetrinet NG.app for macOS 11
+or newer on Apple Silicon and Intel Macs, with SDL2 inside. It is not notarized: on first
+start open System Settings → Privacy & Security and click Open Anyway (see the README). The
+Mac build is tested on GitHub's macOS machines; it has not been played on a Mac with real
+controllers yet. The tests now also wait for every local player's game to start on systems
+that deliver network data a moment later.
+
 ## 0.1.16 — 2026-10-17
 
 Host settings. Press A on Options → Rules for games here to set up games hosted on this

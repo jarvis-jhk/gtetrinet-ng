@@ -53,8 +53,8 @@ not certified hardware compatibility. Release gates and remaining checks are in 
   ranked FFA queue (up to 6), and the built-in updater silent in `.warpzone-managed`
   installs. Descriptor games/gtetrinet-ng.toml in that repo; no free-text player content.
   - [ ] Fault reports through Warpzone (request t_mvc434n79bz3f, warpzone lane, 2026-10-17):
-    BLOCKED until libwarpzone 0.1.3 is released and /api/v1/feedback is deployed (404 on
-    2026-10-17; latest release v0.1.2). Then: caught faults wz_report("bug", stable title,
+    UNBLOCKED 2026-10-20: libwarpzone v0.1.10 has wz_report/wz_report_problem and
+    /api/v1/feedback answers (422 to an empty POST, no longer 404). Linux/Windows only. Then: caught faults wz_report("bug", stable title,
     detail); crash handler writes title+backtrace to a file, sent next start via
     wz_report_problem(NULL,"gtetrinet-ng",version,"crash",…) and deleted. Replaces the ntfy
     relay in src/app/fault.c (keep GTN_FAULT_REPORTS opt-in, release builds only).
@@ -104,12 +104,17 @@ single-player hardware observation; eight-controller and suspend/dock checks rem
 
 ## M4 — macOS support (roadmap item tetrinet-macos-support, Jan 2026-10-19)
 
-- [ ] macOS build: universal (arm64 + x86_64) or one archive per architecture, SDL2 bundled
-  as a framework/dylib with a relative rpath, packaged as a `.app` in a zip or `.dmg`.
-- [ ] CI on a GitHub `macos` runner: build, run the CTest suites, and a short headless SDL
-  smoke start (dummy video driver) before any tag; the release workflow attaches the asset.
-- [ ] Player docs: install/start notes for macOS, including the Gatekeeper workaround for
-  an unsigned build (right-click → Open, or `xattr -dr com.apple.quarantine`). Unsigned is fine.
+- [x] macOS build: universal (arm64 + x86_64) `GTetrinet NG.app` in
+  `gtetrinet-ng-macos-universal.zip`, pinned SDL2 2.30.12 built universal and bundled in
+  Contents/Frameworks via @rpath, ad-hoc signed (tools/macos/, v0.1.17).
+- [x] CI on a GitHub `macos-14` runner: ASan/UBSan Debug CTest, universal Release CTest, then
+  the bundle started from inside (dummy video arm64 + x86_64 under Rosetta, real Cocoa window,
+  server query) and the zip re-verified; the release workflow attaches the asset.
+- [x] Player docs: README macOS install, Gatekeeper (Open Anyway / right-click Open / xattr),
+  settings path, server path, building. Unsigned/not notarized.
+- [ ] Played on a real Mac with controllers; Retina currently drawn by macOS scaling (no HiDPI
+  drawable, the layout and font are pixel-sized), crisp integer HiDPI scaling is open.
+  Warpzone (libwarpzone has no macOS build yet) and an in-game update check are not on macOS.
 - Known risks: SDL_Renderer picks Metal on macOS, so check the software fallback and
   HiDPI/Retina scaling of the 8x8 font and layout; controllers go through the SDL/GameController
   framework (MFi/Xbox/PlayStation), hotplug and seat mapping need a real check; settings use
